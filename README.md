@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/app_icon.png" width="128" height="128" alt="Capsule VN Icon" style="border-radius: 28px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);"><br>
+
 # 💊 Capsule VN — Viên thuốc thông minh cho Android
 
 **Trải nghiệm cụm Viên thuốc (Dynamic Island) thế hệ mới trên Android — Việt hóa 100%, tích hợp AI/Tiện ích thông minh, Vòng sáng LED RGB 360°, Chế độ Gaming toàn diện và Hệ sinh thái Samsung One UI & Android.**
@@ -92,6 +94,12 @@ Bình thường khi không có hoạt động, Viên thuốc có thể thu gọn
 - **Âm nhạc & Lời bài hát đồng bộ**: Hiển thị ảnh bìa, sóng nhạc động (Equalizer) theo màu bìa đĩa và lời bài hát chạy chữ từng từ theo giai điệu (hỗ trợ Spotify, YouTube Music, Zing MP3, Apple Music…).
 - **Cuộc gọi, Tin nhắn & Trả lời trực tiếp**: Nhận/từ chối cuộc gọi, xem lịch sử hội thoại và gõ trả lời tin nhắn ngay trong Viên thuốc.
 - **Điều hướng Bản đồ, Hẹn giờ, Đèn pin, Thanh toán chạm NFC** và **Tự động cập nhật 1 chạm từ GitHub**.
+
+### 9. 🇻🇳 Trứng phục sinh đặc biệt — Ca khúc "Tuổi Trẻ Thế Hệ Bác Hồ – Tùng Dương"
+- **Hiệu ứng Cờ Đỏ Sao Vàng hào hùng**: Khi bạn mở nghe bài hát **Tuổi Trẻ Thế Hệ Bác Hồ** do ca sĩ **Tùng Dương** thể hiện trên bất kỳ ứng dụng nào (Zing MP3, Spotify, YouTube Music...), Viên thuốc Capsule VN sẽ tự động phát hiện và kích hoạt chế độ bí mật:
+  - **Ngôi sao vàng năm cánh** rực sáng đập theo nhịp trống hào hùng của bài hát.
+  - Vòng hào quang đỏ sao vàng và các chùm pháo sáng lấp lánh bung tỏa quanh camera.
+  - Biểu ngữ chạy chữ trang trọng: *“Tuổi trẻ thế hệ Bác Hồ — Khát vọng cống hiến vì Tổ quốc!”*.
 
 <p align="center">
   <img src="docs/feature-cards-liquid.png" width="100%" alt="Minh họa Thấu kính 3D iOS Liquid Glass, Thẻ tin nhắn & cuộc gọi, Báo thức và Cập nhật">

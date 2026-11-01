@@ -91,7 +91,7 @@ fun CardsScreen(onBack: () -> Unit, onInstruction: () -> Unit, open: (Screen) ->
 
         SectionHeader(tr("Điều bất ngờ", "Surprises"))
         GroupToggle(Pos.Single, Icons.Rounded.AutoAwesome, tr("Trứng phục sinh (Bí mật)", "Easter eggs"),
-            tr("Viên thuốc nhận diện một bài hát đặc biệt và biểu diễn theo nhịp điệu. Đó là bài nào? Hãy thử đoán xem", "The island recognizes one special song and puts on a little show to its beat. Which one? Try to guess"),
+            tr("Viên thuốc nhận diện bài hát đặc biệt và biểu diễn hiệu ứng cờ sao rực rỡ theo nhịp điệu. Gợi ý: Hãy mở một ca khúc hào hùng của ca sĩ Tùng Dương!", "The island recognizes a special song and puts on a festive star visualizer to its beat. Hint: Try playing an epic song by Tung Duong!"),
             s.easterEggs, color = Tile.Red) { set { copy(easterEggs = it) } }
     }
 }

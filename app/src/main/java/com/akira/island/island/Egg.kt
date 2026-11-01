@@ -94,13 +94,29 @@ object Egg {
 
     internal val sparks = ArrayList<Spark>()
 
-    private val LINE get() = tr("Bạn tràn ngập SỰ QUYẾT TÂM.", "You're filled with DETERMINATION.")
+    private val LINE get() = tr(
+        "Tuổi trẻ thế hệ Bác Hồ — Khát vọng cống hiến vì Tổ quốc!",
+        "Youth of Ho Chi Minh's generation — Dedicated to Vietnam!",
+    )
+
+    private fun stripDiacritics(str: String): String {
+        val nfd = java.text.Normalizer.normalize(str, java.text.Normalizer.Form.NFD)
+        return Regex("\\p{InCombiningDiacriticalMarks}+").replace(nfd, "")
+            .replace("đ", "d").replace("Đ", "d")
+    }
 
     fun matches(m: MediaInfo): Boolean {
-        val title = norm(m.title)
-        if ("hopes and dreams" !in title) return false
-        val about = norm(m.artist) + " " + norm(m.album) + " " + title
-        return "toby fox" in about || "tobyfox" in about || "undertale" in about
+        val raw = "${m.title} ${m.artist} ${m.album}".lowercase()
+        val plain = stripDiacritics(norm(raw))
+
+        val isSong = "tuoi tre the he bac ho" in plain ||
+                ("tuoi tre" in plain && "bac ho" in plain) ||
+                "the he bac ho" in plain
+        val isArtist = "tung duong" in plain ||
+                "tungduong" in plain ||
+                "tùng dương" in raw
+
+        return isSong && isArtist
     }
 
     private val nonWord = Regex("[^\\p{L}\\p{N}]+")
@@ -132,13 +148,12 @@ object Egg {
                     IslandBus.post(
                         Notice(
                             title = LINE,
-                            caption = m.artist.ifBlank { "Toby Fox" },
-                            state = m.title,
-                            icon = Ios.load(context, R.drawable.ic_soul),
+                            caption = m.artist.ifBlank { "Tùng Dương" },
+                            state = m.title.ifBlank { "Tuổi Trẻ Thế Hệ Bác Hồ" },
+                            icon = Ios.load(context, R.drawable.ic_star_vn),
                             tint = SoulRed,
                             style = NoticeStyle.EGG,
-                            
-                            extraMs = 2_000,
+                            extraMs = 3_000,
                             openPkg = m.pkg,
                         ),
                     )
@@ -167,8 +182,9 @@ internal class Spark(
     var age: Float = 0f,
 )
 
-private val Gold = Color(0xFFFFE14D)
-private val SoulRed = Color(0xFFFF1F1F)
+private val Gold = Color(0xFFFFD700)
+private val StarGold = Color(0xFFFFCD00)
+private val SoulRed = Color(0xFFDA251D)
 
 private fun rainbow(hue: Float): Color = Color.hsv(((hue % 360f) + 360f) % 360f, 0.85f, 1f)
 
@@ -412,9 +428,9 @@ private fun DrawScope.star(c: Offset, r: Float, rotation: Float, color: Color) {
 @Composable
 fun SoulHeart(modifier: Modifier = Modifier) {
     Icon(
-        ImageVector.vectorResource(R.drawable.ic_soul), null, tint = SoulRed,
+        ImageVector.vectorResource(R.drawable.ic_star_vn), null, tint = StarGold,
         modifier = modifier.graphicsLayer {
-            val k = 1f + 0.25f * Egg.pulse.floatValue
+            val k = 1f + 0.35f * Egg.pulse.floatValue
             scaleX = k
             scaleY = k
         },
@@ -455,10 +471,10 @@ fun EggBanner(n: Notice, s: IslandSettings) {
             Modifier
                 .padding(horizontal = 16.dp)
                 .fillMaxWidth()
-                .border(2.5.dp, Color.White, RoundedCornerShape(3.dp))
+                .border(2.dp, StarGold, RoundedCornerShape(12.dp))
                 .padding(horizontal = 14.dp, vertical = 12.dp),
         ) {
-            Text("*", color = Color.White, fontSize = 15.sp, lineHeight = 21.sp, fontFamily = FontFamily.Monospace)
+            Text("★", color = StarGold, fontSize = 16.sp, lineHeight = 21.sp, fontFamily = FontFamily.Monospace)
             Spacer(Modifier.width(10.dp))
             
             Text(

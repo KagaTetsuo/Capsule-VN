@@ -43,6 +43,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.border
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -202,9 +204,14 @@ private fun AppHeader(version: String, update: UpdateState) {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         
-        Box(Modifier.size(84.dp).clip(RoundedCornerShape(24.dp)).background(Ui.Primary), contentAlignment = Alignment.Center) {
-            Image(ImageVector.vectorResource(R.drawable.ic_launcher_foreground), null, Modifier.requiredSize(126.dp))
-        }
+        Image(
+            painter = painterResource(R.drawable.ic_app_icon),
+            contentDescription = "Capsule VN",
+            modifier = Modifier
+                .size(84.dp)
+                .clip(RoundedCornerShape(22.dp))
+                .border(1.dp, Color(0xFF33384F), RoundedCornerShape(22.dp)),
+        )
         Spacer(Modifier.height(14.dp))
         Text("Capsule VN", color = Ui.Text, fontSize = 22.sp, fontWeight = FontWeight.Bold)
         Text("© 2026 Capsule VN · Nguyễn Lê Lý Huỳnh · Zalo: 0399991787", color = Ui.Text, fontSize = 13.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(top = 4.dp))
