@@ -262,7 +262,7 @@ fun GroupItem(
                     modifier = Modifier.align(Alignment.CenterVertically))
                 if (badge != null) Badge(badge, Modifier.align(Alignment.CenterVertically))
             }
-            if (subtitle != null) Text(subtitle, color = Ui.Sub, fontSize = 15.sp, lineHeight = 19.sp)
+            if (subtitle != null) Text(subtitle, color = Ui.Sub, fontSize = 14.sp, lineHeight = 18.sp, modifier = Modifier.padding(top = 2.dp))
         }
         if (trailing != null) {
             Spacer(Modifier.width(12.dp))

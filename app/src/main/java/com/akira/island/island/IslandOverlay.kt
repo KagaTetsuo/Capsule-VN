@@ -53,6 +53,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -283,6 +284,8 @@ fun IslandOverlay(
     }
     
     val callHidden by IslandBus.callHidden.collectAsState()
+    // Thứ tự ổn định của các hoạt động đang chạy, dùng để vuốt qua lại khi đang mở rộng
+    var pageOrder: List<Act> = emptyList()
     val acts = buildList {
         
         if (call != null && call.incoming && !callHidden) add(Act.CallA(call))
@@ -307,6 +310,7 @@ fun IslandOverlay(
         val alarm = nextAlarm
         if (s.cardAlarm && alarm != null && alarm.triggerAt - alarmNow in 1..ALARM_LEAD_MS) persistent += Act.AlarmA(alarm)
 
+        pageOrder = persistent.filter { !it.transient }
         val ringing = (persistent.firstOrNull() as? Act.TimerA)?.t?.ringing == true || call?.incoming == true
         val i = persistent.indexOfFirst { it.id == focus }
         if (i > 0 && !ringing) persistent.add(0, persistent.removeAt(i))
@@ -407,7 +411,8 @@ fun IslandOverlay(
             enter = if (s.reduceEffects) fadeIn() else scaleIn(islandSpec(s), initialScale = 0.3f, transformOrigin = top) + fadeIn(tween(120)),
             exit = if (s.reduceEffects) fadeOut() else scaleOut(islandSpec(s), targetScale = 0.3f, transformOrigin = top) + fadeOut(tween(160)),
         ) {
-            IslandRow(slot, s, primary, showExpanded, lyrics, battery, bubbleVisible, lastSecondary[0], calibrating, onBody, onBubble)
+            val pages = if (cardPreview == CardPreviewMode.NONE) pageOrder else emptyList()
+            IslandRow(slot, s, primary, showExpanded, lyrics, battery, bubbleVisible, lastSecondary[0], calibrating, pages, onBody, onBubble)
         }
         if (eggOn) {
             EggSparks { body.value }
@@ -427,6 +432,7 @@ private fun IslandRow(
     bubbleVisible: Boolean,
     bubbleAct: Act?,
     calibrating: Boolean,
+    pages: List<Act>,
     onBodyBounds: (Rect) -> Unit,
     onBubbleBounds: (Rect) -> Unit,
 ) {
@@ -461,7 +467,7 @@ private fun IslandRow(
     ) {
         
         Spacer(Modifier.animatedWidth(slot))
-        IslandBody(primary, showExpanded, s, lyrics, battery, calibrating, onBodyBounds)
+        IslandBody(primary, showExpanded, s, lyrics, battery, calibrating, pages, onBodyBounds)
         BubbleSlot(slot, bubbleVisible, bubbleAct, s, onBubbleBounds)
     }
 }
@@ -503,6 +509,7 @@ private fun IslandBody(
     lyrics: Lyrics?,
     battery: BatteryInfo,
     calibrating: Boolean,
+    pages: List<Act>,
     onBounds: (Rect) -> Unit,
 ) {
     val context = LocalContext.current
@@ -609,6 +616,7 @@ private fun IslandBody(
     val current by rememberUpdatedState(primary)
     val isExpanded by rememberUpdatedState(expanded)
     val settings by rememberUpdatedState(s)
+    val pagesNow by rememberUpdatedState(pages)
     val egg by IslandBus.egg.collectAsState()
 
     Box(
@@ -726,7 +734,14 @@ private fun IslandBody(
                         scope.launch { pull.animateTo(0f, spring(dampingRatio = 0.45f)) }
                         val vertical = abs(dy) > abs(dx)
                         val act = current
+                        val page = pagesNow.indexOfFirst { it.id == act.id }
                         when {
+                            // Đang mở rộng & có nhiều hoạt động: vuốt trái / phải để chuyển sang hoạt động khác
+                            isExpanded && !vertical && abs(dx) > side && page >= 0 && pagesNow.size > 1 -> {
+                                haptic()
+                                val next = pagesNow[(page + if (dx < 0) 1 else -1).mod(pagesNow.size)]
+                                Controls.expand(next.id)
+                            }
                             !isExpanded && vertical && dy > threshold && settings.swipeExpand && !act.transient &&
                                 (act !is Act.Idle || settings.idleExpand) -> {
                                 haptic()
@@ -784,6 +799,27 @@ private fun IslandBody(
                     CompactContent(f.act, s, expandedWidth)
                 }
             }
+        }
+        val page = pages.indexOfFirst { it.id == primary.id }
+        if (expanded && !calibrating && pages.size > 1 && page >= 0) {
+            PageDots(pages.size, page, Modifier.align(Alignment.BottomCenter).padding(bottom = 7.dp))
+        }
+    }
+}
+
+/** Chấm chỉ báo: có nhiều hoạt động đang chạy, vuốt trái / phải để chuyển. */
+@Composable
+private fun PageDots(count: Int, selected: Int, modifier: Modifier = Modifier) {
+    Row(modifier, horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
+        repeat(count) { i ->
+            val active = i == selected
+            val w by animateDpAsState(if (active) 14.dp else 5.dp, label = "dot")
+            Box(
+                Modifier
+                    .size(w, 5.dp)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = if (active) 0.9f else 0.35f)),
+            )
         }
     }
 }

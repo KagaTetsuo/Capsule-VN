@@ -26,7 +26,7 @@ import com.akira.island.ui.Ui
 @Composable
 fun LyricsScreen(onBack: () -> Unit) {
     val s by SettingsRepo.state.collectAsState()
-    Page(tr("Lời bài hát", "Lyrics"), onBack) {
+    Page(tr("Lời bài hát (Karaoke)", "Synced lyrics"), onBack) {
         Group {
             GroupToggle(Pos.Single, Icons.Rounded.LibraryMusic, tr("Lời bài hát", "Lyrics"),
                 tr("Câu hát hiện tại trong trình phát mở rộng chuyển sang màu trắng theo nhịp bài hát", "The current line in the expanded player fills with white as it's sung"),

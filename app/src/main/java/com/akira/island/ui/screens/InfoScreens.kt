@@ -176,7 +176,7 @@ fun AppInfoScreen(open: (Screen) -> Unit) {
             GroupItem(Pos.First, Icons.Rounded.Lightbulb, tr("Hướng dẫn", "Instructions"),
                 tr("Cách bật Viên thuốc trên Android 13+", "How to turn the island on with Android 13+"),
                 onClick = { open(Screen.INSTRUCTION) }, color = Tile.Yellow) { Arrow() }
-            KeepAliveItem(Pos.Middle, open)
+            BanksItem(Pos.Middle, open)
             GroupItem(Pos.Middle, Icons.Rounded.Navigation, tr("Chẩn đoán điều hướng", "Navigation diagnostics"),
                 tr("Thông tin ứng dụng bản đồ, gọi xe hoặc giao hàng gửi tới — nếu không thấy khoảng cách", "What a navigation, taxi or delivery app sends — if the distance doesn't show"),
                 onClick = { open(Screen.DIAG) }, color = Tile.Teal) { Arrow() }
@@ -207,10 +207,7 @@ private fun AppHeader(version: String, update: UpdateState) {
         Image(
             painter = painterResource(R.drawable.ic_app_icon),
             contentDescription = "Capsule VN",
-            modifier = Modifier
-                .size(84.dp)
-                .clip(RoundedCornerShape(22.dp))
-                .border(1.dp, Color(0xFF33384F), RoundedCornerShape(22.dp)),
+            modifier = Modifier.size(88.dp),
         )
         Spacer(Modifier.height(14.dp))
         Text("Capsule VN", color = Ui.Text, fontSize = 22.sp, fontWeight = FontWeight.Bold)

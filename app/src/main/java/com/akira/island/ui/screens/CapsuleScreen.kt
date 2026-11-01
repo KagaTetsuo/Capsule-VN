@@ -112,13 +112,13 @@ fun CapsuleScreen(open: (Screen) -> Unit) {
     Page(tr("Giao diện", "Appearance")) {
         IslandPreview()
 
-        SectionHeader(tr("Vị trí & kích thước", "Position and size"))
+        SectionHeader(tr("Bố cục", "Layout"))
         Group {
             GroupItem(
                 Pos.First,
                 Icons.Rounded.OpenWith,
-                tr("Vị trí & kích thước Viên thuốc", "Capsule position and size"),
-                tr("Viên thuốc ${s.width}×${s.height} dp & Bảng mở rộng trạng thái", "Capsule ${s.width}×${s.height} dp & Expanded status board"),
+                tr("Vị trí & kích thước", "Position & size"),
+                tr("Viên thuốc ${s.width}×${s.height} dp · Bảng mở rộng", "Capsule ${s.width}×${s.height} dp · Expanded board"),
                 color = Tile.Indigo,
                 onClick = { open(Screen.SIZE) },
             ) { Arrow() }
@@ -134,8 +134,8 @@ fun CapsuleScreen(open: (Screen) -> Unit) {
             GroupItem(
                 Pos.Last,
                 Icons.Rounded.Tune,
-                tr("Khung thẻ tin nhắn, cuộc gọi & cập nhật", "Message, call & update cards"),
-                tr("Vị trí, kích thước, dòng chữ & bo góc từng khung thẻ", "Position, size, lines & corner radius"),
+                tr("Khung thẻ thông báo", "Notification cards"),
+                tr("Tin nhắn, cuộc gọi, cập nhật: vị trí, kích thước, số dòng, bo góc", "Message, call, update: position, size, lines, corners"),
                 color = Tile.Green,
                 onClick = { open(Screen.MSG_CALL_SIZE) },
             ) { Arrow() }
@@ -146,7 +146,7 @@ fun CapsuleScreen(open: (Screen) -> Unit) {
             GroupItem(
                 Pos.First,
                 Icons.Rounded.FormatColorFill,
-                tr("Màu sắc & viền Viên thuốc", "Capsule color & border"),
+                tr("Màu sắc & viền", "Color & border"),
                 tr("Màu sắc nền, viền ngoài và bóng đổ", "Color, outline and shadow"),
                 color = Tile.Orange,
                 onClick = { open(Screen.COLORS) },
@@ -154,7 +154,7 @@ fun CapsuleScreen(open: (Screen) -> Unit) {
             GroupItem(
                 Pos.Middle,
                 Icons.Rounded.RadioButtonChecked,
-                tr("Vòng sáng LED quanh Viên thuốc", "Capsule LED Ring"),
+                tr("Vòng sáng LED", "LED ring"),
                 if (s.ledEnabled) "${s.ledStyle.title} · %.1f dp".format(s.ledWidth) else tr("Tắt", "Off"),
                 color = Tile.Purple,
                 onClick = { open(Screen.LED_RING) },
@@ -183,12 +183,12 @@ fun CapsuleScreen(open: (Screen) -> Unit) {
             }
         }
 
-        SectionHeader(tr("Chuyển động & độ đàn hồi", "Animations & Physics"))
+        SectionHeader(tr("Chuyển động", "Motion"))
         Group {
             GroupItem(
                 Pos.First,
                 Icons.Rounded.Animation,
-                tr("Mở rộng & Độ nảy đàn hồi (Spring Physics)", "Island expansion & Spring Physics"),
+                tr("Mở rộng & độ đàn hồi", "Expansion & elasticity"),
                 "${s.expandStyle.title} · ${s.elasticity.title}" + if (s.liquidExpand) " · " + tr("Chất lỏng", "Liquid") else "",
                 color = Tile.Blue,
                 onClick = { open(Screen.ANIM) },
@@ -196,7 +196,7 @@ fun CapsuleScreen(open: (Screen) -> Unit) {
             GroupItem(
                 Pos.Last,
                 Icons.Rounded.AutoAwesome,
-                tr("Hiệu ứng chuyển động đặc biệt", "Special motion effects"),
+                tr("Hiệu ứng đặc biệt", "Special effects"),
                 effectsSummary(s),
                 color = Tile.Purple,
                 onClick = { open(Screen.EFFECTS) },
@@ -239,6 +239,7 @@ fun AnimScreen(onBack: () -> Unit) {
     var styleDialog by remember { mutableStateOf(false) }
     var elasticityDialog by remember { mutableStateOf(false) }
     var noticeJob by remember { mutableStateOf<Job?>(null) }
+    var demoNoticeId by remember { mutableStateOf(-1L) }
 
     // Mọi thay đổi đều được xem trước trực tiếp trên Viên thuốc thật ở đỉnh màn hình.
     DisposableEffect(Unit) {
@@ -250,20 +251,22 @@ fun AnimScreen(onBack: () -> Unit) {
         noticeJob = scope.launch {
             delay(350)
             IslandBus.stopMotionPreview()
-            IslandBus.notice.value = null
+            // Chỉ thay thế thông báo mẫu trước đó; thông báo thật của ứng dụng khác luôn được ưu tiên giữ nguyên
+            val current = IslandBus.notice.value
+            if (current != null && current.id == demoNoticeId) IslandBus.notice.value = null
             val sec = SettingsRepo.current.noticeDurationMs / 1000f
-            IslandBus.post(
-                Notice(
-                    title = tr("Hiển thị sự kiện", "Event display"),
-                    state = tr("%.1f giây", "%.1f s").format(sec),
-                    icon = Ios.load(context, R.drawable.ios_hourglass),
-                    tint = Tints.Orange,
-                ),
+            val demo = Notice(
+                title = tr("Thông báo mẫu", "Sample event"),
+                state = tr("%.1f giây", "%.1f s").format(sec),
+                icon = Ios.load(context, R.drawable.ios_hourglass),
+                tint = Tints.Orange,
             )
+            demoNoticeId = demo.id
+            IslandBus.post(demo)
         }
     }
 
-    Page(tr("Mở rộng & Độ đàn hồi", "Island expansion & elasticity"), onBack, action = {
+    Page(tr("Mở rộng & độ đàn hồi", "Expansion & elasticity"), onBack, action = {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Box(
                 Modifier.size(42.dp).clip(CircleShape).background(Ui.Primary.copy(alpha = 0.22f)).clickable {
@@ -408,7 +411,7 @@ private fun effectsSummary(s: IslandSettings): String {
 fun EffectsScreen(onBack: () -> Unit) {
     val s by SettingsRepo.state.collectAsState()
     var rateDialog by remember { mutableStateOf(false) }
-    Page(tr("Hiệu ứng", "Effects"), onBack, action = {
+    Page(tr("Hiệu ứng đặc biệt", "Special effects"), onBack, action = {
         Text(tr("Đặt lại", "Reset"), color = Ui.Sub, fontSize = 16.sp, modifier = Modifier.clickable { SettingsRepo.resetEffects() })
     }) {
         IslandPreview()
@@ -669,7 +672,7 @@ fun LedRingScreen(onBack: () -> Unit) {
         }
     }
 
-    Page(tr("Vòng sáng LED Viên thuốc", "Capsule LED Ring"), onBack) {
+    Page(tr("Vòng sáng LED", "LED ring"), onBack) {
         LedRingPreviewCard(s)
 
         Group {

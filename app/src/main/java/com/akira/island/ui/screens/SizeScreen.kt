@@ -202,7 +202,6 @@ fun SizeScreen(onBack: () -> Unit, open: (Screen) -> Unit = {}) {
                     ) { v -> set { copy(notch = v) } }
                 }
 
-                Spacer(Modifier.height(14.dp))
                 SectionHeader(tr("Kích thước & bo góc", "Size & corners"))
                 Group {
                     GroupStepSlider(Pos.First, Icons.Rounded.Straighten, tr("Chiều rộng", "Width"), s.width, 15..170, color = Tile.Purple) { v ->
@@ -223,17 +222,6 @@ fun SizeScreen(onBack: () -> Unit, open: (Screen) -> Unit = {}) {
                     ) { v -> set { copy(capsuleCornerRadius = v) } }
                 }
 
-                Spacer(Modifier.height(14.dp))
-                Group {
-                    GroupItem(
-                        Pos.Single,
-                        Icons.Rounded.Tune,
-                        tr("Thẻ tin nhắn, cuộc gọi & cập nhật", "Message, call & update cards"),
-                        tr("Tùy chỉnh vị trí, kích thước & độ bo góc của các khung thẻ", "Position, size & corner radius of banner cards"),
-                        color = Tile.Green,
-                        onClick = { open(Screen.MSG_CALL_SIZE) },
-                    ) { Arrow() }
-                }
             } else {
                 val conf = LocalConfiguration.current
                 val autoWidth = (conf.screenWidthDp - 22).coerceAtMost(460)
@@ -349,7 +337,7 @@ fun MsgCallSizeScreen(onBack: () -> Unit) {
 
     Box(Modifier.fillMaxSize()) {
         Page(
-            tr("Kích thước & bo góc khung thẻ", "Cards size & corner radius"),
+            tr("Khung thẻ thông báo", "Notification cards"),
             onBack = cancel,
             action = {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {

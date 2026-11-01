@@ -1,5 +1,20 @@
 # Lịch sử phiên bản Capsule VN
 
+## v1.3.0 (2026) — Icon khung vàng trọn vẹn, vuốt chuyển hoạt động, trang chủ mới & tinh gọn giao diện
+- **Icon ứng dụng giữ khung vàng, tách nền ngoài khung**:
+  - Giữ nguyên khung vàng và toàn bộ nền khói đỏ/đen bên trong khung; 4 góc đen bên ngoài được tách bỏ (trong suốt).
+  - Khung đặt gọn trong 60 dp của vùng hiển thị 72 dp → hiện trọn vẹn trên mặt nạ tròn (Pixel), squircle (HyperOS, One UI, ColorOS) và giọt nước, không còn bị cắt góc.
+  - Icon trong mục Giới thiệu, icon tròn kiểu cũ và ảnh README dùng chung bản khung vàng tách nền.
+- **Vuốt qua lại giữa các hoạt động khi mở rộng**:
+  - Chạm vào Viên thuốc mở đúng hoạt động đang hiển thị; vuốt trái / phải để chuyển sang hoạt động khác đang chạy (nhạc, hẹn giờ, đèn pin, điều hướng, tải xuống…), có chấm chỉ báo trang.
+  - Bảng trạng thái mặc định (Giờ, Pin, Âm lịch…) chỉ hiện khi không có hoạt động nào.
+- **Thông báo mẫu không chen ngang thông báo thật**: khi chỉnh "Thời gian hiển thị sự kiện", thông báo mẫu chỉ thay thế thông báo mẫu trước đó; tin nhắn thật từ ứng dụng khác luôn được ưu tiên và hiển thị đủ thời gian.
+- **Trang chủ mới**: thẻ thương hiệu với logo Viên thuốc Capsule VN trên nền đỏ rượu – đen ánh vàng, kèm trạng thái hoạt động và phiên bản; ô xem trước Viên thuốc ở mục Giao diện đổi sang tông màu cùng bộ nhận diện.
+- **Rà soát & tinh gọn toàn bộ giao diện**:
+  - Tên mục và tiêu đề trang được đồng bộ (Thẻ hoạt động, Tin nhắn & thông báo, Sự kiện hệ thống, Mã OTP 1 chạm, Đọc thông báo qua tai nghe, Hành vi hiển thị, Biểu ngữ hệ thống, Màu sắc & viền, Vòng sáng LED, Hiệu ứng đặc biệt, Khung thẻ thông báo…), mô tả ngắn gọn dễ hiểu hơn.
+  - Bỏ các mục trùng lặp: OTP, đọc thông báo và số dòng tin nhắn chỉ còn ở một nơi; lối tắt khung thẻ trùng trong Vị trí & kích thước được gỡ; "Ứng dụng ngân hàng không mở được" chuyển về Giới thiệu → Trợ giúp.
+  - Dịch lại thẻ "Tin nhắn bị hiện 2 lần?" sang tiếng Việt; chữ mô tả các mục nhỏ gọn hơn (14 sp).
+
 ## v1.2.1 (2026) — Sửa icon mất góc, làm lại giao diện Vị trí & kích thước, xem trước chuyển động trực tiếp trên Viên thuốc
 - **Icon ứng dụng không còn bị mất góc**:
   - Nguyên nhân: lớp foreground của Adaptive Icon chứa sẵn khung viền vàng bo góc + 4 góc đen, nên khi launcher (HyperOS, One UI, Pixel…) cắt theo hình dạng riêng thì khung vàng bị xén lệch, góc bị khuyết.

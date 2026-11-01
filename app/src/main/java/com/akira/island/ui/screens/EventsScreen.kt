@@ -39,7 +39,7 @@ fun EventsScreen(onBack: () -> Unit) {
     val s by SettingsRepo.state.collectAsState()
     fun set(block: IslandSettings.() -> IslandSettings) = SettingsRepo.update(block)
 
-    Page(tr("Sự kiện", "Events"), onBack) {
+    Page(tr("Sự kiện hệ thống", "System events"), onBack) {
         SectionHeader(tr("Pin", "Battery"))
         Group {
             GroupToggle(Pos.First, Icons.Rounded.Bolt, tr("Bắt đầu sạc pin", "Charging started"), null,
