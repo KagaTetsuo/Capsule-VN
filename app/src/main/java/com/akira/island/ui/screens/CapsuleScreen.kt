@@ -1,5 +1,36 @@
 package com.akira.island.ui.screens
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.text.font.FontWeight
+import com.akira.island.island.drawLedRing
+import com.akira.island.island.ledOuterGlow
 import android.os.SystemClock
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.padding
@@ -275,12 +306,214 @@ private val ledPalette = listOf(
 )
 
 @Composable
+private fun LedRingPreviewCard(s: IslandSettings) {
+    val infiniteTransition = rememberInfiniteTransition(label = "ledPreviewLoop")
+    val animatedMs by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 2400f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2400, easing = LinearEasing),
+        ),
+        label = "ledClock",
+    )
+
+    val cornerDp = 19.dp
+    val ledAlpha = if (s.ledEnabled) 1f else 0.55f
+    val adaptiveColor = Color(0xFF0084FF)
+
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(28.dp))
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        Color(0xFF141724),
+                        Color(0xFF0D0E15),
+                    )
+                )
+            )
+            .border(1.dp, Color(0xFF262A3E), RoundedCornerShape(28.dp))
+            .padding(top = 16.dp, bottom = 14.dp, start = 14.dp, end = 14.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 2.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("09:41", color = Color(0xFF7A8099), fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("5G", color = Color(0xFF7A8099), fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(end = 4.dp))
+                Box(
+                    Modifier
+                        .size(14.dp, 8.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(Color(0xFF7A8099))
+                )
+            }
+        }
+
+        Spacer(Modifier.height(10.dp))
+
+        Box(
+            Modifier
+                .width(152.dp)
+                .height(38.dp)
+                .drawBehind {
+                    ledOuterGlow(
+                        style = s.ledStyle,
+                        adaptive = adaptiveColor,
+                        custom = Color(s.ledColor),
+                        alpha = ledAlpha,
+                        timeMs = animatedMs.toLong(),
+                        corner = cornerDp.toPx(),
+                        notch = false,
+                    )
+                }
+                .clip(RoundedCornerShape(cornerDp))
+                .background(Color(0xFF08090D))
+                .drawWithContent {
+                    drawContent()
+                    drawLedRing(
+                        style = s.ledStyle,
+                        adaptive = adaptiveColor,
+                        custom = Color(s.ledColor),
+                        strokeDp = s.ledWidth,
+                        alpha = ledAlpha,
+                        timeMs = animatedMs.toLong(),
+                        corner = cornerDp.toPx(),
+                        notch = false,
+                    )
+                },
+            contentAlignment = Alignment.CenterStart,
+        ) {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Box(
+                    Modifier
+                        .size(13.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFF030305))
+                        .border(1.dp, Color(0xFF222738), CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Box(
+                        Modifier
+                            .size(5.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFF0B1428))
+                    )
+                }
+
+                Text(
+                    "Capsule VN",
+                    color = Color(0xFFC7CBD9),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                )
+
+                Box(
+                    Modifier
+                        .size(7.dp)
+                        .clip(CircleShape)
+                        .background(if (s.ledEnabled) Color(0xFF34C759) else Color(0xFF8E92A8))
+                )
+            }
+        }
+
+        Spacer(Modifier.height(12.dp))
+
+        Text(
+            if (s.ledEnabled) {
+                tr(
+                    "● Vòng sáng LED đang bật • ${s.ledStyle.title} (%.1f dp)".format(s.ledWidth),
+                    "● LED Ring Active • ${s.ledStyle.title} (%.1f dp)".format(s.ledWidth),
+                )
+            } else {
+                tr(
+                    "○ Mô phỏng xem trước (Đang tắt công tắc bên dưới)",
+                    "○ Preview simulation (Switch below is off)",
+                )
+            },
+            color = if (s.ledEnabled) Tints.Green else Tints.Orange,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Medium,
+        )
+
+        Spacer(Modifier.height(12.dp))
+
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+        ) {
+            LedStyle.entries.forEach { style ->
+                val selected = s.ledStyle == style
+                val badgeColor = when (style) {
+                    LedStyle.ROTATE_RGB -> Color(0xFFFF2D55)
+                    LedStyle.AUTO_APP -> Color(0xFF0068FF)
+                    LedStyle.CYBER_NEON -> Color(0xFF00F2FE)
+                    LedStyle.BREATHE_GOLD -> Color(0xFFFFD700)
+                    LedStyle.CUSTOM -> Color(s.ledColor)
+                }
+
+                Box(
+                    Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(if (selected) Ui.Primary.copy(alpha = 0.22f) else Color(0xFF1E2130))
+                        .border(
+                            if (selected) 1.5.dp else 1.dp,
+                            if (selected) Ui.Primary else Color(0xFF2E3348),
+                            RoundedCornerShape(12.dp),
+                        )
+                        .clickable { SettingsRepo.update { copy(ledStyle = style) } }
+                        .padding(horizontal = 9.dp, vertical = 6.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(badgeColor)
+                        )
+                        Spacer(Modifier.width(5.dp))
+                        Text(
+                            style.title,
+                            color = if (selected) Color.White else Color(0xFF9AA0B6),
+                            fontSize = 11.sp,
+                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun LedRingScreen(onBack: () -> Unit) {
     val s by SettingsRepo.state.collectAsState()
     var styleDialog by remember { mutableStateOf(false) }
 
+    DisposableEffect(Unit) {
+        IslandBus.previewLed.value = true
+        onDispose {
+            IslandBus.previewLed.value = false
+        }
+    }
+
     Page(tr("Vòng sáng LED Viên thuốc", "Capsule LED Ring"), onBack) {
-        IslandPreview()
+        LedRingPreviewCard(s)
 
         Group {
             GroupToggle(

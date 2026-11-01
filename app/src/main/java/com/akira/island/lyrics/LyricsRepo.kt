@@ -13,7 +13,7 @@ import kotlin.math.abs
 data class FoundLyrics(val lines: List<LyricLine>, val synced: Boolean)
 
 object LyricsRepo {
-    private const val UA = "DynamicIslandAndroid/1.2 (https://github.com/Akira9021/Dynamic-Island-)"
+    private const val UA = "CapsuleVN/1.0 (https://github.com/KagaTetsuo/Capsule-VN)"
 
     private val cache = object : LinkedHashMap<String, FoundLyrics?>(32, 0.75f, true) {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, FoundLyrics?>?) = size > 40

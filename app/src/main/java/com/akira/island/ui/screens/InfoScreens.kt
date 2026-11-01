@@ -186,21 +186,9 @@ fun AppInfoScreen(open: (Screen) -> Unit) {
 
         SectionHeader(tr("Thông tin & Tác quyền", "Information & Credits"))
         Group {
-            GroupItem(Pos.First, Icons.Rounded.Info, "Capsule VN",
-                "© 2026 Capsule VN — Nguyễn Lê Lý Huỳnh (Zalo: 0399991787)",
-                onClick = { open(Screen.ABOUT) }, color = Tile.Indigo) { Arrow() }
-            GroupItem(Pos.Middle, ImageVector.vectorResource(R.drawable.ic_github), tr("Mã nguồn gốc (Android)", "Original Source (Android)"),
-                "Akira9021 (github.com/Akira9021/Dynamic-Island-)",
+            GroupItem(Pos.Single, ImageVector.vectorResource(R.drawable.ic_github), "Capsule VN",
+                "© 2026 Capsule VN · Nguyễn Lê Lý Huỳnh (github.com/KagaTetsuo/Capsule-VN)",
                 onClick = { openGithub(context) }, color = GithubPurple) { Arrow() }
-            GroupItem(Pos.Last, Icons.Rounded.Lightbulb, tr("Ý tưởng ban đầu (PC)", "Original Concept (PC)"),
-                "Mihail Kotovski (Dynamic Island for Windows)",
-                onClick = {
-                    runCatching {
-                        context.startActivity(
-                            Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/mihailkotovski/DynamicIsland")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-                        )
-                    }
-                }, color = Tile.Teal) { Arrow() }
         }
     }
 
@@ -249,14 +237,16 @@ fun IdeaScreen(onBack: () -> Unit) {
                     "notifications with replies, payments, navigation, charging and system events. A second activity goes into" +
                     " a bubble next to the island."),
         )
-        SectionHeader(tr("Nguồn gốc & Tác giả", "Origin & Credits"))
+        SectionHeader(tr("Phát triển & Tác quyền", "Development & Rights"))
         InfoText(
             tr(
-                "Ứng dụng được tùy biến và Việt hóa dựa trên mã nguồn Dynamic Island cho Android của lập trình viên Akira9021 (github.com/Akira9021/Dynamic-Island-).\n\n" +
-                    "Ý tưởng ban đầu và các hiệu ứng đàn hồi bắt nguồn từ dự án Dynamic Island for Windows của Mihail Kotovski (github.com/mihailkotovski/DynamicIsland).\n\n" +
+                "Capsule VN được nghiên cứu, phát triển và tối ưu hóa trải nghiệm chuyên sâu cho người dùng Android tại Việt Nam bởi Nguyễn Lê Lý Huỳnh.\n\n" +
+                    "Liên hệ Zalo hỗ trợ: 0399991787\n" +
+                    "Mã nguồn dự án: https://github.com/KagaTetsuo/Capsule-VN\n\n" +
                     "Lời bài hát đồng bộ thời gian thực được hỗ trợ bởi dịch vụ mở LRCLIB.",
-                "This app is customized and localized from the open-source Dynamic Island for Android by Akira9021 (github.com/Akira9021/Dynamic-Island-).\n\n" +
-                    "The original interactive concept and spring animations originate from Dynamic Island for Windows by Mihail Kotovski (github.com/mihailkotovski/DynamicIsland).\n\n" +
+                "Capsule VN is developed, customized and optimized for Android users in Vietnam by Nguyen Le Ly Huynh.\n\n" +
+                    "Zalo support: 0399991787\n" +
+                    "Source repository: https://github.com/KagaTetsuo/Capsule-VN\n\n" +
                     "Real-time synchronized lyrics are provided by LRCLIB.",
             ),
         )
@@ -268,6 +258,8 @@ fun IdeaScreen(onBack: () -> Unit) {
         )
     }
 }
+
+
 
 @Composable
 internal fun InfoText(text: String) {

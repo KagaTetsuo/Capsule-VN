@@ -62,6 +62,7 @@ object IslandBus {
     
     val unreadLedColor = MutableStateFlow<Color?>(null)
     val unreadLedPkg = MutableStateFlow<String?>(null)
+    val previewLed = MutableStateFlow(false)
     
     val otpFillRequests = MutableSharedFlow<String>(extraBufferCapacity = 4)
     

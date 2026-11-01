@@ -518,13 +518,15 @@ private fun IslandBody(
     val glowTint by animateColorAsState(lastArt[0], tween(500), label = "glowTint")
 
     val unreadLedColor by IslandBus.unreadLedColor.collectAsState()
+    val previewLed by IslandBus.previewLed.collectAsState()
     val eventLed = s.ledOnEvent && primary is Act.NoticeA
     val unreadLed = s.ledOnUnread && unreadLedColor != null
     val chargeLed = s.ledOnCharge && battery.charging
-    val ledActive = s.ledEnabled && !calibrating && (s.ledAlwaysOn || eventLed || unreadLed || chargeLed)
+    val ledActive = (s.ledEnabled || previewLed) && !calibrating && (s.ledAlwaysOn || eventLed || unreadLed || chargeLed || previewLed)
     val ledAlpha by animateFloatAsState(if (ledActive) 1f else 0f, tween(320), label = "ledAlpha")
     val ledClock = rememberFxClock(ledActive && !s.reduceEffects)
     val adaptiveLedColor = when {
+        previewLed -> Color(0xFF0068FF)
         primary is Act.NoticeA -> primary.n.tint
         unreadLedColor != null -> unreadLedColor!!
         battery.charging -> if (battery.superFastCharging) Tints.Teal else Tints.Green
@@ -982,7 +984,7 @@ private class AnimatedIslandShape(private val corner: State<Dp>, private val not
         islandShape(corner.value, notch).createOutline(size, layoutDirection, density)
 }
 
-private fun DrawScope.ledOuterGlow(
+internal fun DrawScope.ledOuterGlow(
     style: LedStyle,
     adaptive: Color,
     custom: Color,
@@ -1014,7 +1016,7 @@ private fun DrawScope.ledOuterGlow(
     }
 }
 
-private fun DrawScope.drawLedRing(
+internal fun DrawScope.drawLedRing(
     style: LedStyle,
     adaptive: Color,
     custom: Color,
@@ -1068,7 +1070,7 @@ private fun DrawScope.drawLedRing(
     )
 }
 
-private fun shiftRing(base: List<Color>, phase: Float): List<Color> {
+internal fun shiftRing(base: List<Color>, phase: Float): List<Color> {
     if (base.size < 2) return base
     val core = base.dropLast(1)
     val n = core.size
