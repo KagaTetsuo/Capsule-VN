@@ -323,7 +323,10 @@ data class IslandSettings(
 
     val topOffset: Int get() = if (notch) 0 else offsetY
 
-    val windowBaseY: Int get() = minOf(topOffset, topOffset + msgOffsetY, topOffset + callOffsetY, topOffset + updateOffsetY)
+    val windowBaseY: Int get() = minOf(
+        minOf(topOffset, topOffset + msgOffsetY, topOffset + callOffsetY),
+        minOf(topOffset + updateOffsetY, topOffset + expandedOffsetY),
+    )
 
     val liveEqualizer: Boolean get() = fxEqualizer && !reduceEffects
 }

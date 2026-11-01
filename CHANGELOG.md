@@ -1,5 +1,18 @@
 # Lịch sử phiên bản Capsule VN
 
+## v1.2.1 (2026) — Sửa icon mất góc, làm lại giao diện Vị trí & kích thước, xem trước chuyển động trực tiếp trên Viên thuốc
+- **Icon ứng dụng không còn bị mất góc**:
+  - Nguyên nhân: lớp foreground của Adaptive Icon chứa sẵn khung viền vàng bo góc + 4 góc đen, nên khi launcher (HyperOS, One UI, Pixel…) cắt theo hình dạng riêng thì khung vàng bị xén lệch, góc bị khuyết.
+  - Làm lại foreground dạng tràn viền: nền khói đỏ/đen + nhũ vàng phủ kín 108 dp, logo "CAPSULE VN ★" nằm gọn trong vùng an toàn 66 dp; launcher tự bo theo hình dạng của máy.
+  - Bổ sung icon đơn sắc riêng (`ic_launcher_monochrome`) cho chế độ Biểu tượng theo chủ đề (Android 13+), không còn bị khối vuông đặc.
+- **Vị trí & kích thước → tab Bảng mở rộng**:
+  - Sửa lỗi **Vị trí dọc (lên / xuống) không hoạt động**: giá trị `expandedOffsetY` trước đây chỉ được lưu mà không được áp dụng; nay Bảng mở rộng dịch chuyển đúng (kể cả giá trị âm) cả khi xem trước lẫn khi bung thật.
+  - Thiết kế lại thanh trượt dùng chung: tiêu đề chiếm trọn chiều ngang, nút "↺ Mặc định" nằm dưới tiêu đề, ô giá trị cố định bên phải → hết hiện tượng rớt chữ từng ký tự.
+  - Đặt lại tiêu đề ngắn gọn: "Vị trí dọc (lên / xuống)", "Chiều rộng" (hiển thị "Tự động" khi theo màn hình), "Chiều cao thêm", "Bo góc"; đồng bộ cho thẻ Tin nhắn / Cuộc gọi / Cập nhật.
+- **Mở rộng & Độ đàn hồi**:
+  - Bỏ khung mô phỏng chuyển động; mọi thay đổi (Kiểu mở rộng, Độ đàn hồi, Mở rộng dạng chất lỏng, Tốc độ chuyển động, Giảm hiệu ứng) giờ được bung thử **trực tiếp trên Viên thuốc thật** ở đỉnh màn hình. Thêm nút ▶ để xem lại.
+  - "Thời gian hiển thị sự kiện" phát một thông báo mẫu trên Viên thuốc, hiển thị đúng số giây đã chọn (bước 0,5 giây).
+
 ## v1.2.0 (2026) — Mô phỏng Đàn hồi & Chất lỏng Trực tiếp, Tùy chỉnh Bảng trạng thái mở rộng & Tối ưu giao diện khoa học
 - **Cập nhật Logo & Icon ứng dụng mới**:
   - Áp dụng logo Viên thuốc Vàng 3D dập nổi nghệ thuật kèm Ngôi sao vàng trên nền khói đỏ đen huyền bí.

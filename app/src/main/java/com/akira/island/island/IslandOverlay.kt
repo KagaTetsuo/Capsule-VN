@@ -435,11 +435,13 @@ private fun IslandRow(
         !calibrating && primary is Act.CallA && primary.c.incoming -> (s.topOffset + s.callOffsetY - s.windowBaseY).dp
         !calibrating && primary is Act.NoticeA && primary.n.style == NoticeStyle.MESSAGE -> (s.topOffset + s.msgOffsetY - s.windowBaseY).dp
         !calibrating && primary is Act.NoticeA && primary.n.style == NoticeStyle.UPDATE -> (s.topOffset + s.updateOffsetY - s.windowBaseY).dp
+        // Bảng mở rộng: áp dụng vị trí trên / dưới riêng (expandedOffsetY)
+        !calibrating && showExpanded -> (s.topOffset + s.expandedOffsetY - s.windowBaseY).dp
         else -> (s.topOffset - s.windowBaseY).dp
     }
     val extraY = animateDpAsState(
         extraYTarget,
-        if (cardPreview != CardPreviewMode.NONE) androidx.compose.animation.core.snap() else islandSpec(s),
+        if (cardPreview != CardPreviewMode.NONE && cardPreview != CardPreviewMode.EXPANDED) androidx.compose.animation.core.snap() else islandSpec(s),
         label = "extraY",
     )
     Row(
