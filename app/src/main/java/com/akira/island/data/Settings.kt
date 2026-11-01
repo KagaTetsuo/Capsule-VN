@@ -188,7 +188,11 @@ data class IslandSettings(
     val updateWidth: Int = 380,
     val updateHeightExtra: Int = 0,
 
+    val capsuleCornerRadius: Int = -1,
+    val expandedCornerRadius: Int = 44,
     val cardCornerRadius: Int = 32,
+    val callCornerRadius: Int = 32,
+    val updateCornerRadius: Int = 32,
 
     val color: Long = 0xFF000000,
     val outline: Boolean = false,

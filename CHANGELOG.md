@@ -1,5 +1,35 @@
 # Lịch sử phiên bản Capsule VN
 
+## v1.1.1 (2026) — Tùy biến Bo góc Toàn diện & Bộ 20 Thử nghiệm Tính năng Đột phá
+- **Tùy biến độ bo góc cho tất cả các mục của Viên thuốc**:
+  - Tùy chỉnh độ bo góc **Viên thuốc thu gọn (Nhàn rỗi)** (`capsuleCornerRadius`: từ bo vuông 0dp đến bo tròn tự động `h/2`).
+  - Tùy chỉnh độ bo góc **Viên thuốc khi mở rộng** (`expandedCornerRadius`: 12..50 dp).
+  - Tùy chỉnh riêng độ bo góc cho từng loại thẻ: **Thẻ tin nhắn** (`cardCornerRadius`), **Thẻ cuộc gọi đến** (`callCornerRadius`), **Thẻ cập nhật** (`updateCornerRadius`).
+- **Mục Thử nghiệm toàn diện (Bộ 20 tính năng tương tác trực tiếp)**:
+  - Bổ sung thử nghiệm 1 chạm trực tiếp trên Viên thuốc cho toàn bộ 20 tính năng cốt lõi và nâng cao:
+    1. 💬 Thẻ tin nhắn Zalo kèm nút Trả lời / Đã đọc
+    2. 🔑 Nhận diện mã OTP & Nút Chép, Điền nhanh 1 chạm
+    3. 🎧 Đọc to thông báo qua Tai nghe (TTS Tiếng Việt chuẩn tự nhiên)
+    4. 📞 Thẻ cuộc gọi đến (Nghe / Từ chối)
+    5. 🎵 Trình phát nhạc đĩa xoay & Sóng Equalizer động
+    6. 🇻🇳 Trứng phục sinh Cờ Đỏ Sao Vàng "Tuổi Trẻ Thế Hệ Bác Hồ - Tùng Dương"
+    7. 🎮 Chế độ Gaming thu gọn & Bảng theo dõi Gaming HUD (°C, RAM, ROM)
+    8. 🌈 Vòng sáng LED Viên thuốc RGB 360° quanh camera
+    9. 🖊️ Bút cảm ứng Samsung S Pen (hiệu ứng rút / cất bút)
+    10. ⚡ Sạc siêu nhanh 2.0 (Super Fast Charging 45W) kèm nhiệt độ °C
+    11. 🛡️ Cảnh báo Bảo vệ Pin chống chai (ngưỡng 85%)
+    12. 🎧 Tai nghe Galaxy Buds3 Pro / Bluetooth kèm vòng pin
+    13. 🖥️ Samsung DeX / Màn hình rời Smart View
+    14. ⏳ Hẹn giờ đếm ngược
+    15. ⏰ Báo thức sáng thức dậy
+    16. 💳 Thanh toán chạm NFC (Đã chuẩn hóa tiền Việt 150.000 đ)
+    17. 🗺️ Bản đồ & Điều hướng rẽ trực tiếp
+    18. 🔄 Thẻ cập nhật phần mềm Capsule VN
+    19. 🔇 Chế độ Chuông / Im lặng rung lắc
+    20. 🔦 Đèn pin bật / tắt
+- **Tối ưu thanh thông số hệ thống (Gaming HUD)**:
+  - Loại bỏ hoàn toàn tiền tố chữ RAM và ROM, khóa cứng hiển thị trên 1 hàng ngang duy nhất (`maxLines = 1`, `softWrap = false`), triệt tiêu hoàn toàn hiện tượng rớt dòng.
+
 ## v1.1.0 (2026) — Nâng cấp Icon Vàng 3D, Bo góc & Tùy biến Thẻ Cập nhật
 - **Biểu tượng ứng dụng mới (Capsule VN Gold 3D & Ngôi sao)**: Thiết kế logo Capsule VN chữ vàng dập nổi 3D kèm ngôi sao năm cánh trên nền khói đỏ/đen huyền bí sang trọng. Tối ưu vùng an toàn (Safe Zone) chuẩn Adaptive Icon chống khuất góc trên mọi Launcher (Samsung One UI, Pixel...).
 - **Tùy chỉnh độ bo góc khung thông báo**: Thêm thanh trượt tùy biến độ bo góc (`8 dp` đến `44 dp`) áp dụng đồng bộ cho các thẻ thông báo, tin nhắn, cuộc gọi và cập nhật.

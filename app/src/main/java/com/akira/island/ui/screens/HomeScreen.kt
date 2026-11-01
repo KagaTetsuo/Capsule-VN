@@ -28,6 +28,18 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.BatteryChargingFull
+import androidx.compose.material.icons.rounded.Cast
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Flare
+import androidx.compose.material.icons.rounded.FlashlightOn
+import androidx.compose.material.icons.rounded.Headphones
+import androidx.compose.material.icons.rounded.Key
+import androidx.compose.material.icons.rounded.LibraryMusic
+import androidx.compose.material.icons.rounded.RecordVoiceOver
+import androidx.compose.material.icons.rounded.Shield
+import androidx.compose.material.icons.rounded.SportsEsports
 import androidx.compose.material.icons.rounded.AccessibilityNew
 import androidx.compose.material.icons.rounded.Alarm
 import androidx.compose.material.icons.rounded.Bluetooth
@@ -349,80 +361,286 @@ private fun DemoTile(d: Demo, modifier: Modifier, onClick: () -> Unit) {
     }
 }
 
-private fun demos(context: Context): List<Demo> = listOf(
-    Demo(Icons.Rounded.Bolt, tr("Sự kiện", "Event"), tr("Đang sạc 75% với độ rộng tối đa", "Charging 75% at full width"), Tile.Green) {
-        IslandBus.post(Notice(tr("Đang sạc", "Charging"), "75%", Ios.load(context, R.drawable.ios_flash), Tints.Green, battery = 75))
-    },
-    Demo(Icons.Rounded.NotificationsOff, tr("Chế độ chuông", "Ring mode"),
-        tr("Viên thuốc rung lên, chuông lắc lư", "The capsule shakes, the bell swings"), Tile.Red) {
-        IslandBus.post(Notice("", tr("Im lặng", "Silent"), Ios.load(context, R.drawable.ios_notifications_off), Tints.Red, style = NoticeStyle.PILL))
-    },
-    Demo(Icons.Rounded.ChatBubble, tr("Tin nhắn", "Message"),
-        tr("Kèm các nút Trả lời và Đánh dấu đã đọc", "With Reply and Mark as read buttons"), Tile.Blue) {
-        
-        val flags = PendingIntent.FLAG_UPDATE_CURRENT or
-            (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) PendingIntent.FLAG_MUTABLE else 0)
-        val test = PendingIntent.getBroadcast(context, 0, Intent("com.akira.island.TEST").setPackage(context.packageName), flags)
-        val input = RemoteInput.Builder("reply").setLabel(tr("Trả lời", "Reply")).build()
-        IslandBus.post(
-            Notice(
-                tr("Anna", "Anna"), icon = Ios.load(context, R.drawable.ios_chatbubble_ellipses), tint = Tints.Blue,
-                style = NoticeStyle.MESSAGE,
-                extraMs = 4_500,
-                message = AppMessage("test", context.packageName, tr("Viên thuốc", "Island"),
-                    tr("Xin chào! Đây là cách thông báo hiển thị trên Viên thuốc", "Hi! This is how a notification looks in the island"),
-                    null, NotificationParser.icon(context, context.packageName), null,
-                    actions = listOf(
-                        MsgAction(tr("Trả lời", "Reply"), test, listOf(input)),
-                        MsgAction(tr("Đánh dấu đã đọc", "Mark as read"), test),
-                    ),
-                    history = listOf(tr("Bạn khỏe không?", "How are you?"), tr("Bạn có rảnh một phút không?", "Got a minute?"),
-                        tr("Xin chào! Đây là cách thông báo hiển thị trên Viên thuốc", "Hi! This is how a notification looks in the island")),
-                ),
-            ),
-        )
-    },
-    Demo(Icons.Rounded.Call, tr("Cuộc gọi đến", "Incoming call"), tr("Bạn có thể trả lời hoặc từ chối", "You can answer or decline"), Tile.Green) {
-        Controls.showTestCall()
-    },
-    Demo(Icons.Rounded.HourglassBottom, tr("Hẹn giờ", "Timer"), tr("Đếm ngược một phút", "A one-minute countdown"), Tile.Orange) {
-        Controls.startTimer(1)
-    },
-    Demo(Icons.Rounded.Alarm, tr("Báo thức", "Alarm"), tr("Thời gian thức dậy và thời gian bạn có thể ngủ", "Wake-up time and how long you can sleep"), Tile.Indigo) {
-        IslandBus.post(
-            Notice(
-                title = tr("Báo thức", "Alarm"),
-                icon = Ios.load(context, R.drawable.ios_alarm),
-                tint = Tints.Orange,
-                style = NoticeStyle.ALARM,
-                alarm = AlarmInfo(System.currentTimeMillis() + (8 * 60 + 15) * 60_000L, null, null),
-                extraMs = 2_000,
-            ),
-        )
-    },
-    Demo(Icons.Rounded.Nfc, tr("Thanh toán", "Payment"), tr("Hiện chạm vào đầu đọc, sau đó hiện Đã thanh toán kèm số tiền", "Hold near reader, then Paid with the amount"), Tile.Teal) {
-        
-        val pkg = context.packageName
-        IslandBus.payReady.value = PayReady(pkg, NotificationParser.icon(context, pkg))
-        IslandBus.scope.launch {
-            delay(3000)
-            if (IslandBus.payReady.value?.pkg == pkg) IslandBus.payReady.value = null
+private fun demos(context: Context): List<Demo> {
+    val flags = PendingIntent.FLAG_UPDATE_CURRENT or
+        (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) PendingIntent.FLAG_MUTABLE else 0)
+    val testBroadcast = PendingIntent.getBroadcast(context, 0, Intent("com.akira.island.TEST").setPackage(context.packageName), flags)
+    val input = RemoteInput.Builder("reply").setLabel(tr("Trả lời", "Reply")).build()
+
+    return listOf(
+        // 1. Tin nhắn Zalo
+        Demo(Icons.Rounded.ChatBubble, tr("Tin nhắn", "Message"),
+            tr("Kèm các nút Trả lời và Đánh dấu đã đọc", "With Reply and Mark as read buttons"), Tile.Blue) {
             IslandBus.post(
                 Notice(
-                    tr("Đã thanh toán", "Paid"), tr("1 250 ₽", "$12.50"), Ios.load(context, R.drawable.ios_checkmark_circle), Tints.Green,
-                    caption = tr("Viên thuốc", "Island"), style = NoticeStyle.PAY_DONE, extraMs = 900,
+                    "Nguyễn Lê Lý Huỳnh", icon = Ios.load(context, R.drawable.ios_chatbubble_ellipses), tint = Tints.Blue,
+                    style = NoticeStyle.MESSAGE,
+                    extraMs = 4_500,
+                    message = AppMessage("test", context.packageName, "Zalo · Capsule VN",
+                        tr("Xin chào! Đây là cách thông báo hiển thị trên Viên thuốc Capsule VN", "Hi! This is how a notification looks in Capsule VN"),
+                        null, NotificationParser.icon(context, context.packageName), null,
+                        actions = listOf(
+                            MsgAction(tr("Trả lời", "Reply"), testBroadcast, listOf(input)),
+                            MsgAction(tr("Đánh dấu đã đọc", "Mark as read"), testBroadcast),
+                        ),
+                        history = listOf(tr("Bạn khỏe không?", "How are you?"), tr("Bạn có rảnh một phút không?", "Got a minute?")),
+                    ),
                 ),
             )
-        }
-    },
-    Demo(Icons.Rounded.Navigation, tr("Điều hướng & Bản đồ", "Navigation"), tr("Mũi tên chỉ hướng và khoảng cách còn lại", "The turn arrow and meters to it"), Tile.Purple) {
-        Controls.showTestLive(context)
-    },
-    Demo(Icons.Rounded.SystemUpdate, tr("Cập nhật", "Update"),
-        tr("Thẻ phiên bản mới: tải xuống, sau đó báo Đã cập nhật", "The new version card: download, then Updated"), Tile.Pink) {
-        UpdateChecker.showDemo(context)
-    },
-)
+        },
+
+        // 2. Tự động nhận diện & Điền nhanh OTP 1 chạm
+        Demo(Icons.Rounded.Key, tr("Mã OTP 1 chạm", "Smart OTP 1-Tap"),
+            tr("Nhận diện mã OTP, tự chép clipboard & điền 1 chạm", "Auto-detect OTP, copy to clipboard & 1-tap fill"), Tile.Green) {
+            com.akira.island.service.OtpHelper.copyToClipboard(context, "868686")
+            IslandBus.post(
+                Notice(
+                    title = "Vietcombank",
+                    icon = Ios.load(context, R.drawable.ios_chatbubble_ellipses),
+                    tint = Tints.Green,
+                    style = NoticeStyle.MESSAGE,
+                    extraMs = 5_000,
+                    message = AppMessage(
+                        key = "test-otp",
+                        pkg = "com.VCB",
+                        appName = "Vietcombank",
+                        text = tr("VCB: 868686 la ma OTP xac thuc Chuyen tien 2.000.000 VND. KHONG chia se ma nay.", "VCB: 868686 is your OTP code for 2,000,000 VND transfer. DO NOT share this code."),
+                        avatar = null,
+                        appIcon = NotificationParser.icon(context, context.packageName),
+                        intent = null,
+                        actions = listOf(
+                            MsgAction(
+                                tr("🔑 Chép & Điền OTP: 868686", "🔑 Copy & Fill OTP: 868686"),
+                                testBroadcast,
+                            ),
+                        ),
+                    ),
+                ),
+            )
+        },
+
+        // 3. Đọc thông báo giọng nói Tiếng Việt (TTS)
+        Demo(Icons.Rounded.RecordVoiceOver, tr("Đọc thông báo (TTS)", "Voice Announcer"),
+            tr("Giọng đọc Tiếng Việt tự nhiên khi đeo tai nghe", "Natural Vietnamese voice notification reading"), Tile.Purple) {
+            com.akira.island.service.VoiceAnnouncer.testSpeak(context)
+        },
+
+        // 4. Cuộc gọi đến
+        Demo(Icons.Rounded.Call, tr("Cuộc gọi đến", "Incoming call"),
+            tr("Hiển thị người gọi với nút Trả lời hoặc Từ chối", "Caller card with Answer and Decline"), Tile.Green) {
+            Controls.showTestCall()
+        },
+
+        // 5. Trình phát nhạc & Sóng Equalizer
+        Demo(Icons.Rounded.LibraryMusic, tr("Trình phát nhạc", "Music Player"),
+            tr("Đĩa bìa nhạc, sóng Equalizer động và điều khiển", "Rotating album art, dynamic equalizer & controls"), Tile.Pink) {
+            IslandBus.media.value = MediaInfo(
+                key = "demo-media", pkg = context.packageName, title = "Tiến Quân Ca", artist = "Văn Cao · Quốc ca Việt Nam",
+                album = "Việt Nam", art = null, accent = Tints.Lavender, durationMs = 180_000L, positionMs = 45_000L,
+                positionTime = SystemClock.elapsedRealtime(), speed = 1f, playing = true, canSeek = true,
+            )
+            IslandBus.scope.launch {
+                delay(8_000)
+                if (IslandBus.media.value?.key == "demo-media") IslandBus.media.value = null
+            }
+        },
+
+        // 6. Trứng phục sinh "Tuổi Trẻ Thế Hệ Bác Hồ"
+        Demo(Icons.Rounded.AutoAwesome, tr("Trứng phục sinh VN", "Vietnam Easter Egg"),
+            tr("Cờ Đỏ Sao Vàng hào hùng theo nhịp ca sĩ Tùng Dương", "Epic Red Flag & Gold Star pulsating with singer Tung Duong"), Tile.Red) {
+            IslandBus.egg.value = true
+            IslandBus.post(
+                Notice(
+                    title = "Tuổi Trẻ Thế Hệ Bác Hồ",
+                    caption = "Tùng Dương · Khát vọng cống hiến vì Tổ quốc!",
+                    state = "Tuổi Trẻ Thế Hệ Bác Hồ",
+                    icon = Ios.load(context, R.drawable.ic_star_vn),
+                    tint = Color(0xFFFF2D55),
+                    style = NoticeStyle.EGG,
+                    extraMs = 4_000,
+                    openPkg = context.packageName,
+                ),
+            )
+            IslandBus.scope.launch {
+                delay(4_500)
+                IslandBus.egg.value = false
+            }
+        },
+
+        // 7. Chế độ Gaming & Bảng theo dõi HUD
+        Demo(Icons.Rounded.SportsEsports, tr("Chế độ Gaming & HUD", "Gaming Mode & HUD"),
+            tr("Thông báo mini chống che và HUD nhiệt độ / RAM / ROM", "Compact gaming pill & live °C / RAM / ROM HUD"), Tile.Indigo) {
+            IslandBus.post(
+                Notice(
+                    title = "Liên Quân Mobile",
+                    caption = tr("Chế độ Gaming đang bật · Minimized", "Gaming mode active · Minimized"),
+                    icon = Ios.load(context, R.drawable.ios_hardware_chip),
+                    tint = Tints.Orange,
+                    style = NoticeStyle.PILL,
+                    extraMs = 3_000,
+                ),
+            )
+        },
+
+        // 8. Vòng sáng LED Viên thuốc (Capsule Edge LED)
+        Demo(Icons.Rounded.Flare, tr("Vòng sáng LED 360°", "Capsule Edge LED"),
+            tr("Viền ánh sáng LED RGB chuyển động quanh camera", "RGB 360° animated LED ring around the punch-hole"), Tile.Yellow) {
+            IslandBus.previewLed.value = true
+            IslandBus.scope.launch {
+                delay(4_500)
+                IslandBus.previewLed.value = false
+            }
+        },
+
+        // 9. Bút cảm ứng Samsung S Pen
+        Demo(Icons.Rounded.Edit, tr("Bút S Pen (Samsung)", "S Pen Stylus"),
+            tr("Hiệu ứng bung mở Viên thuốc khi rút bút S Pen", "Capsule expansion animation when removing S Pen"), Tile.Teal) {
+            IslandBus.post(
+                Notice(
+                    title = tr("Bút S Pen", "S Pen Stylus"),
+                    state = tr("Đã rút bút", "Detached"),
+                    caption = tr("Sẵn sàng ghi chú & thao tác", "Ready for notes & actions"),
+                    icon = Ios.load(context, R.drawable.ios_hardware_chip),
+                    tint = Tints.Teal,
+                    extraMs = 3_000,
+                ),
+            )
+        },
+
+        // 10. Sạc siêu nhanh 2.0 (Super Fast Charging)
+        Demo(Icons.Rounded.BatteryChargingFull, tr("Sạc siêu nhanh 2.0", "Super Fast Charging"),
+            tr("Thông báo sạc nhanh 45W kèm hiển thị nhiệt độ", "Super Fast 45W charging alert with °C temp"), Tile.Green) {
+            IslandBus.post(
+                Notice(
+                    title = tr("Sạc siêu nhanh 2.0", "Super Fast Charging 2.0"),
+                    state = "85%",
+                    caption = tr("Khoảng 18 phút đến khi đầy · 34.2°C", "Around 18 min until full · 34.2°C"),
+                    icon = Ios.load(context, R.drawable.ios_flash),
+                    tint = Tints.Teal,
+                    battery = 85,
+                    extraMs = 3_500,
+                ),
+            )
+        },
+
+        // 11. Cảnh báo bảo vệ tuổi thọ pin
+        Demo(Icons.Rounded.Shield, tr("Bảo vệ Pin", "Battery Protection"),
+            tr("Cảnh báo ngắt sạc khi pin đạt ngưỡng 85%", "Stops charging alert when battery reaches 85%"), Tile.Orange) {
+            IslandBus.post(
+                Notice(
+                    title = tr("Bảo vệ pin", "Battery Protection"),
+                    state = "85%",
+                    caption = tr("Đã đạt mức 85%, hãy ngắt sạc để pin bền hơn", "Reached 85%, unplug to protect battery health"),
+                    icon = Ios.load(context, R.drawable.ios_checkmark_circle),
+                    tint = Tints.Orange,
+                    battery = 85,
+                    extraMs = 3_500,
+                ),
+            )
+        },
+
+        // 12. Tai nghe Galaxy Buds / Bluetooth
+        Demo(Icons.Rounded.Headphones, tr("Galaxy Buds / Tai nghe", "Galaxy Buds / Headset"),
+            tr("Hiển thị kết nối tai nghe kèm vòng phần trăm pin", "Headset connection with battery percentage ring"), Tile.Blue) {
+            IslandBus.post(
+                Notice(
+                    title = "Galaxy Buds3 Pro",
+                    caption = tr("Đã kết nối · Âm thanh vòm 360", "Connected · 360 Audio"),
+                    icon = Ios.load(context, R.drawable.ios_headset),
+                    tint = Tints.Green,
+                    ring = 0.92f,
+                    extraMs = 3_500,
+                ),
+            )
+        },
+
+        // 13. Samsung DeX / Màn hình rời
+        Demo(Icons.Rounded.Cast, tr("Samsung DeX / HDMI", "Samsung DeX / Cast"),
+            tr("Thông báo kết nối màn hình rời không dây / có dây", "External display & Samsung DeX wireless connection"), Tile.Purple) {
+            IslandBus.post(
+                Notice(
+                    title = "Samsung DeX",
+                    state = tr("Đã kết nối", "Connected"),
+                    caption = tr("Đang xuất màn hình ngoài qua Smart View", "Displaying via Smart View"),
+                    icon = Ios.load(context, R.drawable.ios_phone_portrait),
+                    tint = Tints.Lavender,
+                    extraMs = 3_500,
+                ),
+            )
+        },
+
+        // 14. Hẹn giờ
+        Demo(Icons.Rounded.HourglassBottom, tr("Hẹn giờ", "Timer"),
+            tr("Đếm ngược một phút kèm nút điều khiển", "A one-minute countdown with controls"), Tile.Orange) {
+            Controls.startTimer(1)
+        },
+
+        // 15. Báo thức
+        Demo(Icons.Rounded.Alarm, tr("Báo thức", "Alarm"),
+            tr("Thời gian thức dậy và thời gian bạn có thể ngủ", "Wake-up time and remaining sleep duration"), Tile.Indigo) {
+            IslandBus.post(
+                Notice(
+                    title = tr("Báo thức sáng", "Morning Alarm"),
+                    caption = tr("Chuông reo lúc 06:30 · Còn 7 giờ 45 phút", "Rings at 06:30 · 7h 45m left"),
+                    icon = Ios.load(context, R.drawable.ios_alarm),
+                    tint = Tints.Orange,
+                    style = NoticeStyle.ALARM,
+                    alarm = AlarmInfo(System.currentTimeMillis() + (7 * 60 + 45) * 60_000L, null, null),
+                    extraMs = 3_000,
+                ),
+            )
+        },
+
+        // 16. Thanh toán chạm NFC
+        Demo(Icons.Rounded.Nfc, tr("Thanh toán NFC", "NFC Payment"),
+            tr("Hiện chạm vào đầu đọc, sau đó báo Đã thanh toán", "Hold near reader, then Paid with VND amount"), Tile.Teal) {
+            val pkg = context.packageName
+            IslandBus.payReady.value = PayReady(pkg, NotificationParser.icon(context, pkg))
+            IslandBus.scope.launch {
+                delay(2500)
+                if (IslandBus.payReady.value?.pkg == pkg) IslandBus.payReady.value = null
+                IslandBus.post(
+                    Notice(
+                        tr("Đã thanh toán", "Paid"), "150.000 đ", Ios.load(context, R.drawable.ios_checkmark_circle), Tints.Green,
+                        caption = "Vietcombank · NFC", style = NoticeStyle.PAY_DONE, extraMs = 1200,
+                    ),
+                )
+            }
+        },
+
+        // 17. Điều hướng & Bản đồ
+        Demo(Icons.Rounded.Navigation, tr("Điều hướng & Bản đồ", "Navigation"),
+            tr("Mũi tên chỉ hướng rẽ và khoảng cách còn lại", "The turn arrow and meters to destination"), Tile.Purple) {
+            Controls.showTestLive(context)
+        },
+
+        // 18. Cập nhật phần mềm
+        Demo(Icons.Rounded.SystemUpdate, tr("Cập nhật Capsule VN", "Software Update"),
+            tr("Thẻ thông báo phiên bản mới v1.1.1 sẵn sàng tải", "New version v1.1.1 ready to install"), Tile.Pink) {
+            UpdateChecker.showDemo(context)
+        },
+
+        // 19. Chế độ Chuông / Im lặng
+        Demo(Icons.Rounded.NotificationsOff, tr("Chế độ Chuông", "Ring mode"),
+            tr("Viên thuốc rung lắc báo trạng thái Im lặng / Chuông", "The capsule shakes, the bell swings"), Tile.Red) {
+            IslandBus.post(Notice("", tr("Im lặng", "Silent"), Ios.load(context, R.drawable.ios_notifications_off), Tints.Red, style = NoticeStyle.PILL))
+        },
+
+        // 20. Đèn pin
+        Demo(Icons.Rounded.FlashlightOn, tr("Đèn pin", "Flashlight"),
+            tr("Hiển thị trạng thái bật / tắt đèn pin", "Flashlight on / off status on capsule"), Tile.Yellow) {
+            IslandBus.post(
+                Notice(
+                    title = tr("Đèn pin", "Flashlight"),
+                    state = tr("Đang bật", "On"),
+                    icon = Ios.load(context, R.drawable.ios_flashlight),
+                    tint = Tints.Orange,
+                    extraMs = 2_500,
+                ),
+            )
+        },
+    )
+}
 
 @Composable
 internal fun Status(ok: Boolean) {
@@ -442,6 +660,8 @@ private fun CountBadge(n: Int) {
         Text("$n", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
     }
 }
+
+
 
 @Composable
 fun Arrow() {
@@ -467,7 +687,7 @@ fun IslandPreview(expanded: Boolean = false) {
         contentAlignment = Alignment.TopCenter,
     ) {
         val act = if (expanded) Act.Idle else Act.MediaA(demo)
-        val corner = (if (expanded) s.height.dp else activeHeight(s)) / 2
+        val corner = if (expanded) s.expandedCornerRadius.dp else (if (s.capsuleCornerRadius >= 0) s.capsuleCornerRadius.dp else activeHeight(s) / 2)
         val shape = islandShape(corner, s)
         Box(
             Modifier

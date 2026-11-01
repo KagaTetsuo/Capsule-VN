@@ -512,18 +512,26 @@ private fun IslandBody(
     val h = s.height.dp
 
     val cornerTarget = when {
-        expanded && (primary is Act.MediaA || primary is Act.TorchA) -> 46.dp
-        expanded && primary is Act.LiveA -> 42.dp
-        expanded -> 44.dp
+        expanded -> s.expandedCornerRadius.dp
         primary is Act.NoticeA && (primary.n.style == NoticeStyle.MESSAGE || primary.n.style == NoticeStyle.EGG) -> s.cardCornerRadius.dp
-        primary is Act.NoticeA && primary.n.style == NoticeStyle.UPDATE -> s.cardCornerRadius.dp
-        primary is Act.NoticeA && primary.n.style == NoticeStyle.WIDE && primary.n.title.isNotBlank() -> noticeHeight(s) / 2
+        primary is Act.NoticeA && primary.n.style == NoticeStyle.UPDATE -> s.updateCornerRadius.dp
+        primary is Act.CallA && primary.c.incoming -> s.callCornerRadius.dp.coerceAtMost(callHeight(s) / 2)
+        primary is Act.NoticeA && primary.n.style == NoticeStyle.WIDE && primary.n.title.isNotBlank() -> {
+            if (s.capsuleCornerRadius >= 0) s.capsuleCornerRadius.dp else noticeHeight(s) / 2
+        }
         primary is Act.NoticeA && (primary.n.style == NoticeStyle.PAY_DONE ||
-            primary.n.style == NoticeStyle.LIVE || primary.n.style == NoticeStyle.ALARM || primary.n.style == NoticeStyle.SENT) -> noticeHeight(s) / 2
-        primary is Act.PayA -> noticeHeight(s) / 2
-        primary is Act.CallA && primary.c.incoming -> s.cardCornerRadius.dp.coerceAtMost(callHeight(s) / 2)
-        primary is Act.Idle -> h / 2
-        else -> activeHeight(s) / 2
+            primary.n.style == NoticeStyle.LIVE || primary.n.style == NoticeStyle.ALARM || primary.n.style == NoticeStyle.SENT) -> {
+            if (s.capsuleCornerRadius >= 0) s.capsuleCornerRadius.dp else noticeHeight(s) / 2
+        }
+        primary is Act.PayA -> {
+            if (s.capsuleCornerRadius >= 0) s.capsuleCornerRadius.dp else noticeHeight(s) / 2
+        }
+        primary is Act.Idle -> {
+            if (s.capsuleCornerRadius >= 0) s.capsuleCornerRadius.dp else h / 2
+        }
+        else -> {
+            if (s.capsuleCornerRadius >= 0) s.capsuleCornerRadius.dp else activeHeight(s) / 2
+        }
     }
     
     val corner = animateDpAsState(cornerTarget, islandSpec(s), label = "corner")

@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.BorderStyle
+import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.SystemUpdate
 import androidx.compose.material.icons.rounded.Call
 import androidx.compose.material.icons.rounded.ChatBubble
@@ -150,6 +151,28 @@ fun SizeScreen(onBack: () -> Unit, open: (Screen) -> Unit = {}) {
                 }
             }
             Spacer(Modifier.height(16.dp))
+            SectionHeader(tr("Độ bo góc viên thuốc", "Capsule corner radius"))
+            Group {
+                GroupStepSlider(
+                    Pos.First,
+                    Icons.Rounded.BorderStyle,
+                    tr("Bo góc viên thuốc thu gọn (Nhàn rỗi)", "Compact capsule corner radius"),
+                    if (s.capsuleCornerRadius < 0) s.height / 2 else s.capsuleCornerRadius,
+                    0..25,
+                    action = tr("Tự động", "Auto") to { set { copy(capsuleCornerRadius = -1) } },
+                    color = Tile.Yellow,
+                ) { v -> set { copy(capsuleCornerRadius = v) } }
+                GroupStepSlider(
+                    Pos.Last,
+                    Icons.Rounded.Layers,
+                    tr("Bo góc khi bung mở rộng", "Expanded corner radius"),
+                    s.expandedCornerRadius,
+                    12..50,
+                    action = tr("Mặc định (44 dp)", "Default (44 dp)") to { set { copy(expandedCornerRadius = 44) } },
+                    color = Tile.Orange,
+                ) { v -> set { copy(expandedCornerRadius = v) } }
+            }
+            Spacer(Modifier.height(16.dp))
             Group {
                 GroupItem(
                     Pos.Single,
@@ -220,8 +243,8 @@ fun MsgCallSizeScreen(onBack: () -> Unit) {
                         val d = IslandSettings()
                         when (selectedTab) {
                             0 -> set { copy(msgOffsetY = d.msgOffsetY, msgWidth = d.msgWidth, msgHeightExtra = d.msgHeightExtra, msgLines = d.msgLines, cardCornerRadius = d.cardCornerRadius) }
-                            1 -> set { copy(callOffsetY = d.callOffsetY, callWidth = d.callWidth, callHeight = d.callHeight, cardCornerRadius = d.cardCornerRadius) }
-                            else -> set { copy(updateOffsetY = d.updateOffsetY, updateWidth = d.updateWidth, updateHeightExtra = d.updateHeightExtra, cardCornerRadius = d.cardCornerRadius) }
+                            1 -> set { copy(callOffsetY = d.callOffsetY, callWidth = d.callWidth, callHeight = d.callHeight, callCornerRadius = d.callCornerRadius) }
+                            else -> set { copy(updateOffsetY = d.updateOffsetY, updateWidth = d.updateWidth, updateHeightExtra = d.updateHeightExtra, updateCornerRadius = d.updateCornerRadius) }
                         }
                     },
                     contentAlignment = Alignment.Center,
@@ -279,20 +302,7 @@ fun MsgCallSizeScreen(onBack: () -> Unit) {
 
             CardLiveSimulationPreview(s, cardMode = selectedTab)
 
-            SectionHeader(tr("Độ bo góc khung thông báo", "Notification cards corner radius"))
-            Group {
-                GroupStepSlider(
-                    Pos.Single,
-                    Icons.Rounded.BorderStyle,
-                    tr("Độ bo tròn góc khung thẻ", "Card corner radius"),
-                    s.cardCornerRadius,
-                    8..44,
-                    action = tr("Mặc định", "Default") to { set { copy(cardCornerRadius = 32) } },
-                    color = Tile.Orange,
-                ) { v ->
-                    set { copy(cardCornerRadius = v) }
-                }
-            }
+
 
             if (selectedTab == 0) {
                 SectionHeader(tr("Tùy chỉnh Thẻ tin nhắn", "Message card adjustments"))
@@ -334,7 +344,7 @@ fun MsgCallSizeScreen(onBack: () -> Unit) {
                         set { copy(msgHeightExtra = v) }
                     }
                     GroupStepSlider(
-                        Pos.Last,
+                        Pos.Middle,
                         Icons.Rounded.FormatLineSpacing,
                         tr("Dòng văn bản", "Text lines"),
                         s.msgLines,
@@ -345,6 +355,18 @@ fun MsgCallSizeScreen(onBack: () -> Unit) {
                     ) { v ->
                         IslandBus.cardPreviewMode.value = CardPreviewMode.MESSAGE
                         set { copy(msgLines = v) }
+                    }
+                    GroupStepSlider(
+                        Pos.Last,
+                        Icons.Rounded.BorderStyle,
+                        tr("Độ bo tròn góc thẻ tin nhắn", "Message card corner radius"),
+                        s.cardCornerRadius,
+                        8..44,
+                        action = tr("Mặc định", "Default") to { set { copy(cardCornerRadius = 32) } },
+                        color = Tile.Yellow,
+                    ) { v ->
+                        IslandBus.cardPreviewMode.value = CardPreviewMode.MESSAGE
+                        set { copy(cardCornerRadius = v) }
                     }
                 }
             } else if (selectedTab == 1) {
@@ -375,7 +397,7 @@ fun MsgCallSizeScreen(onBack: () -> Unit) {
                         set { copy(callWidth = v) }
                     }
                     GroupStepSlider(
-                        Pos.Last,
+                        Pos.Middle,
                         Icons.Rounded.Height,
                         tr("Độ rộng bề dọc (Chiều cao)", "Vertical height"),
                         s.callHeight,
@@ -385,6 +407,18 @@ fun MsgCallSizeScreen(onBack: () -> Unit) {
                     ) { v ->
                         IslandBus.cardPreviewMode.value = CardPreviewMode.CALL
                         set { copy(callHeight = v) }
+                    }
+                    GroupStepSlider(
+                        Pos.Last,
+                        Icons.Rounded.BorderStyle,
+                        tr("Độ bo tròn góc thẻ cuộc gọi", "Call card corner radius"),
+                        s.callCornerRadius,
+                        8..50,
+                        action = tr("Mặc định", "Default") to { set { copy(callCornerRadius = 32) } },
+                        color = Tile.Yellow,
+                    ) { v ->
+                        IslandBus.cardPreviewMode.value = CardPreviewMode.CALL
+                        set { copy(callCornerRadius = v) }
                     }
                 }
             } else {
@@ -415,7 +449,7 @@ fun MsgCallSizeScreen(onBack: () -> Unit) {
                         set { copy(updateWidth = v) }
                     }
                     GroupStepSlider(
-                        Pos.Last,
+                        Pos.Middle,
                         Icons.Rounded.Height,
                         tr("Độ rộng bề dọc (Chiều cao)", "Vertical height offset"),
                         s.updateHeightExtra,
@@ -425,6 +459,18 @@ fun MsgCallSizeScreen(onBack: () -> Unit) {
                     ) { v ->
                         IslandBus.cardPreviewMode.value = CardPreviewMode.UPDATE
                         set { copy(updateHeightExtra = v) }
+                    }
+                    GroupStepSlider(
+                        Pos.Last,
+                        Icons.Rounded.BorderStyle,
+                        tr("Độ bo tròn góc thẻ cập nhật", "Update card corner radius"),
+                        s.updateCornerRadius,
+                        8..44,
+                        action = tr("Mặc định", "Default") to { set { copy(updateCornerRadius = 32) } },
+                        color = Tile.Yellow,
+                    ) { v ->
+                        IslandBus.cardPreviewMode.value = CardPreviewMode.UPDATE
+                        set { copy(updateCornerRadius = v) }
                     }
                 }
             }
@@ -549,8 +595,9 @@ private fun CardLiveSimulationPreview(s: IslandSettings, cardMode: Int) {
             }
             val visualShift = (14 + offsetDp * 0.45f).coerceIn(2f, 68f).dp
             val corner = when (cardMode) {
-                1 -> s.cardCornerRadius.dp.coerceAtMost(callHeight(s) / 2)
-                else -> s.cardCornerRadius.dp
+                0 -> s.cardCornerRadius.dp
+                1 -> s.callCornerRadius.dp.coerceAtMost(callHeight(s) / 2)
+                else -> s.updateCornerRadius.dp
             }
             val shape = islandShape(corner, s)
 
@@ -609,12 +656,12 @@ private fun CardLiveSimulationPreview(s: IslandSettings, cardMode: Int) {
                 "Offset: ${if (s.msgOffsetY >= 0) "+${s.msgOffsetY}" else "${s.msgOffsetY}"} dp · Width: ${s.msgWidth} dp · Height: ${if (s.msgHeightExtra >= 0) "+${s.msgHeightExtra}" else "${s.msgHeightExtra}"} dp · Corner: ${s.cardCornerRadius} dp",
             )
             1 -> tr(
-                "Vị trí dọc: ${if (s.callOffsetY >= 0) "+${s.callOffsetY}" else "${s.callOffsetY}"} dp · Kích thước: ${s.callWidth}×${s.callHeight} dp · Bo góc: ${s.cardCornerRadius} dp",
-                "Offset: ${if (s.callOffsetY >= 0) "+${s.callOffsetY}" else "${s.callOffsetY}"} dp · Size: ${s.callWidth}×${s.callHeight} dp · Corner: ${s.cardCornerRadius} dp",
+                "Vị trí dọc: ${if (s.callOffsetY >= 0) "+${s.callOffsetY}" else "${s.callOffsetY}"} dp · Kích thước: ${s.callWidth}×${s.callHeight} dp · Bo góc: ${s.callCornerRadius} dp",
+                "Offset: ${if (s.callOffsetY >= 0) "+${s.callOffsetY}" else "${s.callOffsetY}"} dp · Size: ${s.callWidth}×${s.callHeight} dp · Corner: ${s.callCornerRadius} dp",
             )
             else -> tr(
-                "Vị trí dọc: ${if (s.updateOffsetY >= 0) "+${s.updateOffsetY}" else "${s.updateOffsetY}"} dp · Ngang: ${s.updateWidth} dp · Dọc: ${if (s.updateHeightExtra >= 0) "+${s.updateHeightExtra}" else "${s.updateHeightExtra}"} dp · Bo góc: ${s.cardCornerRadius} dp",
-                "Offset: ${if (s.updateOffsetY >= 0) "+${s.updateOffsetY}" else "${s.updateOffsetY}"} dp · Width: ${s.updateWidth} dp · Height: ${if (s.updateHeightExtra >= 0) "+${s.updateHeightExtra}" else "${s.updateHeightExtra}"} dp · Corner: ${s.cardCornerRadius} dp",
+                "Vị trí dọc: ${if (s.updateOffsetY >= 0) "+${s.updateOffsetY}" else "${s.updateOffsetY}"} dp · Ngang: ${s.updateWidth} dp · Dọc: ${if (s.updateHeightExtra >= 0) "+${s.updateHeightExtra}" else "${s.updateHeightExtra}"} dp · Bo góc: ${s.updateCornerRadius} dp",
+                "Offset: ${if (s.updateOffsetY >= 0) "+${s.updateOffsetY}" else "${s.updateOffsetY}"} dp · Width: ${s.updateWidth} dp · Height: ${if (s.updateHeightExtra >= 0) "+${s.updateHeightExtra}" else "${s.updateHeightExtra}"} dp · Corner: ${s.updateCornerRadius} dp",
             )
         }
         Text(summary, color = Ui.Sub, fontSize = 12.5.sp, fontWeight = FontWeight.Medium)
@@ -622,18 +669,28 @@ private fun CardLiveSimulationPreview(s: IslandSettings, cardMode: Int) {
 }
 
 private fun IslandSettings.withPlacement(from: IslandSettings) =
-    copy(offsetX = from.offsetX, offsetY = from.offsetY, width = from.width, height = from.height, notch = from.notch)
+    copy(
+        offsetX = from.offsetX,
+        offsetY = from.offsetY,
+        width = from.width,
+        height = from.height,
+        notch = from.notch,
+        capsuleCornerRadius = from.capsuleCornerRadius,
+        expandedCornerRadius = from.expandedCornerRadius,
+    )
 
 private fun IslandSettings.withMsgCallPlacement(from: IslandSettings) = copy(
     msgOffsetY = from.msgOffsetY,
     msgWidth = from.msgWidth,
     msgHeightExtra = from.msgHeightExtra,
     msgLines = from.msgLines,
+    cardCornerRadius = from.cardCornerRadius,
     callOffsetY = from.callOffsetY,
     callWidth = from.callWidth,
     callHeight = from.callHeight,
+    callCornerRadius = from.callCornerRadius,
     updateOffsetY = from.updateOffsetY,
     updateWidth = from.updateWidth,
     updateHeightExtra = from.updateHeightExtra,
-    cardCornerRadius = from.cardCornerRadius,
+    updateCornerRadius = from.updateCornerRadius,
 )
