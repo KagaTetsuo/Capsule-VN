@@ -342,7 +342,7 @@ fun IslandOverlay(
     
     val secondary = if (!s.bubble || primary.transient || incoming || calibrating || cardPreview != CardPreviewMode.NONE) null
     else acts.drop(1).firstOrNull { !it.transient && it !is Act.AlarmA }
-    val showExpanded = expanded && !primary.transient && !incoming && !calibrating && cardPreview == CardPreviewMode.NONE
+    val showExpanded = (expanded || cardPreview == CardPreviewMode.EXPANDED) && !primary.transient && !incoming && !calibrating
     val h = s.height.dp
 
     val lastSecondary = remember { arrayOfNulls<Act>(1) }
@@ -508,7 +508,7 @@ private fun IslandBody(
     val scope = rememberCoroutineScope()
     val conf = LocalConfiguration.current
     
-    val expandedWidth = (conf.screenWidthDp.dp - 22.dp).coerceAtMost(460.dp)
+    val expandedWidth = if (s.expandedWidth > 0) s.expandedWidth.dp.coerceAtMost(conf.screenWidthDp.dp) else (conf.screenWidthDp.dp - 22.dp).coerceAtMost(460.dp)
     val h = s.height.dp
 
     val cornerTarget = when {

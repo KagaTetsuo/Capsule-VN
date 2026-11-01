@@ -129,7 +129,7 @@ fun ExpandedContent(act: Act, s: IslandSettings, lyrics: Lyrics?, battery: Batte
         return
     }
     
-    Box(Modifier.width(width).padding(start = 22.dp, end = 22.dp, top = cameraInset(s), bottom = 20.dp)) {
+    Box(Modifier.width(width).padding(start = 22.dp, end = 22.dp, top = cameraInset(s), bottom = (20 + s.expandedHeightExtra).coerceAtLeast(6).dp)) {
         when (act) {
             is Act.MediaA -> MediaExpanded(act.m, s, lyrics)
             is Act.TimerA -> TimerExpanded(act.t, s)

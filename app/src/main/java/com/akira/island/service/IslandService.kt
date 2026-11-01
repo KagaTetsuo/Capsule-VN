@@ -36,6 +36,7 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import com.akira.island.core.Controls
 import com.akira.island.core.IslandBus
+import com.akira.island.core.CardPreviewMode
 import com.akira.island.core.ServiceCommand
 import com.akira.island.core.Notice
 import com.akira.island.core.NoticeStyle
@@ -425,7 +426,7 @@ class IslandService : AccessibilityService() {
 
     private fun updateDisplayHeight() {
         val view = display ?: return
-        val h = if (tall || fxTall || IslandBus.expanded.value) tallHeight() else islandBottom().coerceAtLeast(dp(ISLAND_PAD_DP * 2))
+        val h = if (tall || fxTall || IslandBus.expanded.value || IslandBus.cardPreviewMode.value != CardPreviewMode.NONE) tallHeight() else islandBottom().coerceAtLeast(dp(ISLAND_PAD_DP * 2))
         if (displayParams.height == h) return
         displayParams.height = h
         runCatching { wm?.updateViewLayout(view, displayParams) }
@@ -441,7 +442,7 @@ class IslandService : AccessibilityService() {
                 maxOf(body.right, bubble.right), maxOf(body.bottom, bubble.bottom),
             )
         }
-        val usable = visible && !area.isEmpty
+        val usable = visible && !area.isEmpty && IslandBus.cardPreviewMode.value == CardPreviewMode.NONE
         val origin = IntArray(2)
         display?.getLocationOnScreen(origin)
         val x = if (usable) origin[0] + floor(area.left).toInt() else -10

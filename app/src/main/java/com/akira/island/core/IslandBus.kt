@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 
-enum class CardPreviewMode { NONE, MESSAGE, CALL, UPDATE }
+enum class CardPreviewMode { NONE, MESSAGE, CALL, UPDATE, EXPANDED }
 
 object IslandBus {
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -54,6 +54,10 @@ object IslandBus {
     val widthPreviewUntil = MutableStateFlow(0L)
     
     val cardPreviewMode = MutableStateFlow(CardPreviewMode.NONE)
+    val elasticityDemoTrigger = MutableStateFlow(0L)
+    fun triggerElasticityDemo() {
+        elasticityDemoTrigger.value = System.currentTimeMillis()
+    }
     
     val gamingActive = MutableStateFlow(false)
     

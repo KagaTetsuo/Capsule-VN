@@ -114,65 +114,59 @@ fun FeaturesScreen(open: (Screen) -> Unit) {
     var confirmReset by remember { mutableStateOf(false) }
     var languageDialog by remember { mutableStateOf(false) }
 
-    Page(tr("Tính năng", "Features")) {
-        SectionHeader(tr("Những gì Viên thuốc hiển thị", "What the island shows"))
+    Page(tr("Tính năng", "Features")) {        SectionHeader(tr("Nội dung hiển thị", "Display content"))
         Group {
-            GroupItem(Pos.First, Icons.Rounded.Dashboard, tr("Thẻ linh hoạt", "Dynamic cards"),
+            GroupItem(Pos.First, Icons.Rounded.Dashboard, tr("Thẻ đa nhiệm thông minh", "Smart dynamic cards"),
                 tr("Nhạc, cuộc gọi, hẹn giờ, đèn pin, điều hướng", "Music, calls, timers, flashlight, navigation"),
                 color = Tile.Purple, onClick = { open(Screen.CARDS) }) { Arrow() }
-            GroupItem(Pos.Middle, Icons.Rounded.ChatBubble, tr("Thông báo", "Notifications"),
+            GroupItem(Pos.Middle, Icons.Rounded.ChatBubble, tr("Tin nhắn & thông báo", "Messages & notifications"),
                 tr("Tin nhắn kèm nút trả lời nhanh ngay trên Viên thuốc", "App messages with replies right in the island"),
                 color = Tile.Blue, onClick = { open(Screen.NOTIFICATIONS) }) { Arrow() }
-            GroupItem(Pos.Middle, Icons.Rounded.NotificationsActive, tr("Sự kiện", "Events"),
+            GroupItem(Pos.Middle, Icons.Rounded.NotificationsActive, tr("Sự kiện & cắm sạc", "Events & charging"),
                 tr("Sạc pin, Wi-Fi, tai nghe, thanh toán, báo thức", "Charging, Wi-Fi, headphones, payments, alarm"),
                 color = Tile.Orange, onClick = { open(Screen.EVENTS) }) { Arrow() }
-            GroupItem(Pos.Last, Icons.Rounded.LibraryMusic, tr("Lời bài hát", "Lyrics"),
+            GroupItem(Pos.Last, Icons.Rounded.LibraryMusic, tr("Lời bài hát đồng bộ (Karaoke)", "Synced lyrics"),
                 tr("Lời bài hát đồng bộ trong trình phát mở rộng", "Synced lyrics in the expanded player"),
                 color = Tile.Pink, onClick = { open(Screen.LYRICS) }) { Arrow() }
         }
 
-        SectionHeader(tr("Chế độ Gaming & Hệ sinh thái", "Gaming & Ecosystem"))
+        SectionHeader(tr("Tiện ích thông minh", "Smart utilities"))
         Group {
             GroupItem(
-                Pos.First, Icons.Rounded.SportsEsports, tr("Chế độ Gaming", "Gaming Mode"),
-                tr("Tự nhận diện game trên mọi máy Android, thu gọn thông báo & Gaming HUD (°C, RAM)", "Auto-detect games on all Android devices, compact pills & Gaming HUD (°C, RAM)"),
-                color = Tile.Green, onClick = { open(Screen.GAMING) },
-            ) { Arrow() }
-            GroupItem(
-                Pos.Middle, Icons.Rounded.Bolt, tr("Hệ sinh thái Samsung & Android", "Samsung & Android Ecosystem"),
-                tr("Bút S Pen, Galaxy Buds/Watch, Sạc siêu nhanh, Bảo vệ pin & DeX / Truyền màn hình", "S Pen stylus, Galaxy Buds/Watch, Super Fast Charging, Battery Protection & DeX / Cast"),
-                color = Tile.Blue, onClick = { open(Screen.ECOSYSTEM) },
-            ) { Arrow() }
-            GroupItem(
-                Pos.Middle, Icons.Rounded.Palette, tr("Vòng sáng LED Viên thuốc", "Capsule LED Ring"),
-                tr("Vòng sáng LED quanh Viên thuốc khi có tin chưa đọc, sạc pin và sự kiện", "Glowing LED ring around the capsule for unread alerts, charging and events"),
-                color = Tile.Purple, onClick = { open(Screen.LED_RING) },
-            ) { Arrow() }
-            GroupItem(
-                Pos.Middle, Icons.Rounded.Key, tr("Sao chép & Điền nhanh OTP 1 chạm", "Smart OTP 1-Tap Copy & Fill"),
+                Pos.First, Icons.Rounded.Key, tr("Sao chép & Điền nhanh OTP 1 chạm", "Smart OTP 1-Tap Copy & Fill"),
                 tr("Tự động sao chép & điền nhanh mã xác thực OTP 1 chạm từ SMS, ngân hàng, Zalo…", "Auto-copy & 1-tap autofill verification OTP codes from SMS, banks & messengers"),
                 color = Tile.Teal, onClick = { open(Screen.OTP_SETTINGS) },
             ) { Arrow() }
             GroupItem(
-                Pos.Last, Icons.Rounded.RecordVoiceOver, tr("Tự động đọc thông báo qua Tai nghe", "Headset Voice Announcer"),
+                Pos.Middle, Icons.Rounded.RecordVoiceOver, tr("Tự động đọc thông báo qua Tai nghe", "Headset Voice Announcer"),
                 tr("Tự động đọc to tin nhắn đến và tên người gọi khi đang đeo tai nghe", "Automatically read incoming messages & caller names aloud when wearing headphones"),
                 color = Tile.Orange, onClick = { open(Screen.TTS_SETTINGS) },
             ) { Arrow() }
+            GroupItem(
+                Pos.Middle, Icons.Rounded.SportsEsports, tr("Chế độ Gaming & HUD", "Gaming Mode & HUD"),
+                tr("Tự nhận diện game trên mọi máy Android, thu gọn thông báo & Gaming HUD (°C, RAM)", "Auto-detect games on all Android devices, compact pills & Gaming HUD (°C, RAM)"),
+                color = Tile.Green, onClick = { open(Screen.GAMING) },
+            ) { Arrow() }
+            GroupItem(
+                Pos.Last, Icons.Rounded.Bolt, tr("Hệ sinh thái Samsung & Android", "Samsung & Android Ecosystem"),
+                tr("Bút S Pen, Galaxy Buds/Watch, Sạc siêu nhanh, Bảo vệ pin & DeX / Truyền màn hình", "S Pen stylus, Galaxy Buds/Watch, Super Fast Charging, Battery Protection & DeX / Cast"),
+                color = Tile.Blue, onClick = { open(Screen.ECOSYSTEM) },
+            ) { Arrow() }
         }
 
-        SectionHeader(tr("Điều khiển", "Controls"))
+        SectionHeader(tr("Thao tác & điều khiển", "Controls & behavior"))
         Group {
-            GroupItem(Pos.First, Icons.Rounded.Gesture, tr("Cử chỉ", "Gestures"), tr("Chạm và vuốt trên viên thuốc", "Taps and swipes on the capsule"),
+            GroupItem(Pos.First, Icons.Rounded.Gesture, tr("Cử chỉ chạm & vuốt", "Taps & gestures"), tr("Chạm và vuốt trên viên thuốc", "Taps and swipes on the capsule"),
                 color = Tile.Teal, onClick = { open(Screen.GESTURES) }) { Arrow() }
-            GroupItem(Pos.Middle, Icons.Rounded.Tune, tr("Hành vi", "Behavior"),
+            GroupItem(Pos.Middle, Icons.Rounded.Tune, tr("Hành vi hiển thị & thu nhỏ", "Display & collapse behavior"),
                 tr("Khi nào hiển thị và thu nhỏ Viên thuốc, phản hồi rung", "When to show and collapse the island, haptics"),
                 color = Tile.Indigo, onClick = { open(Screen.BEHAVIOR) }) { Arrow() }
-            GroupItem(Pos.Last, Icons.Rounded.NotificationsOff, tr("Biểu ngữ hệ thống", "System banners"),
+            GroupItem(Pos.Last, Icons.Rounded.NotificationsOff, tr("Tắt biểu ngữ nổi hệ thống", "Hide system popup banners"),
                 tr("Để chỉ có Viên thuốc hiển thị cuộc gọi, hẹn giờ và pin", "So only the island shows calls, timers and battery"),
                 color = Tile.Red, onClick = { open(Screen.BANNERS) }) { Arrow() }
         }
 
-        SectionHeader(tr("Chung", "General"))
+        SectionHeader(tr("Hệ thống", "System"))
         Group {
             
             GroupItem(Pos.First, Icons.Rounded.Language, tr("Ngôn ngữ · Language", "Language"), s.language.title,

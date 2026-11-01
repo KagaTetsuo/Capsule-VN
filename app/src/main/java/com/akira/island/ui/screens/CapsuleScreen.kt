@@ -1,6 +1,9 @@
 package com.akira.island.ui.screens
 
+import android.os.SystemClock
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -22,24 +25,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.text.font.FontWeight
-import com.akira.island.island.drawLedRing
-import com.akira.island.island.ledOuterGlow
-import android.os.SystemClock
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Animation
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.BatterySaver
 import androidx.compose.material.icons.rounded.BlurCircular
 import androidx.compose.material.icons.rounded.BlurOn
+import androidx.compose.material.icons.rounded.Bolt
 import androidx.compose.material.icons.rounded.BubbleChart
 import androidx.compose.material.icons.rounded.Contactless
 import androidx.compose.material.icons.rounded.Flare
@@ -47,24 +39,37 @@ import androidx.compose.material.icons.rounded.FormatColorFill
 import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.LensBlur
 import androidx.compose.material.icons.rounded.LineWeight
+import androidx.compose.material.icons.rounded.MarkChatUnread
 import androidx.compose.material.icons.rounded.NotificationsActive
 import androidx.compose.material.icons.rounded.Opacity
 import androidx.compose.material.icons.rounded.OpenWith
+import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.RadioButtonChecked
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material.icons.rounded.WaterDrop
 import androidx.compose.material.icons.rounded.Waves
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.akira.island.core.IslandBus
@@ -73,13 +78,14 @@ import com.akira.island.core.tr
 import com.akira.island.data.Elasticity
 import com.akira.island.data.ExpandStyle
 import com.akira.island.data.FxRate
-import com.akira.island.data.LedStyle
-import androidx.compose.material.icons.rounded.Bolt
-import androidx.compose.material.icons.rounded.MarkChatUnread
-import androidx.compose.material.icons.rounded.Palette
-import androidx.compose.material.icons.rounded.RadioButtonChecked
 import com.akira.island.data.IslandSettings
+import com.akira.island.data.LedStyle
 import com.akira.island.data.SettingsRepo
+import com.akira.island.island.drawLedRing
+import com.akira.island.island.glassSurface
+import com.akira.island.island.islandSpec
+import com.akira.island.island.ledOuterGlow
+import com.akira.island.island.rememberHaptic
 import com.akira.island.ui.ChoiceDialog
 import com.akira.island.ui.Group
 import com.akira.island.ui.GroupItem
@@ -91,6 +97,8 @@ import com.akira.island.ui.Screen
 import com.akira.island.ui.SectionHeader
 import com.akira.island.ui.Tile
 import com.akira.island.ui.Ui
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 
 @Composable
 fun CapsuleScreen(open: (Screen) -> Unit) {
@@ -100,36 +108,58 @@ fun CapsuleScreen(open: (Screen) -> Unit) {
 
         SectionHeader(tr("Vị trí & kích thước", "Position and size"))
         Group {
-            GroupItem(Pos.First, Icons.Rounded.OpenWith, tr("Vị trí & kích thước", "Position and size"),
-                tr("Viên thuốc ${s.width}×${s.height} dp — căn chỉnh vừa camera", "Capsule ${s.width}×${s.height} dp — fit it to the camera"),
-                color = Tile.Indigo, onClick = { open(Screen.SIZE) }) { Arrow() }
-            GroupItem(Pos.Middle, Icons.Rounded.SwapHoriz, tr("Kích thước khi có hoạt động", "Size with activity"),
+            GroupItem(
+                Pos.First,
+                Icons.Rounded.OpenWith,
+                tr("Vị trí & kích thước Viên thuốc", "Capsule position and size"),
+                tr("Viên thuốc ${s.width}×${s.height} dp & Bảng mở rộng trạng thái", "Capsule ${s.width}×${s.height} dp & Expanded status board"),
+                color = Tile.Indigo,
+                onClick = { open(Screen.SIZE) },
+            ) { Arrow() }
+            GroupItem(
+                Pos.Middle,
+                Icons.Rounded.SwapHoriz,
+                tr("Kích thước khi có hoạt động", "Size with activity"),
                 if (s.activeWidth == 0) tr("Độ dày +${s.activeExtra} dp, chiều rộng giữ nguyên", "Thickness +${s.activeExtra} dp, width as without it")
                 else tr("Độ dày +${s.activeExtra}, chiều rộng +${s.activeWidth} dp", "Thickness +${s.activeExtra}, width +${s.activeWidth} dp"),
-                color = Tile.Purple, onClick = { open(Screen.LOOK) }) { Arrow() }
+                color = Tile.Purple,
+                onClick = { open(Screen.LOOK) },
+            ) { Arrow() }
             GroupItem(
                 Pos.Last,
                 Icons.Rounded.Tune,
-                tr("Kích thước & bo góc khung thẻ", "Cards size & corner radius"),
-                tr("Tin nhắn, cuộc gọi, cập nhật · Bo góc ${s.cardCornerRadius} dp", "Messages, calls, updates · Corner ${s.cardCornerRadius} dp"),
+                tr("Khung thẻ tin nhắn, cuộc gọi & cập nhật", "Message, call & update cards"),
+                tr("Vị trí, kích thước, dòng chữ & bo góc từng khung thẻ", "Position, size, lines & corner radius"),
                 color = Tile.Green,
                 onClick = { open(Screen.MSG_CALL_SIZE) },
             ) { Arrow() }
         }
 
-        SectionHeader(tr("Màu sắc & hiệu ứng kính", "Color and glass"))
+        SectionHeader(tr("Màu sắc & ánh sáng", "Color and lighting"))
         Group {
-            GroupItem(Pos.First, Icons.Rounded.FormatColorFill, tr("Màu viên thuốc", "Capsule color"), tr("Màu sắc, đường viền và bóng đổ", "Color, outline and shadow"),
-                color = Tile.Orange, onClick = { open(Screen.COLORS) }) { Arrow() }
             GroupItem(
-                Pos.Middle, Icons.Rounded.RadioButtonChecked, tr("Vòng sáng LED Viên thuốc", "Capsule LED Ring"),
+                Pos.First,
+                Icons.Rounded.FormatColorFill,
+                tr("Màu sắc & viền Viên thuốc", "Capsule color & border"),
+                tr("Màu sắc nền, viền ngoài và bóng đổ", "Color, outline and shadow"),
+                color = Tile.Orange,
+                onClick = { open(Screen.COLORS) },
+            ) { Arrow() }
+            GroupItem(
+                Pos.Middle,
+                Icons.Rounded.RadioButtonChecked,
+                tr("Vòng sáng LED quanh Viên thuốc", "Capsule LED Ring"),
                 if (s.ledEnabled) "${s.ledStyle.title} · %.1f dp".format(s.ledWidth) else tr("Tắt", "Off"),
-                color = Tile.Purple, onClick = { open(Screen.LED_RING) },
+                color = Tile.Purple,
+                onClick = { open(Screen.LED_RING) },
             ) { Arrow() }
             GroupToggle(
-                if (s.liquidGlass) Pos.Middle else Pos.Last, Icons.Rounded.WaterDrop, "Liquid Glass (iOS)",
+                if (s.liquidGlass) Pos.Middle else Pos.Last,
+                Icons.Rounded.WaterDrop,
+                "Liquid Glass (iOS)",
                 tr("Thấu kính chất lỏng 3D chuẩn iOS Liquid Glass với khúc xạ viền và phản quang sống động khi nghiêng máy", "iOS optical 3D liquid glass lens with live refraction and specular highlights when tilting"),
-                s.liquidGlass, color = Tile.Teal,
+                s.liquidGlass,
+                color = Tile.Teal,
             ) { v -> SettingsRepo.update { copy(liquidGlass = v) } }
             if (s.liquidGlass) {
                 GroupSlider(
@@ -147,36 +177,26 @@ fun CapsuleScreen(open: (Screen) -> Unit) {
             }
         }
 
-        SectionHeader(tr("Hiệu ứng chuyển động", "Animations"))
+        SectionHeader(tr("Chuyển động & độ đàn hồi", "Animations & Physics"))
         Group {
-            GroupItem(Pos.First, Icons.Rounded.Animation, tr("Mở rộng Viên thuốc", "Island expansion"),
-                "${s.expandStyle.title} · ${s.durationPercent}%",
-                color = Tile.Blue, onClick = { open(Screen.ANIM) }) { Arrow() }
-            
-            GroupToggle(Pos.Middle, Icons.Rounded.BubbleChart, tr("Mở rộng dạng chất lỏng", "Liquid expansion"),
-                tr("Nội dung mở rộng cùng với Viên thuốc và hiện rõ từ hiệu ứng mờ", "The content grows together with the island and emerges from a blur"),
-                s.liquidExpand, color = Tile.Indigo, badge = tr("Mới", "New"),
-            ) { v -> SettingsRepo.update { copy(liquidExpand = v) } }
-            
-            ElasticityItem(Pos.Middle, s, Tile.Teal)
-            GroupItem(Pos.Last, Icons.Rounded.AutoAwesome, tr("Hiệu ứng", "Effects"), effectsSummary(s),
-                color = Tile.Purple, onClick = { open(Screen.EFFECTS) }) { Arrow() }
+            GroupItem(
+                Pos.First,
+                Icons.Rounded.Animation,
+                tr("Mở rộng & Độ nảy đàn hồi (Spring Physics)", "Island expansion & Spring Physics"),
+                "${s.expandStyle.title} · ${s.elasticity.title}" + if (s.liquidExpand) " · " + tr("Chất lỏng", "Liquid") else "",
+                color = Tile.Blue,
+                onClick = { open(Screen.ANIM) },
+            ) { Arrow() }
+            GroupItem(
+                Pos.Last,
+                Icons.Rounded.AutoAwesome,
+                tr("Hiệu ứng chuyển động đặc biệt", "Special motion effects"),
+                effectsSummary(s),
+                color = Tile.Purple,
+                onClick = { open(Screen.EFFECTS) },
+            ) { Arrow() }
         }
     }
-}
-
-@Composable
-private fun ElasticityItem(pos: Pos, s: IslandSettings, color: Color) {
-    var dialog by remember { mutableStateOf(false) }
-    GroupItem(pos, Icons.Rounded.Waves, tr("Độ đàn hồi", "Elasticity"), s.elasticity.title, color = color, onClick = { dialog = true })
-    if (dialog) {
-        ChoiceDialog(tr("Độ đàn hồi của hiệu ứng", "Animation elasticity"), Elasticity.entries, s.elasticity, { it.title },
-            { v -> SettingsRepo.update { copy(elasticity = v) } }) { dialog = false }
-    }
-}
-
-private fun previewActivity() {
-    IslandBus.widthPreviewUntil.value = SystemClock.elapsedRealtime() + 2_500
 }
 
 @Composable
@@ -208,31 +228,276 @@ fun LookScreen(onBack: () -> Unit) {
 fun AnimScreen(onBack: () -> Unit) {
     val s by SettingsRepo.state.collectAsState()
     var styleDialog by remember { mutableStateOf(false) }
+    var elasticityDialog by remember { mutableStateOf(false) }
 
-    Page(tr("Mở rộng Viên thuốc", "Island expansion"), onBack, action = {
+    Page(tr("Mở rộng & Độ đàn hồi", "Island expansion & elasticity"), onBack, action = {
         Text(tr("Đặt lại", "Reset"), color = Ui.Sub, fontSize = 16.sp, modifier = Modifier.clickable { SettingsRepo.resetAnimations() })
     }) {
+        MotionElasticitySimulationCard(s)
+
+        Spacer(Modifier.height(14.dp))
+        SectionHeader(tr("Cấu hình chuyển động & độ nảy", "Animation & physics configuration"))
         Group {
-            GroupItem(Pos.First, Icons.Rounded.Animation, tr("Kiểu mở rộng", "Expansion style"), s.expandStyle.title, color = Tile.Purple,
-                onClick = { styleDialog = true })
+            GroupItem(
+                Pos.First, Icons.Rounded.Animation, tr("Kiểu mở rộng", "Expansion style"), s.expandStyle.title, color = Tile.Purple,
+                onClick = { styleDialog = true },
+            ) { Arrow() }
+            GroupItem(
+                Pos.Middle, Icons.Rounded.Waves, tr("Độ đàn hồi (Spring Elasticity)", "Elasticity"), s.elasticity.title, color = Tile.Teal,
+                onClick = { elasticityDialog = true },
+            ) { Arrow() }
+            GroupToggle(
+                Pos.Middle, Icons.Rounded.BubbleChart, tr("Mở rộng dạng chất lỏng", "Liquid expansion"),
+                tr("Nội dung mở rộng cùng với Viên thuốc và hiện rõ từ hiệu ứng mờ 3D", "The content grows together with the island and emerges from a blur"),
+                s.liquidExpand, color = Tile.Indigo, badge = tr("Mới", "New"),
+            ) { v ->
+                SettingsRepo.update { copy(liquidExpand = v) }
+                IslandBus.triggerElasticityDemo()
+            }
             GroupSlider(
-                Pos.Middle, Icons.Rounded.Speed, tr("Thời lượng", "Duration"),
+                Pos.Middle, Icons.Rounded.Speed, tr("Tốc độ & Thời lượng", "Duration & Speed"),
                 value = s.durationPercent.toFloat(), range = 0f..100f, label = "${s.durationPercent}%", color = Tile.Indigo,
             ) { v -> SettingsRepo.update { copy(durationPercent = v.toInt()) } }
             GroupSlider(
                 Pos.Middle, Icons.Rounded.Schedule, tr("Hiển thị sự kiện", "Event display"),
                 value = s.noticeDurationMs / 1000f, range = 1.5f..6f, label = tr("%.1f giây", "%.1f s").format(s.noticeDurationMs / 1000f), color = Tile.Orange,
             ) { v -> SettingsRepo.update { copy(noticeDurationMs = (v * 1000).toInt()) } }
-            GroupToggle(Pos.Last, Icons.Rounded.BlurOn, tr("Giảm hiệu ứng", "Reduce effects"),
+            GroupToggle(
+                Pos.Last, Icons.Rounded.BlurOn, tr("Giảm hiệu ứng", "Reduce effects"),
                 tr("Có thể hữu ích trên thiết bị cấu hình thấp", "Can help on less powerful devices"),
-                s.reduceEffects, color = Tile.Gray) { v -> SettingsRepo.update { copy(reduceEffects = v) } }
+                s.reduceEffects, color = Tile.Gray,
+            ) { v -> SettingsRepo.update { copy(reduceEffects = v) } }
         }
     }
 
     if (styleDialog) {
-        ChoiceDialog(tr("Kiểu mở rộng", "Expansion style"), ExpandStyle.entries, s.expandStyle, { it.title },
-            { v -> SettingsRepo.update { copy(expandStyle = v) } }) { styleDialog = false }
+        ChoiceDialog(
+            tr("Kiểu mở rộng", "Expansion style"), ExpandStyle.entries, s.expandStyle, { it.title },
+            { v ->
+                SettingsRepo.update { copy(expandStyle = v) }
+                IslandBus.triggerElasticityDemo()
+            },
+        ) { styleDialog = false }
     }
+
+    if (elasticityDialog) {
+        ChoiceDialog(
+            tr("Độ đàn hồi của hiệu ứng", "Animation elasticity"), Elasticity.entries, s.elasticity, { it.title },
+            { v ->
+                SettingsRepo.update { copy(elasticity = v) }
+                IslandBus.triggerElasticityDemo()
+            },
+        ) { elasticityDialog = false }
+    }
+}
+
+@Composable
+fun MotionElasticitySimulationCard(s: IslandSettings) {
+    val haptic = rememberHaptic()
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    var isExpanded by remember { mutableStateOf(false) }
+    val tilt by IslandBus.glassTilt.collectAsState()
+
+    val targetWidth = if (isExpanded) 250.dp else 128.dp
+    val targetHeight = if (isExpanded) 56.dp else 36.dp
+    val targetCorner = if (isExpanded) 28.dp else 18.dp
+
+    val animatedWidth by animateDpAsState(targetWidth, islandSpec(s), label = "simW")
+    val animatedHeight by animateDpAsState(targetHeight, islandSpec(s), label = "simH")
+    val animatedCorner by animateDpAsState(targetCorner, islandSpec(s), label = "simC")
+
+    val triggerBounce: () -> Unit = {
+        haptic()
+        IslandBus.triggerElasticityDemo()
+        scope.launch {
+            isExpanded = true
+            kotlinx.coroutines.delay(1200L)
+            isExpanded = false
+        }
+    }
+
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(26.dp))
+            .background(Brush.verticalGradient(listOf(Color(0xFF1E1D32), Color(0xFF11101C))))
+            .border(1.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(26.dp))
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(8.dp).clip(CircleShape).background(Tints.Green))
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    tr("Mô phỏng Chuyển động & Đàn hồi", "Motion & Elasticity Live Simulation"),
+                    color = Color.White,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+            Text(
+                "${s.expandStyle.title} · ${s.elasticity.title}",
+                color = Ui.Sub,
+                fontSize = 11.5.sp,
+            )
+        }
+
+        Spacer(Modifier.height(14.dp))
+
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(90.dp)
+                .clip(RoundedCornerShape(20.dp))
+                .background(Color(0xFF09080E)),
+            contentAlignment = Alignment.Center,
+        ) {
+            val shape = RoundedCornerShape(animatedCorner)
+            Box(
+                Modifier
+                    .size(animatedWidth, animatedHeight)
+                    .clip(shape)
+                    .then(
+                        if (s.liquidGlass) {
+                            Modifier.glassSurface(
+                                shape,
+                                Color(s.color),
+                                s.glassOpacity / 100f,
+                                s.glassRefraction / 100f,
+                                s.glassSpecular / 100f,
+                                tilt = { tilt },
+                            )
+                        } else {
+                            Modifier.background(Color(s.color))
+                        }
+                    )
+                    .then(
+                        if (s.outline) Modifier.border(s.outlineWidth.dp, Color(s.outlineColor), shape) else Modifier
+                    )
+                    .clickable { triggerBounce() },
+                contentAlignment = Alignment.Center,
+            ) {
+                if (isExpanded) {
+                    Row(
+                        Modifier.padding(horizontal = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Icon(
+                            Icons.Rounded.AutoAwesome,
+                            null,
+                            tint = Tints.Lavender,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                "Capsule VN",
+                                color = Color.White,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                            )
+                            Text(
+                                if (s.liquidExpand) tr("Bung chất lỏng 3D", "3D Liquid Expansion") else tr("Chuyển động đàn hồi", "Elastic bounce"),
+                                color = Color(0xFFAEB4CC),
+                                fontSize = 10.5.sp,
+                                maxLines = 1,
+                            )
+                        }
+                        Icon(
+                            Icons.Rounded.GraphicEq,
+                            null,
+                            tint = Tints.Green,
+                            modifier = Modifier.size(16.dp),
+                        )
+                    }
+                } else {
+                    Row(
+                        Modifier.padding(horizontal = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Box(
+                            Modifier.size(10.dp).clip(CircleShape).background(Color(0xFF1B2030)),
+                        )
+                        Spacer(Modifier.width(10.dp))
+                        Text(
+                            "Capsule",
+                            color = Color(0xFFC7CBD9),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        Spacer(Modifier.width(10.dp))
+                        Box(
+                            Modifier.size(6.dp).clip(CircleShape).background(Tints.Green),
+                        )
+                    }
+                }
+            }
+        }
+
+        Spacer(Modifier.height(12.dp))
+
+        Row(
+            Modifier
+                .clip(CircleShape)
+                .background(Ui.Primary)
+                .clickable { triggerBounce() }
+                .padding(horizontal = 18.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Rounded.PlayArrow, null, tint = Ui.OnPrimary, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(6.dp))
+            Text(
+                tr("Chạm để thử độ nảy đàn hồi (Spring Test)", "Tap to test elasticity bounce"),
+                color = Ui.OnPrimary,
+                fontSize = 12.5.sp,
+                fontWeight = FontWeight.SemiBold,
+            )
+        }
+
+        Spacer(Modifier.height(12.dp))
+
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+        ) {
+            Elasticity.entries.forEach { el ->
+                val active = s.elasticity == el
+                Box(
+                    Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(if (active) Ui.Primary.copy(alpha = 0.22f) else Color(0xFF1E2130))
+                        .border(
+                            if (active) 1.5.dp else 1.dp,
+                            if (active) Ui.Primary else Color(0xFF2E3348),
+                            RoundedCornerShape(12.dp),
+                        )
+                        .clickable {
+                            SettingsRepo.update { copy(elasticity = el) }
+                            triggerBounce()
+                        }
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                ) {
+                    Text(
+                        el.title,
+                        color = if (active) Color.White else Color(0xFF9AA0B6),
+                        fontSize = 11.5.sp,
+                        fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun previewActivity() {
+    IslandBus.widthPreviewUntil.value = SystemClock.elapsedRealtime() + 2_500
 }
 
 private fun effectsSummary(s: IslandSettings): String {

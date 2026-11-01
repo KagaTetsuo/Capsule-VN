@@ -188,6 +188,10 @@ data class IslandSettings(
     val updateWidth: Int = 380,
     val updateHeightExtra: Int = 0,
 
+    val expandedOffsetY: Int = 0,
+    val expandedWidth: Int = 0,
+    val expandedHeightExtra: Int = 0,
+
     val capsuleCornerRadius: Int = -1,
     val expandedCornerRadius: Int = 44,
     val cardCornerRadius: Int = 32,
