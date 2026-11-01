@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Capsule VN</string>
+    <string name="a11y_label">Capsule VN</string>
+    <string name="tile_label">Capsule VN</string>
+    <string name="a11y_desc">Shows a Capsule overlay over the camera: music, timers, download progress, the flashlight and system events. Copyright © 2026 Capsule VN - Nguyen Le Ly Huynh.</string>
+</resources>

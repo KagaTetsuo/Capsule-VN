@@ -1,0 +1,400 @@
+package com.akira.island.data
+
+import android.content.Context
+import android.content.SharedPreferences
+import com.akira.island.core.tr
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+
+@Serializable
+enum class FxRate(val fps: Int, private val ru: String, private val en: String) {
+    ECO(30, "30 khung hình — tiết kiệm pin", "30 fps — saves power"),
+    SMOOTH(60, "60 khung hình — mượt mà", "60 fps — smooth"),
+    MAX(0, "Theo tần số màn hình — tới 120", "Screen rate — up to 120"),
+    ;
+
+    val title: String get() = tr(ru, en)
+}
+
+@Serializable
+enum class ExpandStyle(private val ru: String, private val en: String) {
+    FRUIT("Như Táo khuyết (iOS)", "Like a Fruit"),
+    SPRING("Lò xo nảy", "Spring"),
+    SMOOTH("Mượt mà", "Smooth"),
+    INSTANT("Không hiệu ứng", "No animation"),
+    ;
+
+    val title: String get() = tr(ru, en)
+}
+
+@Serializable
+enum class Elasticity(private val ru: String, private val en: String, val damping: Float) {
+    NONE("Không đàn hồi", "No bounce", 1f),
+    LOW("Đàn hồi nhẹ", "Light bounce", 0.8f),
+    MEDIUM("Đàn hồi vừa", "Medium bounce", 0.62f),
+    HIGH("Đàn hồi mạnh", "Strong bounce", 0.48f),
+    ;
+
+    val title: String get() = tr(ru, en)
+}
+
+@Serializable
+enum class TapAction(private val ru: String, private val en: String) {
+    EXPAND("Mở rộng viên thuốc", "Expand the capsule"),
+    OPEN_APP("Mở ứng dụng", "Open the app"),
+    PLAY_PAUSE("Phát / Tạm dừng", "Play / pause"),
+    NEXT_TRACK("Bài tiếp theo", "Next track"),
+    SCREENSHOT("Chụp màn hình (ẩn Viên thuốc)", "Screenshot without the island"),
+    NOTHING("Không làm gì", "Nothing"),
+    ;
+
+    val title: String get() = tr(ru, en)
+}
+
+@Serializable
+enum class QuickAction(private val ru: String, private val en: String, private val shortRu: String, private val shortEn: String) {
+    TIMER("Hẹn giờ", "Timer", "Hẹn giờ", "Timer"),
+    STOPWATCH("Đồng hồ bấm giờ", "Stopwatch", "Bấm giờ", "Stopwatch"),
+    FLASHLIGHT("Đèn pin", "Flashlight", "Đèn pin", "Flashlight"),
+    SCREENSHOT("Chụp màn hình (ẩn Viên thuốc)", "Screenshot without the island", "Chụp MH", "Screenshot"),
+    CAMERA("Máy ảnh", "Camera", "Máy ảnh", "Camera"),
+    LOCK("Khóa màn hình", "Lock the screen", "Khóa", "Lock"),
+    ;
+
+    val title: String get() = tr(ru, en)
+    val short: String get() = tr(shortRu, shortEn)
+}
+
+@Serializable
+enum class AccentMode(private val ru: String, private val en: String, private val hintRu: String, private val hintEn: String) {
+    DEFAULT("Tím oải hương", "Lavender", "Màu mặc định của ứng dụng", "The app's color"),
+    SYSTEM("Theo hệ thống", "System", "Lấy màu từ hình nền Android 12+ (Material You)", "From your Android 12+ wallpaper (Material You)"),
+    ADAPTIVE("Từ ảnh đại diện", "From the avatar", "Tự động phối theo ảnh đại diện hoặc biểu tượng ứng dụng", "Matched to the avatar or app icon"),
+    CUSTOM("Tùy chỉnh", "Custom", "Chọn bất kỳ màu nào từ bảng màu", "Any color from the palette"),
+    ;
+
+    val title: String get() = tr(ru, en)
+    val hint: String get() = tr(hintRu, hintEn)
+}
+
+@Serializable
+enum class LedStyle(private val ru: String, private val en: String) {
+    ROTATE_RGB("Cầu vồng RGB xoay 360°", "Rainbow RGB 360°"),
+    AUTO_APP("Theo màu ứng dụng / sự kiện", "App / Event adaptive"),
+    CYBER_NEON("Neon Cyber (Xanh - Tím - Đỏ)", "Cyber Neon"),
+    BREATHE_GOLD("Nhịp thở Vàng Hoàng Gia", "Breathing Gold"),
+    CUSTOM("Màu tùy chọn", "Custom color"),
+    ;
+
+    val title: String get() = tr(ru, en)
+}
+
+@Serializable
+enum class AppLanguage {
+    SYSTEM, VI, EN;
+
+    val title: String
+        get() = when (this) {
+            SYSTEM -> tr("Theo hệ thống", "System default")
+            VI -> "Tiếng Việt"
+            EN -> "English"
+        }
+}
+
+@Serializable
+data class IslandSettings(
+    val enabled: Boolean = true,
+    
+    val language: AppLanguage = AppLanguage.SYSTEM,
+
+    val cardMedia: Boolean = true,
+    val cardTorch: Boolean = true,
+    val cardProgress: Boolean = true,
+    val cardTimer: Boolean = true,
+    val cardCharging: Boolean = true,
+    val cardCall: Boolean = true,
+    val cardMessages: Boolean = true,
+    
+    val msgActions: Boolean = true,
+    
+    val cardLive: Boolean = true,
+    
+    val cardAlarm: Boolean = true,
+    
+    val clockAutoTap: Boolean = true,
+    
+    val timerFromAssistant: Boolean = true,
+    
+    val wakeForAlerts: Boolean = true,
+    
+    val easterEggs: Boolean = true,
+
+    val evChargeStart: Boolean = true,
+    val evChargeStop: Boolean = true,
+    val evLowBattery: Boolean = true,
+    val evWifiOn: Boolean = true,
+    val evWifiOff: Boolean = true,
+    val evHeadsetOn: Boolean = true,
+    val evHeadsetOff: Boolean = true,
+    val evAirplaneOn: Boolean = true,
+    val evAirplaneOff: Boolean = true,
+    val evRinger: Boolean = true,
+    val evBrightness: Boolean = true,
+    val evUsbOn: Boolean = true,
+    val evUsbOff: Boolean = true,
+    val evUnlock: Boolean = false,
+    
+    val evLock: Boolean = true,
+    val evDnd: Boolean = true,
+    
+    val evPayReady: Boolean = true,
+    
+    val payHintOnOpen: Boolean = false,
+    
+    val evPaySuccess: Boolean = true,
+    
+    val evAlarmSet: Boolean = true,
+
+    
+    val width: Int = 104,
+    val height: Int = 31,
+    val offsetX: Int = 0,
+    val offsetY: Int = 11,
+    
+    val notch: Boolean = false,
+    
+    val cameraGap: Int = 34,
+    
+    val activeExtra: Int = 6,
+    
+    val activeWidth: Int = 40,
+    
+    val layoutVersion: Int = 1,
+
+    val msgOffsetY: Int = 0,
+    val msgWidth: Int = 380,
+    val msgHeightExtra: Int = 0,
+
+    val callOffsetY: Int = 0,
+    val callWidth: Int = 370,
+    val callHeight: Int = 82,
+
+    val color: Long = 0xFF000000,
+    val outline: Boolean = false,
+    val outlineColor: Long = 0xFF3A3A40,
+    val outlineWidth: Float = 1f,
+    val outlineFromArt: Boolean = true,
+    val shadow: Boolean = false,
+
+    val accentMode: AccentMode = AccentMode.DEFAULT,
+    val accentColor: Long = 0xFF0A84FF,
+
+    val autoUpdateCheck: Boolean = true,
+    
+    val skippedVersion: String = "",
+    
+    val lastSeenVersion: String = "",
+    val lastUpdateCheck: Long = 0,
+    
+    val islandVersion: String = "",
+
+    val liquidGlass: Boolean = false,
+    val glassOpacity: Int = 62,
+    val glassRefraction: Int = 80,
+    val glassSpecular: Int = 85,
+
+    val expandStyle: ExpandStyle = ExpandStyle.FRUIT,
+    val durationPercent: Int = 35,
+    
+    val liquidExpand: Boolean = false,
+    
+    val elasticity: Elasticity = Elasticity.LOW,
+    val reduceEffects: Boolean = false,
+    val haptics: Boolean = true,
+
+    
+    val fxBlur: Boolean = true,
+    
+    val fxEqualizer: Boolean = true,
+    
+    val fxRate: FxRate = FxRate.SMOOTH,
+    
+    val fxGlow: Boolean = false,
+    
+    val fxPay: Boolean = true,
+    
+    val fxShake: Boolean = true,
+    
+    val batterySaver: Boolean = false,
+
+    val tapAction: TapAction = TapAction.EXPAND,
+    val doubleTapAction: TapAction = TapAction.NOTHING,
+    val longPressAction: TapAction = TapAction.OPEN_APP,
+    val swipeTracks: Boolean = true,
+    val swipeExpand: Boolean = true,
+
+    val lyricsEnabled: Boolean = true,
+
+    val hideIdle: Boolean = false,
+    val hideInLandscape: Boolean = true,
+    val hideWhenPlayerOpen: Boolean = true,
+    
+    val scheduleOn: Boolean = false,
+    val scheduleFrom: Int = 10,
+    val scheduleTo: Int = 23,
+    val noticeDurationMs: Int = 2500,
+    val timerMinutes: Int = 5,
+    
+    val autoCollapseSec: Int = 0,
+    
+    val bubble: Boolean = true,
+    
+    val idleExpand: Boolean = true,
+    
+    val quickActions: List<QuickAction> = listOf(QuickAction.TIMER, QuickAction.STOPWATCH, QuickAction.FLASHLIGHT),
+    
+    val keepAlive: Boolean = false,
+    
+    val msgLines: Int = 3,
+    
+    val msgInApp: Boolean = false,
+    
+    val msgChannels: Map<String, String> = emptyMap(),
+    
+    val bannerHintHidden: Boolean = false,
+
+    val gameModeEnabled: Boolean = true,
+    val gameForceOn: Boolean = false,
+    val gameSuppressPopups: Boolean = true,
+    val gameShowHud: Boolean = true,
+    val gameBypassLandscapeHide: Boolean = true,
+
+    val ledEnabled: Boolean = true,
+    val ledOnUnread: Boolean = true,
+    val ledOnEvent: Boolean = true,
+    val ledOnCharge: Boolean = true,
+    val ledAlwaysOn: Boolean = false,
+    val ledStyle: LedStyle = LedStyle.ROTATE_RGB,
+    val ledWidth: Float = 2.5f,
+    val ledColor: Long = 0xFF00E5FF,
+
+    val ecoSpPen: Boolean = true,
+    val ecoBudsWatch: Boolean = true,
+    val ecoFastCharge: Boolean = true,
+    val ecoBatteryProtectLevel: Int = 80,
+    val ecoDexCast: Boolean = true,
+
+    val otpEnabled: Boolean = true,
+    val otpAutoCopy: Boolean = false,
+    val otpAutoFill: Boolean = true,
+
+    val ttsEnabled: Boolean = false,
+    val ttsOnlyHeadset: Boolean = true,
+    val ttsReadContent: Boolean = true,
+    val ttsReadCalls: Boolean = true,
+) {
+    
+    fun forPowerSave(on: Boolean): IslandSettings = if (on && batterySaver && !reduceEffects) copy(reduceEffects = true) else this
+
+    fun inSchedule(hour: Int): Boolean = when {
+        !scheduleOn || scheduleFrom == scheduleTo -> true
+        scheduleFrom < scheduleTo -> hour in scheduleFrom until scheduleTo
+        else -> hour >= scheduleFrom || hour < scheduleTo
+    }
+
+    val topOffset: Int get() = if (notch) 0 else offsetY
+
+    val windowBaseY: Int get() = minOf(topOffset, topOffset + msgOffsetY, topOffset + callOffsetY)
+
+    val liveEqualizer: Boolean get() = fxEqualizer && !reduceEffects
+}
+
+object SettingsRepo {
+    private const val KEY = "settings_v1"
+    private val json = Json {
+        ignoreUnknownKeys = true
+        encodeDefaults = true
+        coerceInputValues = true
+    }
+
+    private var prefs: SharedPreferences? = null
+
+    var hadSavedSettings = false
+        private set
+    private val _state = MutableStateFlow(IslandSettings())
+    val state: StateFlow<IslandSettings> = _state.asStateFlow()
+    val current: IslandSettings get() = _state.value
+
+    fun init(context: Context) {
+        if (prefs != null) return
+        val p = context.applicationContext.getSharedPreferences("island", Context.MODE_PRIVATE)
+        prefs = p
+        hadSavedSettings = p.contains(KEY)
+        p.getString(KEY, null)?.let { raw ->
+            runCatching { json.decodeFromString<IslandSettings>(raw) }.onSuccess { _state.value = it }
+        }
+        
+        val cur = _state.value
+        
+        if (cur.layoutVersion in 2..2) update { copy(cameraGap = IslandSettings().cameraGap, layoutVersion = 3) }
+        if (cur.layoutVersion < 2) {
+            update {
+                copy(
+                    width = if (width == 96) 126 else width,
+                    height = if (height == 34) 37 else height,
+                    offsetY = if (offsetY == 8) 11 else offsetY,
+                    layoutVersion = 3,
+                )
+            }
+        }
+        
+        if (current.layoutVersion < 4) {
+            val d = IslandSettings()
+            update {
+                val old = width == 126 && height == 37
+                copy(
+                    width = if (old) d.width else width,
+                    height = if (old) d.height else height,
+                    activeWidth = if (old && activeWidth == 48) d.activeWidth else activeWidth,
+                    
+                    elasticity = if (elasticity == Elasticity.HIGH) d.elasticity else elasticity,
+                    layoutVersion = 4,
+                )
+            }
+        }
+    }
+
+    fun update(block: IslandSettings.() -> IslandSettings) {
+        val next = _state.value.block()
+        if (next == _state.value) return
+        _state.value = next
+        prefs?.edit()?.putString(KEY, json.encodeToString(next))?.apply()
+    }
+
+    fun reset() = update { IslandSettings() }
+
+    fun resetAnimations() = update {
+        val d = IslandSettings()
+        copy(
+            expandStyle = d.expandStyle,
+            durationPercent = d.durationPercent,
+            liquidExpand = d.liquidExpand,
+            elasticity = d.elasticity,
+            reduceEffects = d.reduceEffects,
+            noticeDurationMs = d.noticeDurationMs,
+        )
+    }
+
+    fun resetEffects() = update {
+        val d = IslandSettings()
+        copy(
+            fxBlur = d.fxBlur, fxEqualizer = d.fxEqualizer, fxRate = d.fxRate, fxGlow = d.fxGlow, fxPay = d.fxPay,
+            fxShake = d.fxShake, batterySaver = d.batterySaver,
+        )
+    }
+}

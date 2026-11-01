@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Capsule VN</string>
+    <string name="a11y_label">Capsule VN</string>
+    <string name="tile_label">Viên thuốc VN</string>
+    <string name="a11y_desc">Hiển thị viên thuốc Capsule bao quanh camera: âm nhạc, hẹn giờ, tiến trình tải xuống, đèn pin và các sự kiện hệ thống. Bản quyền © 2026 Capsule VN - Nguyễn Lê Lý Huỳnh.</string>
+</resources>
