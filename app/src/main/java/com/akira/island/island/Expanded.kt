@@ -87,6 +87,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material.icons.rounded.Thermostat
+import androidx.compose.material.icons.rounded.Memory
+import androidx.compose.material.icons.rounded.Storage
+import com.akira.island.core.LunarCalendar
+import com.akira.island.core.StorageInfo
 import com.akira.island.core.BatteryInfo
 import com.akira.island.core.CallInfo
 import com.akira.island.core.ChronoInfo
@@ -658,6 +663,14 @@ private fun IdleExpanded(s: IslandSettings, battery: BatteryInfo) {
             Column(Modifier.weight(1f)) {
                 Text(clockText(time, 36.sp), color = Color.White, fontSize = 36.sp, style = Digits)
                 Text(date, color = Dim, fontSize = 14.sp)
+                val lunarDate = remember(now / 60000L) { LunarCalendar.getLunarDateString(now) }
+                Text(
+                    lunarDate,
+                    color = Color(0xFFFF9F0A),
+                    fontSize = 12.5.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
                 
                 alarm?.takeIf { it.triggerAt - now in 1..86_400_000L }?.let { a ->
                     Row(
@@ -762,50 +775,77 @@ private fun QuickButton(a: QuickAction, context: Context, modifier: Modifier) {
 
 @Composable
 private fun GamingHudRow(battery: BatteryInfo) {
-    val gaming by IslandBus.gamingActive.collectAsState()
     val ramPct by IslandBus.ramPercent.collectAsState()
     val ramGb by IslandBus.ramGbText.collectAsState()
-    val tempC = if (battery.tempTenths > 0) battery.tempC else 34.5f
+    val (romText, _) = remember { StorageInfo.getRomUsage() }
+
+    val tempC = if (battery.tempTenths > 0) battery.tempC else 33.9f
     val tempColor = when {
         tempC >= 42f -> Tints.Red
         tempC >= 38.5f -> Tints.Orange
         else -> Tints.Green
     }
+
     Row(
         Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .background(Color.White.copy(alpha = 0.08f))
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+            .padding(horizontal = 10.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                Modifier
-                    .size(8.dp)
-                    .clip(CircleShape)
-                    .background(if (gaming) Tints.Green else Tints.Teal),
+            Icon(
+                Icons.Rounded.Thermostat,
+                contentDescription = null,
+                tint = tempColor,
+                modifier = Modifier.size(15.dp),
             )
-            Spacer(Modifier.width(6.dp))
+            Spacer(Modifier.width(2.dp))
             Text(
-                if (gaming) "GAMING HUD" else tr("Hệ thống", "System HUD"),
-                color = if (gaming) Tints.Green else Tints.Teal,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
+                "%.1f°C".format(tempC),
+                color = tempColor,
+                fontSize = 12.5.sp,
+                fontWeight = FontWeight.SemiBold,
+                style = Digits,
             )
         }
-        Text(
-            "%.1f°C".format(tempC),
-            color = tempColor,
-            fontSize = 13.sp,
-            style = Digits,
-        )
-        Text(
-            if (ramGb.isNotEmpty()) "RAM $ramPct% ($ramGb)" else "RAM ${ramPct.coerceAtLeast(42)}%",
-            color = Color.White.copy(alpha = 0.88f),
-            fontSize = 12.5.sp,
-            style = Digits,
-        )
+
+        Box(Modifier.width(1.dp).height(12.dp).background(Color.White.copy(alpha = 0.15f)))
+
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                Icons.Rounded.Memory,
+                contentDescription = null,
+                tint = Color(0xFF38BDF8),
+                modifier = Modifier.size(15.dp),
+            )
+            Spacer(Modifier.width(2.dp))
+            Text(
+                if (ramGb.isNotEmpty()) "RAM $ramGb ($ramPct%)" else "RAM $ramPct%",
+                color = Color.White.copy(alpha = 0.92f),
+                fontSize = 12.sp,
+                style = Digits,
+            )
+        }
+
+        Box(Modifier.width(1.dp).height(12.dp).background(Color.White.copy(alpha = 0.15f)))
+
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                Icons.Rounded.Storage,
+                contentDescription = null,
+                tint = Color(0xFFA78BFA),
+                modifier = Modifier.size(15.dp),
+            )
+            Spacer(Modifier.width(2.dp))
+            Text(
+                "ROM $romText",
+                color = Color.White.copy(alpha = 0.92f),
+                fontSize = 12.sp,
+                style = Digits,
+            )
+        }
     }
 }
