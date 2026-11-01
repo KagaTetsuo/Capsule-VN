@@ -115,5 +115,4 @@ Bình thường khi không có hoạt động, Viên thuốc có thể thu gọn
 - **Tên ứng dụng**: **Capsule VN** (`com.dynamicisland.vn`)
 - **Phát triển & Tối ưu hóa tại Việt Nam**: **Nguyễn Lê Lý Huỳnh**
 - **Liên hệ hỗ trợ (Zalo)**: **0399991787**
-- **Bản quyền**: **© 2026 Capsule VN · Nguyễn Lê Lý Huỳnh · Zalo: 0399991787**
 - **Giấy phép mã nguồn mở**: [MIT License](LICENSE)
