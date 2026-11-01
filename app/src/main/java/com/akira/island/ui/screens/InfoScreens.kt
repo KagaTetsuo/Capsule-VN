@@ -215,7 +215,7 @@ private fun AppHeader(version: String, update: UpdateState) {
         Spacer(Modifier.height(14.dp))
         Text("Capsule VN", color = Ui.Text, fontSize = 22.sp, fontWeight = FontWeight.Bold)
         Text("© 2026 Capsule VN · Nguyễn Lê Lý Huỳnh · Zalo: 0399991787", color = Ui.Text, fontSize = 13.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(top = 4.dp))
-        Text(tr("Phiên bản $version (Bản tùy biến đặc biệt)", "Version $version (Customized Edition)"), color = Ui.Sub, fontSize = 12.sp, modifier = Modifier.padding(top = 2.dp))
+        Text(tr("Phiên bản $version", "Version $version"), color = Ui.Sub, fontSize = 13.sp, modifier = Modifier.padding(top = 2.dp))
         val (label, color) = when (update) {
             UpdateState.UpToDate -> tr("Đã là mới nhất", "Up to date") to Tints.Green
             is UpdateState.Available -> tr("Đã có phiên bản ${update.release.version}", "Version ${update.release.version} is available") to Ui.Primary

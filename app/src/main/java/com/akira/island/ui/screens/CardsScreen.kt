@@ -48,8 +48,8 @@ fun CardsScreen(onBack: () -> Unit, onInstruction: () -> Unit, open: (Screen) ->
             GroupItem(
                 Pos.Last,
                 Icons.Rounded.Tune,
-                tr("Thẻ tin nhắn & cuộc gọi", "Message & Call cards"),
-                tr("Tùy chỉnh riêng vị trí trên/dưới, bề ngang & bề dọc kèm mô phỏng trực tiếp", "Separate position, width & height controls with live simulation"),
+                tr("Kích thước & bo góc khung thẻ", "Cards size & corner radius"),
+                tr("Tùy chỉnh riêng vị trí, kích thước & độ bo góc kèm mô phỏng trực tiếp", "Position, size & corner radius controls with live simulation"),
                 color = Tile.Indigo,
                 onClick = { open(Screen.MSG_CALL_SIZE) },
             ) { Arrow() }

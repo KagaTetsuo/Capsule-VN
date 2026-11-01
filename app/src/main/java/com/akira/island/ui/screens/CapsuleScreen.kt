@@ -110,8 +110,8 @@ fun CapsuleScreen(open: (Screen) -> Unit) {
             GroupItem(
                 Pos.Last,
                 Icons.Rounded.Tune,
-                tr("Thẻ tin nhắn & cuộc gọi", "Message & Call cards"),
-                tr("Tin nhắn ${s.msgWidth} dp · Cuộc gọi ${s.callWidth}×${s.callHeight} dp", "Message ${s.msgWidth} dp · Call ${s.callWidth}×${s.callHeight} dp"),
+                tr("Kích thước & bo góc khung thẻ", "Cards size & corner radius"),
+                tr("Tin nhắn, cuộc gọi, cập nhật · Bo góc ${s.cardCornerRadius} dp", "Messages, calls, updates · Corner ${s.cardCornerRadius} dp"),
                 color = Tile.Green,
                 onClick = { open(Screen.MSG_CALL_SIZE) },
             ) { Arrow() }

@@ -169,6 +169,24 @@ private fun buildPreviewCall(): CallInfo = CallInfo(
     open = null,
 )
 
+private fun buildPreviewUpdate(context: Context): Notice = Notice(
+    title = tr("Đã có phiên bản 1.1.0", "Version 1.1.0 is available"),
+    icon = Ios.load(context, R.drawable.ios_download),
+    tint = Tints.Lavender,
+    caption = tr("Tùy biến bo góc khung thông báo & kích thước thẻ cập nhật", "Customizable card corner radius & update size"),
+    style = NoticeStyle.UPDATE,
+    appIcon = NotificationParser.icon(context, context.packageName),
+    update = com.akira.island.update.Release(
+        version = "1.1.0",
+        notes = tr("Tùy biến bo góc khung thông báo & kích thước thẻ cập nhật", "Customizable card corner radius & update size"),
+        apkUrl = "https://github.com/KagaTetsuo/Capsule-VN/releases/download/v1.1.0/Capsule_VN.apk",
+        pageUrl = "https://github.com/KagaTetsuo/Capsule-VN/releases",
+        sizeBytes = 25_000_000L,
+    ),
+    openPkg = context.packageName,
+    extraMs = 3_500,
+)
+
 val CalibrationRed = Color(0xFFFF6B6B)
 
 const val ISLAND_PAD_DP = 12
@@ -310,11 +328,13 @@ fun IslandOverlay(
     val cardPreview by IslandBus.cardPreviewMode.collectAsState()
     val previewMsgNotice = remember(context) { buildPreviewMessage(context) }
     val previewCallInfo = remember { buildPreviewCall() }
+    val previewUpdateNotice = remember(context) { buildPreviewUpdate(context) }
 
     val primary = when {
         calibrating -> Act.Idle
         cardPreview == CardPreviewMode.MESSAGE -> Act.NoticeA(previewMsgNotice)
         cardPreview == CardPreviewMode.CALL -> Act.CallA(previewCallInfo)
+        cardPreview == CardPreviewMode.UPDATE -> Act.NoticeA(previewUpdateNotice)
         previewing -> Act.LiveA(WidthDemo)
         else -> acts.firstOrNull() ?: Act.Idle
     }
@@ -414,6 +434,7 @@ private fun IslandRow(
     val extraYTarget = when {
         !calibrating && primary is Act.CallA && primary.c.incoming -> (s.topOffset + s.callOffsetY - s.windowBaseY).dp
         !calibrating && primary is Act.NoticeA && primary.n.style == NoticeStyle.MESSAGE -> (s.topOffset + s.msgOffsetY - s.windowBaseY).dp
+        !calibrating && primary is Act.NoticeA && primary.n.style == NoticeStyle.UPDATE -> (s.topOffset + s.updateOffsetY - s.windowBaseY).dp
         else -> (s.topOffset - s.windowBaseY).dp
     }
     val extraY = animateDpAsState(
@@ -494,13 +515,13 @@ private fun IslandBody(
         expanded && (primary is Act.MediaA || primary is Act.TorchA) -> 46.dp
         expanded && primary is Act.LiveA -> 42.dp
         expanded -> 44.dp
-        primary is Act.NoticeA && (primary.n.style == NoticeStyle.MESSAGE || primary.n.style == NoticeStyle.EGG) -> 32.dp
-        primary is Act.NoticeA && primary.n.style == NoticeStyle.UPDATE -> 36.dp
+        primary is Act.NoticeA && (primary.n.style == NoticeStyle.MESSAGE || primary.n.style == NoticeStyle.EGG) -> s.cardCornerRadius.dp
+        primary is Act.NoticeA && primary.n.style == NoticeStyle.UPDATE -> s.cardCornerRadius.dp
         primary is Act.NoticeA && primary.n.style == NoticeStyle.WIDE && primary.n.title.isNotBlank() -> noticeHeight(s) / 2
         primary is Act.NoticeA && (primary.n.style == NoticeStyle.PAY_DONE ||
             primary.n.style == NoticeStyle.LIVE || primary.n.style == NoticeStyle.ALARM || primary.n.style == NoticeStyle.SENT) -> noticeHeight(s) / 2
         primary is Act.PayA -> noticeHeight(s) / 2
-        primary is Act.CallA && primary.c.incoming -> callHeight(s) / 2
+        primary is Act.CallA && primary.c.incoming -> s.cardCornerRadius.dp.coerceAtMost(callHeight(s) / 2)
         primary is Act.Idle -> h / 2
         else -> activeHeight(s) / 2
     }

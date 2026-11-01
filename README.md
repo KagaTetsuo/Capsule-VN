@@ -6,7 +6,7 @@
 
 **Trải nghiệm cụm Viên thuốc (Dynamic Island) thế hệ mới trên Android — Việt hóa 100%, tích hợp AI/Tiện ích thông minh, Vòng sáng LED RGB 360°, Chế độ Gaming toàn diện và Hệ sinh thái Samsung One UI & Android.**
 
-[![Phiên bản](https://img.shields.io/badge/Phiên_bản-v1.0.0-A855F7?style=for-the-badge)](https://github.com/KagaTetsuo/Capsule-VN/releases/latest)
+[![Phiên bản](https://img.shields.io/badge/Phiên_bản-v1.1.0-A855F7?style=for-the-badge)](https://github.com/KagaTetsuo/Capsule-VN/releases/latest)
 [![Android](https://img.shields.io/badge/Android-8.0%2B%20(Hỗ%20trợ%20One%20UI%209%20%2F%20Android%2016)-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/KagaTetsuo/Capsule-VN/releases/latest)
 [![Tác giả](https://img.shields.io/badge/Tác_giả-Nguyễn_Lê_Lý_Huỳnh-3B82F6?style=for-the-badge)](https://github.com/KagaTetsuo/Capsule-VN)
 [![Zalo](https://img.shields.io/badge/Zalo-0399991787-0068FF?style=for-the-badge)](https://zalo.me/0399991787)
@@ -84,11 +84,13 @@ Bình thường khi không có hoạt động, Viên thuốc có thể thu gọn
 ### 6. 💧 Thấu kính chất lỏng 3D chuẩn iOS Liquid Glass
 - Không chỉ là lớp mờ đơn thuần: sử dụng shader **AGSL 3D Lens Distortion** tái tạo độ cong khúc xạ ánh sáng ở viền kính, tán sắc cầu vồng nhẹ và vệt phản quang chuyển động theo cảm biến con quay hồi chuyển khi bạn nghiêng máy.
 
-### 7. 📐 Tách riêng tùy chỉnh Thẻ Tin nhắn & Thẻ Cuộc gọi đến
-- Cho phép điều chỉnh độc lập giữa **Thẻ tin nhắn** và **Thẻ cuộc gọi đến**:
-  - **Vị trí Lên / Xuống (Dọc)**: `-20 dp` đến `+60 dp`
-  - **Độ rộng bề ngang**: `220 dp` đến `420 dp`
-  - **Độ rộng bề dọc (Chiều cao)**: Co giãn linh hoạt kèm **Khung mô phỏng trực tiếp (Live Preview)** ngay trong màn hình cài đặt.
+### 7. 📐 Tùy chỉnh riêng Thẻ Tin nhắn, Cuộc gọi đến, Cập nhật & Độ bo góc
+- Cho phép điều chỉnh độc lập từng loại thẻ thông báo:
+  - **Vị trí Lên / Xuống (Dọc)**: `-30 dp` đến `+120 dp`
+  - **Độ rộng bề ngang**: `220 dp` đến `440 dp`
+  - **Độ rộng bề dọc (Chiều cao)**: Co giãn linh hoạt phù hợp với nội dung từng loại thẻ
+  - **Độ bo góc khung thẻ**: Tùy chỉnh từ `8 dp` (góc vuông bo nhẹ) đến `44 dp` (bo tròn mềm mại chuẩn viên thuốc)
+  - **Khung mô phỏng trực tiếp (Live Preview)** ngay trong màn hình cài đặt và trên Viên thuốc thực tế.
 
 ### 8. 🎵 Trình phát nhạc Karaoke, Điều hướng, Báo thức & Thanh toán NFC
 - **Âm nhạc & Lời bài hát đồng bộ**: Hiển thị ảnh bìa, sóng nhạc động (Equalizer) theo màu bìa đĩa và lời bài hát chạy chữ từng từ theo giai điệu (hỗ trợ Spotify, YouTube Music, Zing MP3, Apple Music…).

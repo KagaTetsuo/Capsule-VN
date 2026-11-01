@@ -184,6 +184,12 @@ data class IslandSettings(
     val callWidth: Int = 370,
     val callHeight: Int = 82,
 
+    val updateOffsetY: Int = 0,
+    val updateWidth: Int = 380,
+    val updateHeightExtra: Int = 0,
+
+    val cardCornerRadius: Int = 32,
+
     val color: Long = 0xFF000000,
     val outline: Boolean = false,
     val outlineColor: Long = 0xFF3A3A40,
@@ -309,7 +315,7 @@ data class IslandSettings(
 
     val topOffset: Int get() = if (notch) 0 else offsetY
 
-    val windowBaseY: Int get() = minOf(topOffset, topOffset + msgOffsetY, topOffset + callOffsetY)
+    val windowBaseY: Int get() = minOf(topOffset, topOffset + msgOffsetY, topOffset + callOffsetY, topOffset + updateOffsetY)
 
     val liveEqualizer: Boolean get() = fxEqualizer && !reduceEffects
 }

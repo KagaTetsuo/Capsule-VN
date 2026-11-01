@@ -101,7 +101,10 @@ fun UpdateCard(n: Notice, s: IslandSettings, wideWidth: Dp) {
         if (loading) IslandBus.noticeHold.value = true
         onDispose { if (loading) IslandBus.noticeHold.value = false }
     }
-    Column(Modifier.width(wideWidth).padding(start = 22.dp, end = 22.dp, top = cameraInset(s) + 8.dp, bottom = 18.dp)) {
+        val targetWidth = if (s.updateWidth > 0) s.updateWidth.dp else wideWidth
+    val topPad = (cameraInset(s) + 8.dp + (s.updateHeightExtra * 0.45f).dp).coerceAtLeast(4.dp)
+    val bottomPad = (18.dp + (s.updateHeightExtra * 0.55f).dp).coerceAtLeast(6.dp)
+    Column(Modifier.width(targetWidth).padding(start = 22.dp, end = 22.dp, top = topPad, bottom = bottomPad)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             AppMark(n, 48.dp)
             Spacer(Modifier.width(13.dp))

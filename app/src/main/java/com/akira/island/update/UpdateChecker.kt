@@ -137,7 +137,7 @@ object UpdateChecker {
         )
     }
 
-    private fun apkName(version: String) = "DynamicIsland-${version.filter { it.isLetterOrDigit() || it == '.' }}.apk"
+    private fun apkName(version: String) = "Capsule_VN-${version.filter { it.isLetterOrDigit() || it == '.' }}.apk"
 
     fun readyFile(release: Release, state: DownloadState): File? =
         (state as? DownloadState.Ready)?.file?.takeIf { it.name == apkName(release.version) && it.exists() }
@@ -176,7 +176,7 @@ object UpdateChecker {
                 val conn = (URL(url).openConnection() as HttpURLConnection).apply {
                     connectTimeout = 15_000
                     readTimeout = 30_000
-                    setRequestProperty("User-Agent", "DynamicIsland-Android")
+                    setRequestProperty("User-Agent", "CapsuleVN-Android")
                 }
                 try {
                     if (conn.responseCode !in 200..299) error("HTTP ${conn.responseCode}")
@@ -246,7 +246,7 @@ object UpdateChecker {
             connectTimeout = 10_000
             readTimeout = 15_000
             setRequestProperty("Accept", "application/vnd.github+json")
-            setRequestProperty("User-Agent", "DynamicIsland-Android")
+            setRequestProperty("User-Agent", "CapsuleVN-Android")
         }
         try {
             
