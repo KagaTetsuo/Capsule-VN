@@ -791,7 +791,7 @@ private fun GamingHudRow(battery: BatteryInfo) {
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .background(Color.White.copy(alpha = 0.08f))
-            .padding(horizontal = 10.dp, vertical = 7.dp),
+            .padding(horizontal = 8.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
@@ -806,9 +806,11 @@ private fun GamingHudRow(battery: BatteryInfo) {
             Text(
                 "%.1f°C".format(tempC),
                 color = tempColor,
-                fontSize = 12.5.sp,
+                fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
                 style = Digits,
+                maxLines = 1,
+                softWrap = false,
             )
         }
 
@@ -821,12 +823,15 @@ private fun GamingHudRow(battery: BatteryInfo) {
                 tint = Color(0xFF38BDF8),
                 modifier = Modifier.size(15.dp),
             )
-            Spacer(Modifier.width(2.dp))
+            Spacer(Modifier.width(3.dp))
+            val ramDisplay = if (ramGb.isNotEmpty()) "$ramGb ($ramPct%)" else "$ramPct%"
             Text(
-                if (ramGb.isNotEmpty()) "RAM $ramGb ($ramPct%)" else "RAM $ramPct%",
+                ramDisplay,
                 color = Color.White.copy(alpha = 0.92f),
-                fontSize = 12.sp,
+                fontSize = 11.5.sp,
                 style = Digits,
+                maxLines = 1,
+                softWrap = false,
             )
         }
 
@@ -839,12 +844,14 @@ private fun GamingHudRow(battery: BatteryInfo) {
                 tint = Color(0xFFA78BFA),
                 modifier = Modifier.size(15.dp),
             )
-            Spacer(Modifier.width(2.dp))
+            Spacer(Modifier.width(3.dp))
             Text(
-                "ROM $romText",
+                romText,
                 color = Color.White.copy(alpha = 0.92f),
-                fontSize = 12.sp,
+                fontSize = 11.5.sp,
                 style = Digits,
+                maxLines = 1,
+                softWrap = false,
             )
         }
     }
