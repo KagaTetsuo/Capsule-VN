@@ -93,6 +93,8 @@ class IslandService : AccessibilityService() {
     
     private var alerting = false
     private var wakeBlocked = false
+    // Thời điểm màn hình được bật sáng vì tin nhắn (0 = không phải do Viên thuốc bật)
+    private var noticeWokeAt = 0L
     private var lastScreenOn = true
     private var replySince = 0L
     private var imePackages: Set<String> = emptySet()
@@ -199,6 +201,9 @@ class IslandService : AccessibilityService() {
             IslandBus.calls.map { calls -> calls.values.any { it.incoming } }.distinctUntilChanged()
                 .collect { ringing -> if (!ringing) IslandBus.callHidden.value = false }
         }
+
+        // Tin nhắn tới lúc màn hình tắt: sáng màn hình để hiện trên Viên thuốc, xong thì tự tắt lại
+        scope.launch { IslandBus.notice.collect { onNoticeForWake(it) } }
 
         scope.launch {
             IslandBus.commands.collect { cmd ->
@@ -489,6 +494,34 @@ class IslandService : AccessibilityService() {
         displayParams.softInputMode = if (on) WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING
         else WindowManager.LayoutParams.SOFT_INPUT_STATE_UNCHANGED
         runCatching { wm?.updateViewLayout(view, displayParams) }
+    }
+
+    private fun onNoticeForWake(n: Notice?) {
+        if (n != null) {
+            val s = SettingsRepo.current
+            if (!s.enabled || !s.wakeOnMessage || IslandBus.screenOn.value) return
+            if (n.style != NoticeStyle.MESSAGE) return
+            scope.launch {
+                if (Proximity.near(this@IslandService)) return@launch // đang trong túi / úp máy
+                if (IslandBus.notice.value?.id != n.id || IslandBus.screenOn.value) return@launch
+                noticeWokeAt = SystemClock.elapsedRealtime()
+                ScreenWaker.wake(this@IslandService, scope) { IslandBus.notice.value?.id == n.id }
+            }
+        } else if (noticeWokeAt != 0L) {
+            val woke = noticeWokeAt
+            noticeWokeAt = 0L
+            scope.launch {
+                delay(1_500)
+                // Chỉ tắt lại khi người dùng không chạm vào Viên thuốc và máy vẫn đang khoá
+                val touched = IslandBus.lastTouch > woke
+                val locked = keyguard?.isKeyguardLocked == true
+                if (!touched && locked && IslandBus.screenOn.value && IslandBus.notice.value == null &&
+                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
+                ) {
+                    performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN)
+                }
+            }
+        }
     }
 
     private fun onAlert(alert: Boolean, screenOn: Boolean) {

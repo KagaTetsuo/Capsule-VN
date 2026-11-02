@@ -143,6 +143,8 @@ data class IslandSettings(
     val timerFromAssistant: Boolean = true,
     
     val wakeForAlerts: Boolean = true,
+    /** Màn hình đang tắt mà có tin nhắn: sáng lên hiện tin trên Viên thuốc rồi tự tắt lại. */
+    val wakeOnMessage: Boolean = true,
     
     val easterEggs: Boolean = true,
 

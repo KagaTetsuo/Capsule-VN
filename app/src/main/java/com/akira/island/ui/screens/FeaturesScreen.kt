@@ -297,7 +297,10 @@ fun BehaviorScreen(onBack: () -> Unit) {
             GroupToggle(Pos.First, Icons.Rounded.Vibration, tr("Rung phản hồi", "Haptics"),
                 tr("Khi mở, đóng và chạm vào viên thuốc", "When opening, closing and tapping the capsule"),
                 s.haptics, color = Tile.Pink) { v -> SettingsRepo.update { copy(haptics = v) } }
-            GroupToggle(Pos.Last, Icons.Rounded.LightMode, tr("Bật sáng màn hình", "Turn on the screen"),
+            GroupToggle(Pos.Middle, Icons.Rounded.ChatBubble, tr("Sáng màn hình khi có tin nhắn", "Wake the screen for messages"),
+                tr("Màn hình đang tắt: sáng lên hiện tin nhắn trên Viên thuốc ở màn hình khoá rồi tự tắt lại. Không sáng khi máy để trong túi / úp xuống", "Screen off: lights up to show the message on the lock screen, then turns off again. Not while in a pocket / face down"),
+                s.wakeOnMessage, color = Tile.Blue) { v -> SettingsRepo.update { copy(wakeOnMessage = v) } }
+            GroupToggle(Pos.Last, Icons.Rounded.LightMode, tr("Sáng màn hình khi chuông reo", "Wake the screen while ringing"),
                 tr("Khi có hẹn giờ, báo thức hoặc cuộc gọi đến, màn hình sẽ bật sáng trong lúc chuông kêu", "When a timer, alarm or incoming call rings, the screen turns on and stays on while it rings"),
                 s.wakeForAlerts, color = Tile.Yellow) { v -> SettingsRepo.update { copy(wakeForAlerts = v) } }
         }
