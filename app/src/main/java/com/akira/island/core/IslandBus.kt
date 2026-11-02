@@ -3,6 +3,7 @@ package com.akira.island.core
 import androidx.compose.ui.graphics.Color
 import com.akira.island.data.SettingsRepo
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.BufferOverflow
@@ -54,9 +55,35 @@ object IslandBus {
     val widthPreviewUntil = MutableStateFlow(0L)
     
     val cardPreviewMode = MutableStateFlow(CardPreviewMode.NONE)
-    val elasticityDemoTrigger = MutableStateFlow(0L)
-    fun triggerElasticityDemo() {
-        elasticityDemoTrigger.value = System.currentTimeMillis()
+
+    private var motionDemoJob: Job? = null
+
+    /**
+     * Xem trước trực tiếp hiệu ứng mở rộng trên Viên thuốc thật ở đỉnh màn hình:
+     * thu gọn (nếu đang mở) -> bung mở rộng theo cấu hình hiện tại -> giữ -> thu gọn lại.
+     * Gọi liên tục (khi kéo thanh trượt) sẽ được gộp lại (debounce) để chỉ chạy bản mới nhất.
+     */
+    fun previewMotion(debounceMs: Long = 260) {
+        motionDemoJob?.cancel()
+        motionDemoJob = scope.launch {
+            delay(debounceMs)
+            val s = SettingsRepo.current
+            // Thời gian ổn định của lò xo: ~0,25 s (nhanh nhất) .. ~1,15 s (chậm nhất)
+            val settle = 250L + s.durationPercent.coerceIn(0, 100) * 9L
+            if (cardPreviewMode.value == CardPreviewMode.EXPANDED) {
+                cardPreviewMode.value = CardPreviewMode.NONE
+                delay(settle + 150)
+            }
+            cardPreviewMode.value = CardPreviewMode.EXPANDED
+            delay(settle + 1_100)
+            cardPreviewMode.value = CardPreviewMode.NONE
+        }
+    }
+
+    fun stopMotionPreview() {
+        motionDemoJob?.cancel()
+        motionDemoJob = null
+        if (cardPreviewMode.value == CardPreviewMode.EXPANDED) cardPreviewMode.value = CardPreviewMode.NONE
     }
     
     val gamingActive = MutableStateFlow(false)
@@ -66,6 +93,39 @@ object IslandBus {
     
     val unreadLedColor = MutableStateFlow<Color?>(null)
     val unreadLedPkg = MutableStateFlow<String?>(null)
+    /** Tin nhắn chưa đọc — mỗi cuộc trò chuyện một thẻ, mới nhất đứng đầu (chạm Viên thuốc để xem, vuốt qua lại). */
+    val unreadNotices = MutableStateFlow<List<Notice>>(emptyList())
+    private const val MAX_UNREAD = 6
+
+    fun setUnread(n: Notice) {
+        val key = n.message?.key
+        unreadNotices.value = (listOf(n) + unreadNotices.value.filter { it.message?.key != key }).take(MAX_UNREAD)
+        syncUnreadLed()
+    }
+
+    /** Bỏ một cuộc trò chuyện khỏi danh sách chưa đọc (đã mở, đã trả lời hoặc thông báo đã bị xoá). */
+    fun removeUnread(key: String) {
+        unreadNotices.value = unreadNotices.value.filter { it.message?.key != key }
+        syncUnreadLed()
+    }
+
+    fun removeUnreadPkg(pkg: String) {
+        if (unreadNotices.value.none { it.message?.pkg == pkg } && unreadLedPkg.value != pkg) return
+        unreadNotices.value = unreadNotices.value.filter { it.message?.pkg != pkg }
+        syncUnreadLed()
+    }
+
+    fun clearUnread() {
+        unreadNotices.value = emptyList()
+        syncUnreadLed()
+    }
+
+    // Viền LED lấy màu của cuộc trò chuyện chưa đọc mới nhất
+    private fun syncUnreadLed() {
+        val top = unreadNotices.value.firstOrNull()
+        unreadLedColor.value = top?.tint
+        unreadLedPkg.value = top?.message?.pkg
+    }
     val previewLed = MutableStateFlow(false)
     
     val otpFillRequests = MutableSharedFlow<String>(extraBufferCapacity = 4)

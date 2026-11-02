@@ -21,6 +21,13 @@ import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.FormatLineSpacing
 import androidx.compose.material.icons.rounded.Gesture
 import androidx.compose.material.icons.rounded.Language
+import com.akira.island.data.SettingsBackup
+import androidx.compose.material.icons.rounded.CloudDone
+import androidx.compose.material.icons.rounded.SettingsBackupRestore
+import androidx.compose.material.icons.rounded.Backup
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.compose.rememberLauncherForActivityResult
+import android.widget.Toast
 import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material.icons.rounded.LightMode
 import androidx.compose.material.icons.rounded.NotificationsActive
@@ -113,19 +120,33 @@ fun FeaturesScreen(open: (Screen) -> Unit) {
     val s by SettingsRepo.state.collectAsState()
     var confirmReset by remember { mutableStateOf(false) }
     var languageDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val backupLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        val ok = runCatching {
+            context.contentResolver.openOutputStream(uri)?.use { it.write(SettingsRepo.exportJson().toByteArray()) } != null
+        }.getOrDefault(false)
+        Toast.makeText(context, if (ok) tr("Đã sao lưu cài đặt", "Settings backed up") else tr("Không lưu được file sao lưu", "Couldn't save the backup"), Toast.LENGTH_SHORT).show()
+    }
+    val restoreLauncher = rememberLauncherForActivityResult(OpenBackup) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        val raw = runCatching { context.contentResolver.openInputStream(uri)?.use { it.readBytes().decodeToString() } }.getOrNull()
+        val ok = raw != null && SettingsRepo.importJson(raw)
+        Toast.makeText(context, if (ok) tr("Đã khôi phục cài đặt", "Settings restored") else tr("File không hợp lệ", "Invalid backup file"), Toast.LENGTH_SHORT).show()
+    }
 
     Page(tr("Tính năng", "Features")) {        SectionHeader(tr("Nội dung hiển thị", "Display content"))
         Group {
-            GroupItem(Pos.First, Icons.Rounded.Dashboard, tr("Thẻ đa nhiệm thông minh", "Smart dynamic cards"),
-                tr("Nhạc, cuộc gọi, hẹn giờ, đèn pin, điều hướng", "Music, calls, timers, flashlight, navigation"),
+            GroupItem(Pos.First, Icons.Rounded.Dashboard, tr("Thẻ hoạt động", "Live activity cards"),
+                tr("Nhạc, cuộc gọi, hẹn giờ, đèn pin, điều hướng, tải xuống", "Music, calls, timers, flashlight, navigation, downloads"),
                 color = Tile.Purple, onClick = { open(Screen.CARDS) }) { Arrow() }
             GroupItem(Pos.Middle, Icons.Rounded.ChatBubble, tr("Tin nhắn & thông báo", "Messages & notifications"),
                 tr("Tin nhắn kèm nút trả lời nhanh ngay trên Viên thuốc", "App messages with replies right in the island"),
                 color = Tile.Blue, onClick = { open(Screen.NOTIFICATIONS) }) { Arrow() }
-            GroupItem(Pos.Middle, Icons.Rounded.NotificationsActive, tr("Sự kiện & cắm sạc", "Events & charging"),
+            GroupItem(Pos.Middle, Icons.Rounded.NotificationsActive, tr("Sự kiện hệ thống", "System events"),
                 tr("Sạc pin, Wi-Fi, tai nghe, thanh toán, báo thức", "Charging, Wi-Fi, headphones, payments, alarm"),
                 color = Tile.Orange, onClick = { open(Screen.EVENTS) }) { Arrow() }
-            GroupItem(Pos.Last, Icons.Rounded.LibraryMusic, tr("Lời bài hát đồng bộ (Karaoke)", "Synced lyrics"),
+            GroupItem(Pos.Last, Icons.Rounded.LibraryMusic, tr("Lời bài hát (Karaoke)", "Synced lyrics"),
                 tr("Lời bài hát đồng bộ trong trình phát mở rộng", "Synced lyrics in the expanded player"),
                 color = Tile.Pink, onClick = { open(Screen.LYRICS) }) { Arrow() }
         }
@@ -133,36 +154,36 @@ fun FeaturesScreen(open: (Screen) -> Unit) {
         SectionHeader(tr("Tiện ích thông minh", "Smart utilities"))
         Group {
             GroupItem(
-                Pos.First, Icons.Rounded.Key, tr("Sao chép & Điền nhanh OTP 1 chạm", "Smart OTP 1-Tap Copy & Fill"),
-                tr("Tự động sao chép & điền nhanh mã xác thực OTP 1 chạm từ SMS, ngân hàng, Zalo…", "Auto-copy & 1-tap autofill verification OTP codes from SMS, banks & messengers"),
+                Pos.First, Icons.Rounded.Key, tr("Mã OTP 1 chạm", "1-tap OTP"),
+                tr("Tự chép và điền mã xác thực từ SMS, ngân hàng, Zalo… chỉ với 1 chạm", "Copy & fill verification codes from SMS, banks, messengers in one tap"),
                 color = Tile.Teal, onClick = { open(Screen.OTP_SETTINGS) },
             ) { Arrow() }
             GroupItem(
-                Pos.Middle, Icons.Rounded.RecordVoiceOver, tr("Tự động đọc thông báo qua Tai nghe", "Headset Voice Announcer"),
-                tr("Tự động đọc to tin nhắn đến và tên người gọi khi đang đeo tai nghe", "Automatically read incoming messages & caller names aloud when wearing headphones"),
+                Pos.Middle, Icons.Rounded.RecordVoiceOver, tr("Đọc thông báo qua tai nghe", "Read notifications aloud"),
+                tr("Đọc to tin nhắn và tên người gọi khi đang đeo tai nghe", "Reads messages and caller names aloud while wearing headphones"),
                 color = Tile.Orange, onClick = { open(Screen.TTS_SETTINGS) },
             ) { Arrow() }
             GroupItem(
                 Pos.Middle, Icons.Rounded.SportsEsports, tr("Chế độ Gaming & HUD", "Gaming Mode & HUD"),
-                tr("Tự nhận diện game trên mọi máy Android, thu gọn thông báo & Gaming HUD (°C, RAM)", "Auto-detect games on all Android devices, compact pills & Gaming HUD (°C, RAM)"),
+                tr("Tự nhận diện game, thu gọn thông báo, bảng HUD °C & RAM", "Detects games, compact notifications, °C & RAM HUD"),
                 color = Tile.Green, onClick = { open(Screen.GAMING) },
             ) { Arrow() }
             GroupItem(
                 Pos.Last, Icons.Rounded.Bolt, tr("Hệ sinh thái Samsung & Android", "Samsung & Android Ecosystem"),
-                tr("Bút S Pen, Galaxy Buds/Watch, Sạc siêu nhanh, Bảo vệ pin & DeX / Truyền màn hình", "S Pen stylus, Galaxy Buds/Watch, Super Fast Charging, Battery Protection & DeX / Cast"),
+                tr("S Pen, Galaxy Buds/Watch, sạc siêu nhanh, bảo vệ pin, DeX / truyền màn hình", "S Pen, Galaxy Buds/Watch, super fast charging, battery protection, DeX / cast"),
                 color = Tile.Blue, onClick = { open(Screen.ECOSYSTEM) },
             ) { Arrow() }
         }
 
-        SectionHeader(tr("Thao tác & điều khiển", "Controls & behavior"))
+        SectionHeader(tr("Điều khiển & hiển thị", "Controls & display"))
         Group {
             GroupItem(Pos.First, Icons.Rounded.Gesture, tr("Cử chỉ chạm & vuốt", "Taps & gestures"), tr("Chạm và vuốt trên viên thuốc", "Taps and swipes on the capsule"),
                 color = Tile.Teal, onClick = { open(Screen.GESTURES) }) { Arrow() }
-            GroupItem(Pos.Middle, Icons.Rounded.Tune, tr("Hành vi hiển thị & thu nhỏ", "Display & collapse behavior"),
-                tr("Khi nào hiển thị và thu nhỏ Viên thuốc, phản hồi rung", "When to show and collapse the island, haptics"),
+            GroupItem(Pos.Middle, Icons.Rounded.Tune, tr("Hành vi hiển thị", "Display behavior"),
+                tr("Khi nào hiện / ẩn, lịch trình, tự thu nhỏ, rung phản hồi", "When to show / hide, schedule, auto-collapse, haptics"),
                 color = Tile.Indigo, onClick = { open(Screen.BEHAVIOR) }) { Arrow() }
-            GroupItem(Pos.Last, Icons.Rounded.NotificationsOff, tr("Tắt biểu ngữ nổi hệ thống", "Hide system popup banners"),
-                tr("Để chỉ có Viên thuốc hiển thị cuộc gọi, hẹn giờ và pin", "So only the island shows calls, timers and battery"),
+            GroupItem(Pos.Last, Icons.Rounded.NotificationsOff, tr("Biểu ngữ hệ thống", "System banners"),
+                tr("Tắt pop-up trùng lặp để chỉ Viên thuốc hiển thị cuộc gọi, hẹn giờ, pin", "Turn off duplicate pop-ups so only the island shows calls, timers, battery"),
                 color = Tile.Red, onClick = { open(Screen.BANNERS) }) { Arrow() }
         }
 
@@ -171,6 +192,17 @@ fun FeaturesScreen(open: (Screen) -> Unit) {
             
             GroupItem(Pos.First, Icons.Rounded.Language, tr("Ngôn ngữ · Language", "Language"), s.language.title,
                 color = Tile.Blue, onClick = { languageDialog = true }) { Arrow() }
+            if (SettingsBackup.supported) {
+                GroupToggle(Pos.Middle, Icons.Rounded.CloudDone, tr("Tự động sao lưu", "Automatic backup"),
+                    tr("Luôn lưu cấu hình mới nhất vào Download/CapsuleVN — gỡ app vẫn còn, cài lại chọn file để phục hồi", "Keeps your latest settings in Download/CapsuleVN — survives uninstall, pick it after reinstalling"),
+                    s.autoBackup, color = Tile.Blue) { v -> SettingsRepo.update { copy(autoBackup = v) } }
+            }
+            GroupItem(Pos.Middle, Icons.Rounded.Backup, tr("Sao lưu cài đặt", "Back up settings"),
+                tr("Lưu toàn bộ tuỳ chỉnh ra file — dùng khi gỡ / cài lại hoặc đổi máy", "Save all your settings to a file — for reinstalling or a new phone"),
+                onClick = { backupLauncher.launch("CapsuleVN-caidat.json") }, color = Tile.Green) { Arrow() }
+            GroupItem(Pos.Middle, Icons.Rounded.SettingsBackupRestore, tr("Khôi phục cài đặt", "Restore settings"),
+                tr("Chọn file sao lưu để áp dụng lại toàn bộ tuỳ chỉnh", "Pick a backup file to bring all settings back"),
+                onClick = { restoreLauncher.launch(BACKUP_TYPES) }, color = Tile.Teal) { Arrow() }
             GroupItem(Pos.Last, Icons.Rounded.Restore, tr("Đặt lại toàn bộ cài đặt", "Reset all settings"),
                 tr("Khôi phục về trạng thái như khi mới cài đặt", "Back to how it was after installing"),
                 onClick = { confirmReset = true }, color = Tile.Gray)
@@ -206,7 +238,7 @@ fun BehaviorScreen(onBack: () -> Unit) {
     val s by SettingsRepo.state.collectAsState()
     var collapseDialog by remember { mutableStateOf(false) }
 
-    Page(tr("Hành vi", "Behavior"), onBack) {
+    Page(tr("Hành vi hiển thị", "Display behavior"), onBack) {
         SectionHeader(tr("Khi nào hiển thị", "When to show"))
         Group {
             GroupToggle(Pos.First, Icons.Rounded.VisibilityOff, tr("Ẩn viên thuốc khi trống", "Hide the empty capsule"),
@@ -233,12 +265,12 @@ fun BehaviorScreen(onBack: () -> Unit) {
             }
         }
 
-        SectionHeader(tr("Viên thuốc mở rộng", "Expanded island"))
+        SectionHeader(tr("Khi mở rộng", "When expanded"))
         Group {
-            GroupItem(Pos.First, Icons.Rounded.UnfoldLess, tr("Thu nhỏ Viên thuốc khi đang mở rộng", "Collapse the expanded island"), collapseLabel(s.autoCollapseSec),
+            GroupItem(Pos.First, Icons.Rounded.UnfoldLess, tr("Tự thu nhỏ bảng mở rộng", "Auto-collapse the expanded island"), collapseLabel(s.autoCollapseSec),
                 color = Tile.Indigo, onClick = { collapseDialog = true })
             GroupToggle(Pos.Last, Icons.Rounded.Circle, tr("Hoạt động thứ hai bên cạnh", "Second activity alongside"),
-                tr("Khi có 2 hoạt động cùng lúc, hoạt động thứ 2 là hình tròn nhỏ bên cạnh viên thuốc, như trên iPhone", "With two activities, the second one is a small circle next to the capsule, like on iPhone"),
+                tr("Khi có nhiều hoạt động, hoạt động thứ 2 là hình tròn nhỏ cạnh Viên thuốc. Khi mở rộng, vuốt trái / phải để chuyển giữa các hoạt động", "With several activities, the second one is a small circle next to the island. When expanded, swipe left / right to switch between them"),
                 s.bubble, color = Tile.Purple) { v ->
                 SettingsRepo.update { copy(bubble = v) }
             }
@@ -260,9 +292,9 @@ fun BehaviorScreen(onBack: () -> Unit) {
             }
         }
 
-        SectionHeader(tr("Góp ý & phản hồi", "Feedback"))
+        SectionHeader(tr("Rung & màn hình", "Haptics & screen"))
         Group {
-            GroupToggle(Pos.First, Icons.Rounded.Vibration, tr("Rung phản hồi (Haptics)", "Haptics"),
+            GroupToggle(Pos.First, Icons.Rounded.Vibration, tr("Rung phản hồi", "Haptics"),
                 tr("Khi mở, đóng và chạm vào viên thuốc", "When opening, closing and tapping the capsule"),
                 s.haptics, color = Tile.Pink) { v -> SettingsRepo.update { copy(haptics = v) } }
             GroupToggle(Pos.Last, Icons.Rounded.LightMode, tr("Bật sáng màn hình", "Turn on the screen"),
@@ -272,7 +304,7 @@ fun BehaviorScreen(onBack: () -> Unit) {
     }
 
     if (collapseDialog) {
-        ChoiceDialog(tr("Thu nhỏ Viên thuốc khi đang mở rộng", "Collapse the expanded island"), listOf(0, 5, 10, 20, 30), s.autoCollapseSec, ::collapseLabel,
+        ChoiceDialog(tr("Tự thu nhỏ bảng mở rộng", "Auto-collapse the expanded island"), listOf(0, 5, 10, 20, 30), s.autoCollapseSec, ::collapseLabel,
             { v -> SettingsRepo.update { copy(autoCollapseSec = v) } }) { collapseDialog = false }
     }
 }
@@ -292,7 +324,7 @@ fun NotificationsScreen(onBack: () -> Unit, open: (Screen) -> Unit = {}) {
     val s by SettingsRepo.state.collectAsState()
     var accentDialog by remember { mutableStateOf(false) }
 
-    Page(tr("Thông báo", "Notifications"), onBack) {
+    Page(tr("Tin nhắn & thông báo", "Messages & notifications"), onBack) {
         Group {
             GroupToggle(Pos.First, Icons.Rounded.ChatBubble, tr("Thông báo ứng dụng", "App notifications"),
                 tr("Tin nhắn từ Telegram, Zalo, Messenger, WhatsApp, email... dưới dạng thẻ trên Viên thuốc, như trên iPhone", "Messages from Telegram, WhatsApp, email and other apps as a card in the island, like on iPhone"),
@@ -305,33 +337,13 @@ fun NotificationsScreen(onBack: () -> Unit, open: (Screen) -> Unit = {}) {
                 s.msgInApp, color = Tile.Teal) { v ->
                 SettingsRepo.update { copy(msgInApp = v) }
             }
-            GroupSlider(
-                Pos.Middle, Icons.Rounded.FormatLineSpacing, tr("Dòng văn bản", "Text lines"),
-                value = s.msgLines.toFloat(), range = 1f..6f, steps = 4, label = "${s.msgLines}", color = Tile.Green,
-            ) { v -> SettingsRepo.update { copy(msgLines = Math.round(v)) } }
-            GroupItem(
-                Pos.Middle,
-                Icons.Rounded.Tune,
-                tr("Kích thước & bo góc khung thẻ", "Cards size & corner radius"),
-                tr("Tùy chỉnh riêng vị trí, kích thước & độ bo góc kèm mô phỏng trực tiếp", "Position, size & corner radius controls with live simulation"),
-                color = Tile.Purple,
-                onClick = { open(Screen.MSG_CALL_SIZE) },
-            ) { Arrow() }
-            GroupItem(
-                Pos.Middle,
-                Icons.Rounded.Key,
-                tr("Sao chép & Điền nhanh OTP 1 chạm", "Smart OTP 1-Tap Copy & Fill"),
-                if (s.otpEnabled) tr("Bật", "On") else tr("Tắt", "Off"),
-                color = Tile.Teal,
-                onClick = { open(Screen.OTP_SETTINGS) },
-            ) { Arrow() }
             GroupItem(
                 Pos.Last,
-                Icons.Rounded.RecordVoiceOver,
-                tr("Tự động đọc thông báo qua Tai nghe", "Headset Voice Announcer"),
-                if (s.ttsEnabled) tr("Bật", "On") else tr("Tắt", "Off"),
-                color = Tile.Orange,
-                onClick = { open(Screen.TTS_SETTINGS) },
+                Icons.Rounded.Tune,
+                tr("Khung thẻ thông báo", "Notification cards"),
+                tr("Vị trí, kích thước, số dòng & bo góc — xem trước trực tiếp", "Position, size, lines & corners — live preview"),
+                color = Tile.Purple,
+                onClick = { open(Screen.MSG_CALL_SIZE) },
             ) { Arrow() }
         }
 
@@ -403,7 +415,7 @@ fun GamingScreen(onBack: () -> Unit) {
     val bat by IslandBus.battery.collectAsState()
     val ramPct by IslandBus.ramPercent.collectAsState()
 
-    Page(tr("Chế độ Gaming", "Gaming Mode"), onBack) {
+    Page(tr("Chế độ Gaming & HUD", "Gaming Mode & HUD"), onBack) {
         SectionHeader(tr("Tương thích mọi dòng máy Android", "Universal Android Gaming"))
         Group {
             GroupToggle(
@@ -588,7 +600,7 @@ fun OtpSettingsScreen(onBack: () -> Unit) {
     val s by SettingsRepo.state.collectAsState()
     val context = LocalContext.current
 
-    Page(tr("Sao chép & Điền nhanh OTP 1 chạm", "Smart OTP 1-Tap Copy & Fill"), onBack) {
+    Page(tr("Mã OTP 1 chạm", "1-tap OTP"), onBack) {
         SectionHeader(tr("Tùy chỉnh nhận diện & điền mã OTP", "OTP Settings"))
         Group {
             GroupToggle(
@@ -648,7 +660,7 @@ fun TtsSettingsScreen(onBack: () -> Unit) {
     val s by SettingsRepo.state.collectAsState()
     val context = LocalContext.current
 
-    Page(tr("Tự động đọc thông báo qua Tai nghe", "Headset Voice Announcer"), onBack) {
+    Page(tr("Đọc thông báo qua tai nghe", "Read notifications aloud"), onBack) {
         SectionHeader(tr("Tùy chỉnh đọc thông báo bằng giọng nói", "Voice Announcer Settings"))
         Group {
             GroupToggle(
@@ -693,3 +705,13 @@ fun TtsSettingsScreen(onBack: () -> Unit) {
         }
     }
 }
+
+/** Chọn file sao lưu, mở sẵn thư mục Download/CapsuleVN. */
+internal object OpenBackup : ActivityResultContracts.OpenDocument() {
+    override fun createIntent(context: android.content.Context, input: Array<String>): android.content.Intent =
+        super.createIntent(context, input).apply {
+            SettingsBackup.initialFolder?.let { putExtra(android.provider.DocumentsContract.EXTRA_INITIAL_URI, it) }
+        }
+}
+
+internal val BACKUP_TYPES = arrayOf("application/json", "text/plain", "application/octet-stream")

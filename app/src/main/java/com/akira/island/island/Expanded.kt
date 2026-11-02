@@ -128,6 +128,13 @@ fun ExpandedContent(act: Act, s: IslandSettings, lyrics: Lyrics?, battery: Batte
         TorchCard(act.t, s)
         return
     }
+    if (act is Act.UnreadA) {
+        val m = act.n.message
+        if (m != null) {
+            Box(Modifier.width(width), contentAlignment = Alignment.TopCenter) { MessageCard(act.n, m, s, width) }
+            return
+        }
+    }
     
     Box(Modifier.width(width).padding(start = 22.dp, end = 22.dp, top = cameraInset(s), bottom = (20 + s.expandedHeightExtra).coerceAtLeast(6).dp)) {
         when (act) {
@@ -152,20 +159,21 @@ private fun MediaExpanded(m: MediaInfo, s: IslandSettings, lyrics: Lyrics?) {
     val now = rememberNow(100, active = m.playing)
     val pos = m.positionAt(now)
     Column {
+        // Ảnh bìa + tên bài / ca sĩ + sóng nhạc theo màu ảnh bìa
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Art(m.art, 60.dp, 14.4.dp, Modifier.clickable { Controls.openApp(context, m.pkg) })
+            Art(m.art, 64.dp, 16.dp, Modifier.clickable { Controls.openApp(context, m.pkg) })
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
-                Text(m.title, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, maxLines = 1,
+                Text(m.title, color = Color.White, fontSize = 17.sp, lineHeight = 22.sp, fontWeight = FontWeight.SemiBold, maxLines = 1,
                     modifier = Modifier.basicMarquee(iterations = Int.MAX_VALUE))
                 if (m.artist.isNotBlank()) {
-                    Spacer(Modifier.height(3.dp))
-                    Text(m.artist, color = Tints.Gray, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Spacer(Modifier.height(2.dp))
+                    Text(m.artist, color = Color.White.copy(alpha = 0.6f), fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
             Spacer(Modifier.width(10.dp))
             val egg by IslandBus.egg.collectAsState()
-            if (egg) SoulHeart(Modifier.size(24.dp)) else Equalizer(m.accent, m.playing, s.liveEqualizer, Modifier.size(30.dp, 24.dp))
+            if (egg) SoulHeart(Modifier.size(24.dp)) else Equalizer(m.accent, m.playing, s.liveEqualizer, Modifier.size(28.dp, 22.dp))
         }
 
         val lines = lyrics?.takeIf { it.key == m.key && s.lyricsEnabled && it.lines.isNotEmpty() }
@@ -174,7 +182,6 @@ private fun MediaExpanded(m: MediaInfo, s: IslandSettings, lyrics: Lyrics?) {
             Spacer(Modifier.height(14.dp))
             KaraokeLine(lines, pos, s)
         } else if (s.lyricsEnabled && status?.first == m.key) {
-            
             Spacer(Modifier.height(12.dp))
             Text(
                 if (status?.second == LyricsStatus.LOADING) tr("Đang tìm lời bài hát…", "Looking for lyrics…") else tr("Không tìm thấy lời bài hát", "No lyrics found"),
@@ -182,23 +189,22 @@ private fun MediaExpanded(m: MediaInfo, s: IslandSettings, lyrics: Lyrics?) {
             )
         }
 
+        // Thanh tiến trình toàn chiều ngang, thời gian nằm gọn bên dưới hai đầu
         Spacer(Modifier.height(14.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(formatDuration(pos), color = Tints.Gray, fontSize = 11.sp, style = Digits.copy(fontWeight = FontWeight.Normal),
-                modifier = Modifier.width(34.dp))
-            SeekBar(
-                fraction = if (m.durationMs > 0) pos.toFloat() / m.durationMs else 0f,
-                color = Color.White,
-                enabled = m.canSeek && m.durationMs > 0,
-                onSeek = { f -> Controls.seekTo((f * m.durationMs).toLong()) },
-                modifier = Modifier.weight(1f),
-            )
-            Text(
-                if (m.durationMs > 0) "-" + formatDuration(m.durationMs - pos) else "",
-                color = Tints.Gray, fontSize = 11.sp, style = Digits.copy(fontWeight = FontWeight.Normal), textAlign = TextAlign.End,
-                modifier = Modifier.width(38.dp),
-            )
+        SeekBar(
+            fraction = if (m.durationMs > 0) pos.toFloat() / m.durationMs else 0f,
+            color = Color.White,
+            enabled = m.canSeek && m.durationMs > 0,
+            onSeek = { f -> Controls.seekTo((f * m.durationMs).toLong()) },
+        )
+        Row(Modifier.fillMaxWidth().padding(top = 1.dp)) {
+            val time = Digits.copy(fontWeight = FontWeight.Medium)
+            Text(formatDuration(pos), color = Color.White.copy(alpha = 0.55f), fontSize = 11.5.sp, style = time, modifier = Modifier.weight(1f))
+            if (m.durationMs > 0) {
+                Text("-" + formatDuration(m.durationMs - pos), color = Color.White.copy(alpha = 0.55f), fontSize = 11.5.sp, style = time)
+            }
         }
+        Spacer(Modifier.height(4.dp))
         MediaControls(m.like, m.dislike, m.playing)
     }
 }
@@ -206,30 +212,30 @@ private fun MediaExpanded(m: MediaInfo, s: IslandSettings, lyrics: Lyrics?) {
 @Composable
 private fun MediaControls(like: PlayerAction?, dislike: PlayerAction?, playing: Boolean) {
     val context = LocalContext.current
-    
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        
-        Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
-            like?.let { a ->
-                RoundButton(if (a.on) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder, size = 30.dp, bg = Color.Transparent,
-                    fg = if (a.on) Tints.Red else Dim, iconScale = 0.66f) { Controls.playerAction(a.action) }
-            }
-            dislike?.let { a ->
-                RoundButton(Icons.Rounded.HeartBroken, size = 30.dp, bg = Color.Transparent, fg = Dim, iconScale = 0.62f) {
-                    Controls.playerAction(a.action)
+    // Hàng điều khiển cân đối: yêu thích · lùi · Phát/Tạm dừng (nút tròn trắng nổi bật) · tới · loa ra
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
+            when {
+                like != null -> RoundButton(
+                    if (like.on) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder, size = 36.dp, bg = Color.Transparent,
+                    fg = if (like.on) Tints.Red else Dim, iconScale = 0.6f,
+                ) { Controls.playerAction(like.action) }
+                dislike != null -> RoundButton(Icons.Rounded.HeartBroken, size = 36.dp, bg = Color.Transparent, fg = Dim, iconScale = 0.58f) {
+                    Controls.playerAction(dislike.action)
                 }
             }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(18.dp), verticalAlignment = Alignment.CenterVertically) {
-            RoundButton(Ios.back, size = 44.dp, bg = Color.Transparent, iconScale = 0.636f) { Controls.prev() }
-            RoundButton(if (playing) Ios.pause else Ios.play, size = 48.dp, bg = Color.Transparent, iconScale = 0.667f) {
-                Controls.playPause()
-            }
-            RoundButton(Ios.forward, size = 44.dp, bg = Color.Transparent, iconScale = 0.636f) { Controls.next() }
+        RoundButton(Ios.back, size = 46.dp, bg = Color.Transparent, iconScale = 0.6f) { Controls.prev() }
+        RoundButton(if (playing) Ios.pause else Ios.play, size = 56.dp, bg = Color.White, fg = Color.Black, iconScale = 0.46f) {
+            Controls.playPause()
         }
-        
-        Box(Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
-            RoundButton(Ios.airplay, size = 36.dp, bg = Color.Transparent, fg = Dim, iconScale = 0.6f) { Controls.openOutput(context) }
+        RoundButton(Ios.forward, size = 46.dp, bg = Color.Transparent, iconScale = 0.6f) { Controls.next() }
+        Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
+            RoundButton(Ios.airplay, size = 36.dp, bg = Color.Transparent, fg = Dim, iconScale = 0.58f) { Controls.openOutput(context) }
         }
     }
 }

@@ -21,6 +21,18 @@ enum class FxRate(val fps: Int, private val ru: String, private val en: String) 
     val title: String get() = tr(ru, en)
 }
 
+/** Kiểu nền cho các thẻ thông báo (tin nhắn, cuộc gọi đến, cập nhật). */
+@Serializable
+enum class CardBg(private val ru: String, private val en: String) {
+    DEFAULT("Như Viên thuốc", "Same as the island"),
+    COLOR("Màu tuỳ chọn", "Custom color"),
+    IMAGE("Ảnh nền", "Background image"),
+    GLASS("Liquid Glass (iOS)", "Liquid Glass (iOS)"),
+    ;
+
+    val title: String get() = tr(ru, en)
+}
+
 @Serializable
 enum class ExpandStyle(private val ru: String, private val en: String) {
     FRUIT("Như Táo khuyết (iOS)", "Like a Fruit"),
@@ -198,6 +210,20 @@ data class IslandSettings(
     val callCornerRadius: Int = 32,
     val updateCornerRadius: Int = 32,
 
+    // Nền & viền của các thẻ thông báo
+    val cardBg: CardBg = CardBg.DEFAULT,
+    val cardBgColor: Long = 0xFF1F1719,
+    val cardBgOpacity: Int = 100,
+    val cardBgImage: String = "",
+    val cardImageDim: Int = 40,
+    val cardBorder: Boolean = false,
+    val cardBorderColor: Long = 0xFFE6C068,
+    val cardBorderWidth: Float = 1.5f,
+    /** Áp dụng nền & viền thẻ cho cả bảng mở rộng (Giờ, Pin, nhạc, hẹn giờ…). */
+    val cardStyleExpanded: Boolean = true,
+    /** Áp dụng cho cả thông báo dạng viên nhỏ (sạc, tai nghe, chế độ chuông, thanh toán…). Mặc định giữ nền đen như cũ. */
+    val cardStylePills: Boolean = false,
+
     val color: Long = 0xFF000000,
     val outline: Boolean = false,
     val outlineColor: Long = 0xFF3A3A40,
@@ -250,6 +276,12 @@ data class IslandSettings(
     val doubleTapAction: TapAction = TapAction.NOTHING,
     val longPressAction: TapAction = TapAction.OPEN_APP,
     val swipeTracks: Boolean = true,
+    /** Chế độ ngân hàng: tự tắt Viên thuốc khi mở app ngân hàng / VNeID, tự bật lại khi rời app. */
+    val bankMode: Boolean = false,
+    val bankApps: List<String> = emptyList(),
+    val bankAppsEdited: Boolean = false,
+    /** Vuốt ngang trên Viên thuốc thu gọn để chuyển giữa các hoạt động đang chạy. */
+    val swipeSwitch: Boolean = false,
     val swipeExpand: Boolean = true,
 
     val lyricsEnabled: Boolean = true,
@@ -303,6 +335,10 @@ data class IslandSettings(
     val ecoBatteryProtectLevel: Int = 80,
     val ecoDexCast: Boolean = true,
 
+    /** Tự động sao lưu cấu hình ra Download/CapsuleVN (còn lại sau khi gỡ app). */
+    val autoBackup: Boolean = true,
+    /** Đã hỏi khôi phục cài đặt cũ sau khi cài mới. */
+    val restoreAsked: Boolean = false,
     val otpEnabled: Boolean = true,
     val otpAutoCopy: Boolean = false,
     val otpAutoFill: Boolean = true,
@@ -323,7 +359,10 @@ data class IslandSettings(
 
     val topOffset: Int get() = if (notch) 0 else offsetY
 
-    val windowBaseY: Int get() = minOf(topOffset, topOffset + msgOffsetY, topOffset + callOffsetY, topOffset + updateOffsetY)
+    val windowBaseY: Int get() = minOf(
+        minOf(topOffset, topOffset + msgOffsetY, topOffset + callOffsetY),
+        minOf(topOffset + updateOffsetY, topOffset + expandedOffsetY),
+    )
 
     val liveEqualizer: Boolean get() = fxEqualizer && !reduceEffects
 }
@@ -391,6 +430,24 @@ object SettingsRepo {
     }
 
     fun reset() = update { IslandSettings() }
+
+    /** Sao lưu toàn bộ cài đặt ra chuỗi JSON (để lưu thành file). */
+    fun exportJson(): String = json.encodeToString(current)
+
+    /** Khôi phục cài đặt từ file JSON đã sao lưu; giữ nguyên các thông tin cập nhật của bản đang cài. */
+    fun importJson(raw: String): Boolean = runCatching {
+        val restored = json.decodeFromString<IslandSettings>(raw)
+        val c = current
+        update {
+            restored.copy(
+                skippedVersion = c.skippedVersion,
+                lastSeenVersion = c.lastSeenVersion,
+                lastUpdateCheck = c.lastUpdateCheck,
+                islandVersion = c.islandVersion,
+            )
+        }
+        true
+    }.getOrDefault(false)
 
     fun resetAnimations() = update {
         val d = IslandSettings()

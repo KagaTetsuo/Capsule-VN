@@ -68,6 +68,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
@@ -242,6 +244,8 @@ fun CompactContent(act: Act, s: IslandSettings, wideWidth: Dp) {
         is Act.AlarmA -> AlarmCompact(act.a, s)
 
         is Act.NoticeA -> NoticeCompact(act.n, s, wideWidth)
+
+        is Act.UnreadA -> NoticeCompact(act.n, s, wideWidth)
 
         is Act.PayA -> PayReady(tr("Thanh toán", "Pay"), tr("Chạm vào đầu đọc thẻ", "Hold near reader"), act.p.icon, s, wideWidth)
 
@@ -418,10 +422,10 @@ private fun PillNotice(n: Notice, s: IslandSettings) {
 }
 
 @Composable
-private fun MessageCard(n: Notice, m: AppMessage, s: IslandSettings, @Suppress("UNUSED_PARAMETER") wideWidth: Dp) {
+internal fun MessageCard(n: Notice, m: AppMessage, s: IslandSettings, @Suppress("UNUSED_PARAMETER") wideWidth: Dp) {
     val context = LocalContext.current
     val haptic = rememberHaptic()
-    val iconSize = 40.dp
+    val iconSize = 44.dp
     val reply by IslandBus.reply.collectAsState()
     val locked by IslandBus.locked.collectAsState()
     
@@ -440,8 +444,9 @@ private fun MessageCard(n: Notice, m: AppMessage, s: IslandSettings, @Suppress("
         onDispose { if (IslandBus.reply.value?.noticeId == n.id) IslandBus.reply.value = null }
     }
 
-    val topGap = ((messageTop(s) - s.height.dp).coerceAtLeast(4.dp) + (s.msgHeightExtra * 0.45f).dp).coerceAtLeast(2.dp)
-    val bottomPad = (12.dp + (s.msgHeightExtra * 0.55f).dp).coerceAtLeast(4.dp)
+    // Khoảng cách từ dòng tên app / thời gian xuống nội dung: vừa đủ, không để trống quá nhiều
+    val topGap = (6.dp + (s.msgHeightExtra * 0.45f).dp).coerceAtLeast(2.dp)
+    val bottomPad = (16.dp + (s.msgHeightExtra * 0.55f).dp).coerceAtLeast(4.dp)
 
     Column(
         Modifier
@@ -450,32 +455,34 @@ private fun MessageCard(n: Notice, m: AppMessage, s: IslandSettings, @Suppress("
             .padding(bottom = bottomPad),
     ) {
         
+        // Dòng tên app (trái) & thời gian (phải) hai bên camera: chữ rõ hơn, thụt vào khỏi góc bo để không bị cắt
+        val headerInset = (s.cardCornerRadius * 0.55f).dp.coerceIn(20.dp, 30.dp)
         Row(
-            Modifier.fillMaxWidth().height(s.height.dp).padding(horizontal = 18.dp),
+            Modifier.fillMaxWidth().height(s.height.dp + 4.dp).padding(start = headerInset, end = headerInset, top = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
                 if (m.appIcon != null) {
-                    Image(m.appIcon, null, Modifier.size(15.dp).clip(RoundedCornerShape(4.dp)))
-                    Spacer(Modifier.width(6.dp))
+                    Image(m.appIcon, null, Modifier.size(18.dp).clip(RoundedCornerShape(5.dp)))
+                    Spacer(Modifier.width(7.dp))
                 }
-                Text(m.appName, color = dim, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(m.appName, color = Color.White.copy(alpha = 0.72f), fontSize = 13.5.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             Spacer(Modifier.width(compactGap(s)))
             Row(Modifier.weight(1f), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
-                Text(tr("bây giờ", "now"), color = dim, fontSize = 12.sp, maxLines = 1, softWrap = false)
-                Spacer(Modifier.width(4.dp))
-                Icon(Ios.bell, null, tint = dim, modifier = Modifier.size(12.dp))
+                Text(tr("bây giờ", "now"), color = Color.White.copy(alpha = 0.72f), fontSize = 13.5.sp, fontWeight = FontWeight.Medium, maxLines = 1, softWrap = false)
+                Spacer(Modifier.width(5.dp))
+                Icon(Ios.bell, null, tint = Color.White.copy(alpha = 0.72f), modifier = Modifier.size(15.dp))
             }
         }
         Spacer(Modifier.height(topGap))
-        Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.Top) {
+        Row(Modifier.padding(horizontal = 18.dp), verticalAlignment = Alignment.Top) {
             NotifIcon(if (hidden) m.copy(avatar = null) else m, n, iconSize, Color(s.color))
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Row(Modifier.fillMaxWidth().heightIn(min = 22.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        if (hidden) m.appName else n.title, color = Color.White, fontSize = 15.sp, lineHeight = 20.sp,
+                        if (hidden) m.appName else n.title, color = Color.White, fontSize = 16.sp, lineHeight = 21.sp,
                         fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
                     )
                     if (m.history.size > 1 && !hidden) {
@@ -498,8 +505,8 @@ private fun MessageCard(n: Notice, m: AppMessage, s: IslandSettings, @Suppress("
                     }
                 } else if (m.text.isNotEmpty()) {
                     Text(
-                        m.text, color = Color.White.copy(alpha = 0.88f), fontSize = 14.sp, lineHeight = 19.sp, maxLines = s.msgLines.coerceIn(1, 8),
-                        overflow = TextOverflow.Ellipsis,
+                        m.text, color = Color.White.copy(alpha = 0.85f), fontSize = 14.5.sp, lineHeight = 20.sp, maxLines = s.msgLines.coerceIn(1, 8),
+                        overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 1.dp),
                     )
                 }
             }
@@ -508,7 +515,7 @@ private fun MessageCard(n: Notice, m: AppMessage, s: IslandSettings, @Suppress("
             Row(
                 Modifier
                     .fillMaxWidth()
-                    .padding(start = 16.dp + iconSize + 12.dp, end = 16.dp, top = 8.dp),
+                    .padding(start = 18.dp + iconSize + 12.dp, end = 16.dp, top = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Row(
@@ -550,7 +557,7 @@ private fun MessageCard(n: Notice, m: AppMessage, s: IslandSettings, @Suppress("
         }
         if (replyAction != null) {
             
-            Box(Modifier.padding(start = 16.dp + iconSize + 12.dp, end = 16.dp)) {
+            Box(Modifier.padding(start = 18.dp + iconSize + 12.dp, end = 16.dp)) {
                 ReplyField(replyAction, accent) { text ->
                     if (text.isBlank()) return@ReplyField
                     if (Controls.sendReply(context, replyAction, text)) {
@@ -576,14 +583,14 @@ private fun MessageCard(n: Notice, m: AppMessage, s: IslandSettings, @Suppress("
             }
         } else if (m.actions.isNotEmpty() && !locked) {
             
+            // Nút thao tác dạng viên tròn, chia đều bề ngang & thẳng hàng với ảnh đại diện
             Row(
-                Modifier.fillMaxWidth().padding(start = 16.dp + iconSize + 12.dp, end = 16.dp, top = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(18.dp),
+                Modifier.fillMaxWidth().padding(start = 18.dp, end = 18.dp, top = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                m.actions.forEachIndexed { i, a ->
-                    
-                    TextAction(a.title, accent, if (i == m.actions.lastIndex) Modifier.weight(1f, fill = false) else Modifier, size = 14.sp) {
+                m.actions.forEach { a ->
+                    ActionPill(a.title, accent, Modifier.weight(1f)) {
                         if (a.isReply) {
                             IslandBus.reply.value = ReplyState(n.id, a)
                         } else {
@@ -621,7 +628,8 @@ private fun statusBarHeight(): Dp {
 @Composable
 private fun NotifIcon(m: AppMessage, n: Notice, size: Dp, ring: Color) {
     Box(Modifier.size(size + 4.dp)) {
-        val big = m.avatar ?: m.appIcon
+        val raw = m.avatar ?: m.appIcon
+        val big = remember(raw) { raw?.let { runCatching { circleCrop(it) }.getOrDefault(it) } }
         if (big != null) {
             Image(big, null, Modifier.size(size).clip(CircleShape), contentScale = ContentScale.Crop)
         } else {
@@ -632,7 +640,7 @@ private fun NotifIcon(m: AppMessage, n: Notice, size: Dp, ring: Color) {
         if (m.avatar != null && m.appIcon != null) {
             Image(
                 m.appIcon, null,
-                Modifier.align(Alignment.BottomEnd).size(size * 0.44f).clip(CircleShape).background(ring).padding(2.dp).clip(CircleShape),
+                Modifier.align(Alignment.BottomEnd).size(size * 0.42f).clip(CircleShape).background(Color.Black).padding(2.dp).clip(CircleShape),
             )
         }
     }
@@ -649,6 +657,41 @@ private fun CountPill(count: Int, open: Boolean, accent: Color, onClick: () -> U
         Text("$count", color = ink, fontSize = 13.sp, style = Digits, maxLines = 1)
         Icon(Icons.Rounded.KeyboardArrowDown, null, tint = ink, modifier = Modifier.size(17.dp).graphicsLayer { rotationZ = rotation })
     }
+}
+
+@Composable
+private fun ActionPill(title: String, accent: Color, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    val haptic = rememberHaptic()
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    Box(
+        modifier
+            .height(38.dp)
+            .clip(CircleShape)
+            .background(accent.copy(alpha = if (pressed) 0.28f else 0.16f))
+            .clickable(interaction, indication = null) {
+                haptic()
+                onClick()
+            }
+            .padding(horizontal = 12.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(title, color = accent, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+/** Cắt ảnh đại diện thành hình tròn ngay trên bitmap — luôn tròn kể cả khi lớp vẽ không hỗ trợ clip. */
+private fun circleCrop(src: ImageBitmap): ImageBitmap {
+    val b = src.asAndroidBitmap()
+    val d = minOf(b.width, b.height)
+    val out = android.graphics.Bitmap.createBitmap(d, d, android.graphics.Bitmap.Config.ARGB_8888)
+    val canvas = android.graphics.Canvas(out)
+    val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG or android.graphics.Paint.FILTER_BITMAP_FLAG)
+    paint.shader = android.graphics.BitmapShader(b, android.graphics.Shader.TileMode.CLAMP, android.graphics.Shader.TileMode.CLAMP).apply {
+        setLocalMatrix(android.graphics.Matrix().apply { setTranslate(-(b.width - d) / 2f, -(b.height - d) / 2f) })
+    }
+    canvas.drawCircle(d / 2f, d / 2f, d / 2f, paint)
+    return out.asImageBitmap()
 }
 
 @Composable

@@ -1,5 +1,55 @@
 # Lịch sử phiên bản Capsule VN
 
+## v1.3.0 (2026) — Icon khung vàng trọn vẹn, vuốt chuyển hoạt động, trang chủ mới & tinh gọn giao diện
+- **Tin nhắn chưa đọc xem lại được**: khi viền LED báo tin nhắn chưa đọc đang sáng, chạm vào Viên thuốc sẽ mở đúng thẻ tin nhắn đó (kèm nút Trả lời / Đã đọc) thay vì bảng Âm lịch – RAM – ROM; vẫn vuốt trái / phải sang nhạc, hẹn giờ… Chạm vào thẻ để mở cuộc trò chuyện; xem xong thu nhỏ thì viền tự tắt.
+- **Sửa báo nhầm "Thanh toán NFC – Chạm vào đầu đọc thẻ" khi đăng nhập ứng dụng**: siết nhận diện màn hình thanh toán (không còn khớp nhầm tên màn hình như "SetPayment/SmartPay" hay chữ "cài đặt … vào máy"); gợi ý khi mở app chỉ áp dụng cho ví / ngân hàng.
+- **Vuốt ngang chuyển hoạt động khi thu gọn** (tuỳ chọn trong Cử chỉ chạm & vuốt, mặc định tắt). Khi đang phát nhạc, vuốt vẫn ưu tiên chuyển bài; khi mở rộng, vuốt luôn chuyển hoạt động.
+- **Giao diện đen – đỏ – vàng kim** đồng bộ với logo: nền đen ấm, thẻ đỏ thẫm, nút & điểm nhấn vàng kim.
+- **Icon phóng to vừa khung squircle** (HyperOS, One UI, ColorOS) — khung vàng chiếm 68/72 dp.
+- **Cập nhật OTA ổn định**: CI ký APK bằng khóa cố định (GitHub Secrets) để các bản sau cài đè được qua cập nhật trong app.
+- Thêm lối vào "Giới thiệu về Viên thuốc" trong tab Giới thiệu.
+- **Sao lưu cấu hình cá nhân**:
+  - Tự động sao lưu (mặc định bật, Android 10+): cấu hình mới nhất luôn được lưu vào `Download/CapsuleVN/CapsuleVN-caidat.json` — file vẫn còn sau khi gỡ ứng dụng.
+  - Cài lại: Trang chủ hiện thẻ "Khôi phục cài đặt cũ?" mở sẵn thư mục sao lưu, chọn file là phục hồi toàn bộ thiết lập. Nếu máy bật sao lưu Google, cài đặt cũng được Android tự khôi phục.
+  - Vẫn có Sao lưu / Khôi phục thủ công trong Tính năng → Hệ thống (dùng khi đổi máy).
+- **Nhắc bật lại Viên thuốc khi rời app ngân hàng** rung nhẹ 2 nhịp, không chuông.
+- **Nền & viền thẻ thông báo tuỳ chỉnh** (Giao diện → Khung thẻ thông báo): kiểu nền Như Viên thuốc / Màu tuỳ chọn / Ảnh nền (tự cắt vừa khung, làm tối để dễ đọc) / Liquid Glass (iOS), độ đậm nền, màu & độ dày viền — áp dụng cho thẻ tin nhắn, cuộc gọi đến, cập nhật và tin chưa đọc, xem trước trực tiếp.
+- **Chế độ ngân hàng & VNeID** (Trang chủ / Giới thiệu → Ngân hàng & VNeID): tự tắt Viên thuốc khi bạn chạm biểu tượng hoặc mở app ngân hàng, ví / thanh toán, VNeID, VssID (tự nhận diện theo tên gói, tên app và dịch vụ thanh toán NFC; chỉnh được danh sách).
+  - Dùng ngay, không cần cài đặt gì: dùng xong chạm thông báo để bật lại.
+  - Cấp "Truy cập dữ liệu sử dụng" (trong Cài đặt): rời app sẽ hiện nhắc 1 chạm mở thẳng trang bật Viên thuốc.
+  - Nâng cao (tuỳ chọn): cấp 1 lần qua Shizuku hoặc ADB để tự bật lại hoàn toàn; sau đó có thể gỡ Shizuku và tắt Tuỳ chọn nhà phát triển.
+- **Nền & viền áp dụng cho các bảng thông báo** (tin nhắn, cuộc gọi, cập nhật, điều hướng, báo thức…) **và cả bảng mở rộng**; thông báo dạng viên nhỏ (sạc, tai nghe, chế độ chuông, thanh toán…) mặc định giữ nền đen như cũ, bật được nền ảnh / Liquid Glass nếu muốn.
+- **Thẻ tin nhắn cân đối hơn**: dòng tên app / thời gian to, rõ và thụt vào khỏi góc bo; bớt khoảng trống phía trên; ảnh đại diện tròn 44 dp kèm biểu tượng app; nút Trả lời / Đã đọc dạng viên tròn chia đều bề ngang.
+- **Trình phát nhạc mở rộng hiện đại**: ảnh bìa 64 dp bo tròn, tên bài / ca sĩ rõ ràng, thanh tiến trình toàn chiều ngang với thời gian bên dưới, nút Phát / Tạm dừng tròn trắng nổi bật ở giữa.
+- **Nhiều tin nhắn chưa đọc**: mỗi cuộc trò chuyện là một trang riêng (tối đa 6), vuốt qua lại; cuộc trò chuyện nào đã xem / đã mở / đã trả lời thì tự bỏ khỏi danh sách, viền LED đổi theo màu tin mới nhất còn lại.
+- **Cuộc gọi Zalo / Messenger**: sau khi bấm Nghe trên Viên thuốc, tự mở màn hình cuộc gọi của ứng dụng để ứng dụng đó tắt chuông và rung.
+- **Thử nghiệm tính năng**: bỏ mục Trứng phục sinh; sửa Trình phát nhạc thử nghiệm không hiện (trước đây bị ẩn vì trùng với chính ứng dụng đang mở).
+- **Icon ứng dụng giữ khung vàng, tách nền ngoài khung**:
+  - Giữ nguyên khung vàng và toàn bộ nền khói đỏ/đen bên trong khung; 4 góc đen bên ngoài được tách bỏ (trong suốt).
+  - Icon trong mục Giới thiệu, icon tròn kiểu cũ và ảnh README dùng chung bản khung vàng tách nền.
+- **Vuốt qua lại giữa các hoạt động khi mở rộng**:
+  - Chạm vào Viên thuốc mở đúng hoạt động đang hiển thị; vuốt trái / phải để chuyển sang hoạt động khác đang chạy (nhạc, hẹn giờ, đèn pin, điều hướng, tải xuống…), có chấm chỉ báo trang.
+  - Bảng trạng thái mặc định (Giờ, Pin, Âm lịch…) chỉ hiện khi không có hoạt động nào.
+- **Thông báo mẫu không chen ngang thông báo thật**: khi chỉnh "Thời gian hiển thị sự kiện", thông báo mẫu chỉ thay thế thông báo mẫu trước đó; tin nhắn thật từ ứng dụng khác luôn được ưu tiên và hiển thị đủ thời gian.
+- **Trang chủ mới**: thẻ thương hiệu với logo Viên thuốc Capsule VN trên nền đỏ rượu – đen ánh vàng, kèm trạng thái hoạt động và phiên bản; ô xem trước Viên thuốc ở mục Giao diện đổi sang tông màu cùng bộ nhận diện.
+- **Rà soát & tinh gọn toàn bộ giao diện**:
+  - Tên mục và tiêu đề trang được đồng bộ (Thẻ hoạt động, Tin nhắn & thông báo, Sự kiện hệ thống, Mã OTP 1 chạm, Đọc thông báo qua tai nghe, Hành vi hiển thị, Biểu ngữ hệ thống, Màu sắc & viền, Vòng sáng LED, Hiệu ứng đặc biệt, Khung thẻ thông báo…), mô tả ngắn gọn dễ hiểu hơn.
+  - Bỏ các mục trùng lặp: OTP, đọc thông báo và số dòng tin nhắn chỉ còn ở một nơi; lối tắt khung thẻ trùng trong Vị trí & kích thước được gỡ; "Ứng dụng ngân hàng không mở được" chuyển về Giới thiệu → Trợ giúp.
+  - Dịch lại thẻ "Tin nhắn bị hiện 2 lần?" sang tiếng Việt; chữ mô tả các mục nhỏ gọn hơn (14 sp).
+
+## v1.2.1 (2026) — Sửa icon mất góc, làm lại giao diện Vị trí & kích thước, xem trước chuyển động trực tiếp trên Viên thuốc
+- **Icon ứng dụng không còn bị mất góc**:
+  - Nguyên nhân: lớp foreground của Adaptive Icon chứa sẵn khung viền vàng bo góc + 4 góc đen, nên khi launcher (HyperOS, One UI, Pixel…) cắt theo hình dạng riêng thì khung vàng bị xén lệch, góc bị khuyết.
+  - Làm lại foreground dạng tràn viền: nền khói đỏ/đen + nhũ vàng phủ kín 108 dp, logo "CAPSULE VN ★" nằm gọn trong vùng an toàn 66 dp; launcher tự bo theo hình dạng của máy.
+  - Bổ sung icon đơn sắc riêng (`ic_launcher_monochrome`) cho chế độ Biểu tượng theo chủ đề (Android 13+), không còn bị khối vuông đặc.
+- **Vị trí & kích thước → tab Bảng mở rộng**:
+  - Sửa lỗi **Vị trí dọc (lên / xuống) không hoạt động**: giá trị `expandedOffsetY` trước đây chỉ được lưu mà không được áp dụng; nay Bảng mở rộng dịch chuyển đúng (kể cả giá trị âm) cả khi xem trước lẫn khi bung thật.
+  - Thiết kế lại thanh trượt dùng chung: tiêu đề chiếm trọn chiều ngang, nút "↺ Mặc định" nằm dưới tiêu đề, ô giá trị cố định bên phải → hết hiện tượng rớt chữ từng ký tự.
+  - Đặt lại tiêu đề ngắn gọn: "Vị trí dọc (lên / xuống)", "Chiều rộng" (hiển thị "Tự động" khi theo màn hình), "Chiều cao thêm", "Bo góc"; đồng bộ cho thẻ Tin nhắn / Cuộc gọi / Cập nhật.
+- **Mở rộng & Độ đàn hồi**:
+  - Bỏ khung mô phỏng chuyển động; mọi thay đổi (Kiểu mở rộng, Độ đàn hồi, Mở rộng dạng chất lỏng, Tốc độ chuyển động, Giảm hiệu ứng) giờ được bung thử **trực tiếp trên Viên thuốc thật** ở đỉnh màn hình. Thêm nút ▶ để xem lại.
+  - "Thời gian hiển thị sự kiện" phát một thông báo mẫu trên Viên thuốc, hiển thị đúng số giây đã chọn (bước 0,5 giây).
+
 ## v1.2.0 (2026) — Mô phỏng Đàn hồi & Chất lỏng Trực tiếp, Tùy chỉnh Bảng trạng thái mở rộng & Tối ưu giao diện khoa học
 - **Cập nhật Logo & Icon ứng dụng mới**:
   - Áp dụng logo Viên thuốc Vàng 3D dập nổi nghệ thuật kèm Ngôi sao vàng trên nền khói đỏ đen huyền bí.

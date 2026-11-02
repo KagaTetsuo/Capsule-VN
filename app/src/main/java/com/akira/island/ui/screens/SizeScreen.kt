@@ -1,5 +1,28 @@
 ﻿package com.akira.island.ui.screens
 
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlin.math.roundToInt
+import java.io.File
+import com.akira.island.ui.GroupSlider
+import com.akira.island.ui.ChoiceDialog
+import com.akira.island.data.CardBg
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material.icons.rounded.LineWeight
+import androidx.compose.material.icons.rounded.Opacity
+import androidx.compose.material.icons.rounded.Contrast
+import androidx.compose.material.icons.rounded.Image
+import androidx.compose.material.icons.rounded.Wallpaper
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import android.widget.Toast
+import android.net.Uri
+import android.graphics.BitmapFactory
+import android.graphics.Bitmap
+import android.content.Context
 import android.app.PendingIntent
 import android.content.Intent
 import android.os.Build
@@ -29,6 +52,7 @@ import androidx.compose.material.icons.rounded.Call
 import androidx.compose.material.icons.rounded.ChatBubble
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.DashboardCustomize
+import androidx.compose.material.icons.rounded.Circle
 import androidx.compose.material.icons.rounded.FormatLineSpacing
 import androidx.compose.material.icons.rounded.Height
 import androidx.compose.material.icons.rounded.Layers
@@ -56,7 +80,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.akira.island.core.CardPreviewMode
@@ -148,8 +174,8 @@ fun SizeScreen(onBack: () -> Unit, open: (Screen) -> Unit = {}) {
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 val modes = listOf(
-                    Icons.Rounded.AspectRatio to tr("Viên thuốc thu gọn", "Compact capsule"),
-                    Icons.Rounded.DashboardCustomize to tr("Bảng mở rộng trạng thái", "Expanded status"),
+                    Icons.Rounded.AspectRatio to tr("Viên thuốc", "Capsule"),
+                    Icons.Rounded.DashboardCustomize to tr("Bảng mở rộng", "Expanded board"),
                 )
                 modes.forEachIndexed { idx, (icon, label) ->
                     val active = selectedMode == idx
@@ -174,22 +200,22 @@ fun SizeScreen(onBack: () -> Unit, open: (Screen) -> Unit = {}) {
                             fontSize = 13.sp,
                             fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
                             maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                         )
                     }
                 }
             }
 
-            Spacer(Modifier.height(14.dp))
-
             if (selectedMode == 0) {
+                LivePreviewHint(tr("Viên thuốc trên đỉnh màn hình đang chuyển màu đỏ để căn chỉnh trực tiếp quanh camera", "The capsule at the top turns red so you can align it around the camera live"))
                 SectionHeader(tr("Vị trí quanh camera", "Position around camera"))
                 Group {
                     GroupStepSlider(
-                        Pos.First, Icons.Rounded.SwapHoriz, tr("Ngang", "Horizontal"), s.offsetX, -200..200,
+                        Pos.First, Icons.Rounded.SwapHoriz, tr("Vị trí ngang (trái / phải)", "Horizontal position"), s.offsetX, -200..200,
                         action = tr("Chính giữa", "Center") to { set { copy(offsetX = 0) } }, color = Tile.Blue,
                     ) { v -> set { copy(offsetX = v) } }
                     if (!s.notch) {
-                        GroupStepSlider(Pos.Middle, Icons.Rounded.SwapVert, tr("Khoảng cách từ mép trên", "Top offset"), s.offsetY, -10..120, color = Tile.Indigo) { v ->
+                        GroupStepSlider(Pos.Middle, Icons.Rounded.SwapVert, tr("Vị trí dọc (cách mép trên)", "Vertical position (from top)"), s.offsetY, -10..120, color = Tile.Indigo) { v ->
                             set { copy(offsetY = v) }
                         }
                     }
@@ -200,8 +226,7 @@ fun SizeScreen(onBack: () -> Unit, open: (Screen) -> Unit = {}) {
                     ) { v -> set { copy(notch = v) } }
                 }
 
-                Spacer(Modifier.height(14.dp))
-                SectionHeader(tr("Kích thước & bo góc Viên thuốc", "Capsule size & corner"))
+                SectionHeader(tr("Kích thước & bo góc", "Size & corners"))
                 Group {
                     GroupStepSlider(Pos.First, Icons.Rounded.Straighten, tr("Chiều rộng", "Width"), s.width, 15..170, color = Tile.Purple) { v ->
                         set { copy(width = v) }
@@ -212,91 +237,63 @@ fun SizeScreen(onBack: () -> Unit, open: (Screen) -> Unit = {}) {
                     GroupStepSlider(
                         Pos.Last,
                         Icons.Rounded.BorderStyle,
-                        tr("Bo góc viên thuốc thu gọn", "Compact corner radius"),
+                        tr("Bo góc", "Corner radius"),
                         if (s.capsuleCornerRadius < 0) s.height / 2 else s.capsuleCornerRadius,
                         0..25,
-                        action = tr("Tự động", "Auto") to { set { copy(capsuleCornerRadius = -1) } },
+                        action = tr("Tự động (tròn đều)", "Auto (fully round)") to { set { copy(capsuleCornerRadius = -1) } },
+                        valueText = if (s.capsuleCornerRadius < 0) tr("Tự động", "Auto") else null,
                         color = Tile.Yellow,
                     ) { v -> set { copy(capsuleCornerRadius = v) } }
                 }
 
-                Spacer(Modifier.height(14.dp))
-                Group {
-                    GroupItem(
-                        Pos.Single,
-                        Icons.Rounded.Tune,
-                        tr("Thẻ tin nhắn, cuộc gọi & cập nhật", "Message, call & update cards"),
-                        tr("Tùy chỉnh vị trí, kích thước & độ bo góc của các khung thẻ", "Position, size & corner radius of banner cards"),
-                        color = Tile.Green,
-                        onClick = { open(Screen.MSG_CALL_SIZE) },
-                    ) { Arrow() }
-                }
             } else {
-                
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(18.dp))
-                        .background(Color(0xFF1E2032))
-                        .border(1.dp, Color(0xFF2E324A), RoundedCornerShape(18.dp))
-                        .padding(14.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Box(
-                        Modifier
-                            .size(10.dp)
-                            .clip(CircleShape)
-                            .background(Tints.Green),
-                    )
-                    Spacer(Modifier.width(10.dp))
-                    Text(
-                        tr("Đang mô phỏng Bảng trạng thái mở rộng trên đỉnh màn hình (Giờ, Pin, Âm lịch, RAM/ROM, Phím tắt)", "Live preview of expanded status island at the top (Clock, Battery, Lunar date, RAM/ROM, Shortcuts)"),
-                        color = Color(0xFFB0B6CE),
-                        fontSize = 12.5.sp,
-                        lineHeight = 18.sp,
-                    )
+                val conf = LocalConfiguration.current
+                val autoWidth = (conf.screenWidthDp - 22).coerceAtMost(460)
+                LivePreviewHint(tr("Bảng mở rộng (Giờ, Pin, Âm lịch, RAM/ROM, Phím tắt) đang hiển thị trực tiếp trên đỉnh màn hình — kéo thanh trượt để xem thay đổi ngay", "The expanded board (clock, battery, lunar date, RAM/ROM, shortcuts) is shown live at the top — drag a slider to see changes instantly"))
+
+                SectionHeader(tr("Vị trí", "Position"))
+                Group {
+                    GroupStepSlider(
+                        Pos.Single,
+                        Icons.Rounded.SwapVert,
+                        tr("Vị trí dọc (lên / xuống)", "Vertical position (up / down)"),
+                        s.expandedOffsetY,
+                        -30..120,
+                        action = tr("Mặc định 0 dp", "Default 0 dp") to { set { copy(expandedOffsetY = 0) } },
+                        color = Tile.Indigo,
+                    ) { v -> set { copy(expandedOffsetY = v) } }
                 }
 
-                Spacer(Modifier.height(14.dp))
-                SectionHeader(tr("Vị trí & kích thước khi bung mở rộng", "Expanded position & size"))
+                SectionHeader(tr("Kích thước & bo góc", "Size & corners"))
                 Group {
                     GroupStepSlider(
                         Pos.First,
-                        Icons.Rounded.SwapVert,
-                        tr("Vị trí trên / dưới (Dọc)", "Top / bottom position"),
-                        s.expandedOffsetY,
-                        -30..120,
-                        action = tr("Mặc định (0 dp)", "Default (0 dp)") to { set { copy(expandedOffsetY = 0) } },
-                        color = Tile.Indigo,
-                    ) { v -> set { copy(expandedOffsetY = v) } }
-
-                    GroupStepSlider(
-                        Pos.Middle,
                         Icons.Rounded.Straighten,
-                        tr("Độ rộng bề ngang", "Horizontal width"),
-                        if (s.expandedWidth == 0) 380 else s.expandedWidth,
+                        tr("Chiều rộng", "Width"),
+                        if (s.expandedWidth == 0) autoWidth.coerceIn(260, 460) else s.expandedWidth,
                         260..460,
-                        action = tr("Tự động theo màn hình", "Auto screen width") to { set { copy(expandedWidth = 0) } },
+                        action = tr("Tự động theo màn hình", "Auto (screen width)") to { set { copy(expandedWidth = 0) } },
                         color = Tile.Blue,
+                        valueText = if (s.expandedWidth == 0) tr("Tự động", "Auto") else null,
                     ) { v -> set { copy(expandedWidth = v) } }
 
                     GroupStepSlider(
                         Pos.Middle,
                         Icons.Rounded.Height,
-                        tr("Chiều cao bổ sung", "Vertical height offset"),
+                        tr("Chiều cao thêm", "Extra height"),
                         s.expandedHeightExtra,
                         -20..60,
-                        action = tr("Mặc định (0 dp)", "Default (0 dp)") to { set { copy(expandedHeightExtra = 0) } },
+                        action = tr("Mặc định 0 dp", "Default 0 dp") to { set { copy(expandedHeightExtra = 0) } },
                         color = Tile.Purple,
                     ) { v -> set { copy(expandedHeightExtra = v) } }
 
                     GroupStepSlider(
                         Pos.Last,
                         Icons.Rounded.Layers,
-                        tr("Độ bo góc khi bung mở rộng", "Expanded corner radius"),
+                        tr("Bo góc", "Corner radius"),
                         s.expandedCornerRadius,
                         12..50,
-                        action = tr("Mặc định (44 dp)", "Default (44 dp)") to { set { copy(expandedCornerRadius = 44) } },
+                        action = tr("Mặc định 44 dp", "Default 44 dp") to { set { copy(expandedCornerRadius = 44) } },
                         color = Tile.Orange,
                     ) { v -> set { copy(expandedCornerRadius = v) } }
                 }
@@ -364,7 +361,7 @@ fun MsgCallSizeScreen(onBack: () -> Unit) {
 
     Box(Modifier.fillMaxSize()) {
         Page(
-            tr("Kích thước & bo góc khung thẻ", "Cards size & corner radius"),
+            tr("Khung thẻ thông báo", "Notification cards"),
             onBack = cancel,
             action = {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -458,10 +455,10 @@ fun MsgCallSizeScreen(onBack: () -> Unit) {
                     GroupStepSlider(
                         Pos.First,
                         Icons.Rounded.SwapVert,
-                        tr("Vị trí trên / dưới (Dọc)", "Top / bottom position"),
+                        tr("Vị trí dọc (lên / xuống)", "Vertical position (up / down)"),
                         s.msgOffsetY,
                         -30..120,
-                        action = tr("Mặc định", "Default") to { set { copy(msgOffsetY = 0) } },
+                        action = tr("Mặc định 0 dp", "Default 0 dp") to { set { copy(msgOffsetY = 0) } },
                         color = Tile.Indigo,
                     ) { v ->
                         if (previewOn) IslandBus.cardPreviewMode.value = CardPreviewMode.MESSAGE
@@ -470,10 +467,10 @@ fun MsgCallSizeScreen(onBack: () -> Unit) {
                     GroupStepSlider(
                         Pos.Middle,
                         Icons.Rounded.Straighten,
-                        tr("Độ rộng bề ngang", "Horizontal width"),
+                        tr("Chiều rộng", "Width"),
                         s.msgWidth,
                         220..440,
-                        action = tr("Mặc định (380 dp)", "Default (380 dp)") to { set { copy(msgWidth = 380) } },
+                        action = tr("Mặc định 380 dp", "Default 380 dp") to { set { copy(msgWidth = 380) } },
                         color = Tile.Blue,
                     ) { v ->
                         if (previewOn) IslandBus.cardPreviewMode.value = CardPreviewMode.MESSAGE
@@ -482,10 +479,10 @@ fun MsgCallSizeScreen(onBack: () -> Unit) {
                     GroupStepSlider(
                         Pos.Middle,
                         Icons.Rounded.Height,
-                        tr("Độ rộng bề dọc (Chiều cao)", "Vertical height offset"),
+                        tr("Chiều cao thêm", "Extra height"),
                         s.msgHeightExtra,
                         -15..60,
-                        action = tr("Mặc định (0 dp)", "Default (0 dp)") to { set { copy(msgHeightExtra = 0) } },
+                        action = tr("Mặc định 0 dp", "Default 0 dp") to { set { copy(msgHeightExtra = 0) } },
                         color = Tile.Purple,
                     ) { v ->
                         if (previewOn) IslandBus.cardPreviewMode.value = CardPreviewMode.MESSAGE
@@ -494,11 +491,11 @@ fun MsgCallSizeScreen(onBack: () -> Unit) {
                     GroupStepSlider(
                         Pos.Middle,
                         Icons.Rounded.FormatLineSpacing,
-                        tr("Dòng văn bản", "Text lines"),
+                        tr("Số dòng nội dung", "Text lines"),
                         s.msgLines,
                         1..6,
                         unit = tr("dòng", "lines"),
-                        action = tr("Mặc định (3)", "Default (3)") to { set { copy(msgLines = 3) } },
+                        action = tr("Mặc định 3 dòng", "Default 3 lines") to { set { copy(msgLines = 3) } },
                         color = Tile.Teal,
                     ) { v ->
                         if (previewOn) IslandBus.cardPreviewMode.value = CardPreviewMode.MESSAGE
@@ -507,10 +504,10 @@ fun MsgCallSizeScreen(onBack: () -> Unit) {
                     GroupStepSlider(
                         Pos.Last,
                         Icons.Rounded.BorderStyle,
-                        tr("Độ bo tròn góc thẻ tin nhắn", "Message card corner radius"),
+                        tr("Bo góc", "Corner radius"),
                         s.cardCornerRadius,
                         8..44,
-                        action = tr("Mặc định (32 dp)", "Default (32 dp)") to { set { copy(cardCornerRadius = 32) } },
+                        action = tr("Mặc định 32 dp", "Default 32 dp") to { set { copy(cardCornerRadius = 32) } },
                         color = Tile.Yellow,
                     ) { v ->
                         if (previewOn) IslandBus.cardPreviewMode.value = CardPreviewMode.MESSAGE
@@ -523,10 +520,10 @@ fun MsgCallSizeScreen(onBack: () -> Unit) {
                     GroupStepSlider(
                         Pos.First,
                         Icons.Rounded.SwapVert,
-                        tr("Vị trí trên / dưới (Dọc)", "Top / bottom position"),
+                        tr("Vị trí dọc (lên / xuống)", "Vertical position (up / down)"),
                         s.callOffsetY,
                         -30..120,
-                        action = tr("Mặc định", "Default") to { set { copy(callOffsetY = 0) } },
+                        action = tr("Mặc định 0 dp", "Default 0 dp") to { set { copy(callOffsetY = 0) } },
                         color = Tile.Indigo,
                     ) { v ->
                         if (previewOn) IslandBus.cardPreviewMode.value = CardPreviewMode.CALL
@@ -535,10 +532,10 @@ fun MsgCallSizeScreen(onBack: () -> Unit) {
                     GroupStepSlider(
                         Pos.Middle,
                         Icons.Rounded.Straighten,
-                        tr("Độ rộng bề ngang", "Horizontal width"),
+                        tr("Chiều rộng", "Width"),
                         s.callWidth,
                         220..440,
-                        action = tr("Mặc định (370 dp)", "Default (370 dp)") to { set { copy(callWidth = 370) } },
+                        action = tr("Mặc định 370 dp", "Default 370 dp") to { set { copy(callWidth = 370) } },
                         color = Tile.Green,
                     ) { v ->
                         if (previewOn) IslandBus.cardPreviewMode.value = CardPreviewMode.CALL
@@ -547,10 +544,10 @@ fun MsgCallSizeScreen(onBack: () -> Unit) {
                     GroupStepSlider(
                         Pos.Middle,
                         Icons.Rounded.Height,
-                        tr("Độ rộng bề dọc (Chiều cao)", "Vertical height"),
+                        tr("Chiều cao", "Height"),
                         s.callHeight,
                         52..130,
-                        action = tr("Mặc định (82 dp)", "Default (82 dp)") to { set { copy(callHeight = 82) } },
+                        action = tr("Mặc định 82 dp", "Default 82 dp") to { set { copy(callHeight = 82) } },
                         color = Tile.Pink,
                     ) { v ->
                         if (previewOn) IslandBus.cardPreviewMode.value = CardPreviewMode.CALL
@@ -559,10 +556,10 @@ fun MsgCallSizeScreen(onBack: () -> Unit) {
                     GroupStepSlider(
                         Pos.Last,
                         Icons.Rounded.BorderStyle,
-                        tr("Độ bo tròn góc thẻ cuộc gọi", "Call card corner radius"),
+                        tr("Bo góc", "Corner radius"),
                         s.callCornerRadius,
                         8..50,
-                        action = tr("Mặc định (32 dp)", "Default (32 dp)") to { set { copy(callCornerRadius = 32) } },
+                        action = tr("Mặc định 32 dp", "Default 32 dp") to { set { copy(callCornerRadius = 32) } },
                         color = Tile.Yellow,
                     ) { v ->
                         if (previewOn) IslandBus.cardPreviewMode.value = CardPreviewMode.CALL
@@ -575,10 +572,10 @@ fun MsgCallSizeScreen(onBack: () -> Unit) {
                     GroupStepSlider(
                         Pos.First,
                         Icons.Rounded.SwapVert,
-                        tr("Vị trí trên / dưới (Dọc)", "Top / bottom position"),
+                        tr("Vị trí dọc (lên / xuống)", "Vertical position (up / down)"),
                         s.updateOffsetY,
                         -30..120,
-                        action = tr("Mặc định", "Default") to { set { copy(updateOffsetY = 0) } },
+                        action = tr("Mặc định 0 dp", "Default 0 dp") to { set { copy(updateOffsetY = 0) } },
                         color = Tile.Indigo,
                     ) { v ->
                         if (previewOn) IslandBus.cardPreviewMode.value = CardPreviewMode.UPDATE
@@ -587,10 +584,10 @@ fun MsgCallSizeScreen(onBack: () -> Unit) {
                     GroupStepSlider(
                         Pos.Middle,
                         Icons.Rounded.Straighten,
-                        tr("Độ rộng bề ngang", "Horizontal width"),
+                        tr("Chiều rộng", "Width"),
                         s.updateWidth,
                         220..440,
-                        action = tr("Mặc định (380 dp)", "Default (380 dp)") to { set { copy(updateWidth = 380) } },
+                        action = tr("Mặc định 380 dp", "Default 380 dp") to { set { copy(updateWidth = 380) } },
                         color = Tile.Blue,
                     ) { v ->
                         if (previewOn) IslandBus.cardPreviewMode.value = CardPreviewMode.UPDATE
@@ -599,10 +596,10 @@ fun MsgCallSizeScreen(onBack: () -> Unit) {
                     GroupStepSlider(
                         Pos.Middle,
                         Icons.Rounded.Height,
-                        tr("Độ rộng bề dọc (Chiều cao)", "Vertical height offset"),
+                        tr("Chiều cao thêm", "Extra height"),
                         s.updateHeightExtra,
                         -20..60,
-                        action = tr("Mặc định (0 dp)", "Default (0 dp)") to { set { copy(updateHeightExtra = 0) } },
+                        action = tr("Mặc định 0 dp", "Default 0 dp") to { set { copy(updateHeightExtra = 0) } },
                         color = Tile.Purple,
                     ) { v ->
                         if (previewOn) IslandBus.cardPreviewMode.value = CardPreviewMode.UPDATE
@@ -611,15 +608,23 @@ fun MsgCallSizeScreen(onBack: () -> Unit) {
                     GroupStepSlider(
                         Pos.Last,
                         Icons.Rounded.BorderStyle,
-                        tr("Độ bo tròn góc thẻ cập nhật", "Update card corner radius"),
+                        tr("Bo góc", "Corner radius"),
                         s.updateCornerRadius,
                         8..44,
-                        action = tr("Mặc định (32 dp)", "Default (32 dp)") to { set { copy(updateCornerRadius = 32) } },
+                        action = tr("Mặc định 32 dp", "Default 32 dp") to { set { copy(updateCornerRadius = 32) } },
                         color = Tile.Yellow,
                     ) { v ->
                         if (previewOn) IslandBus.cardPreviewMode.value = CardPreviewMode.UPDATE
                         set { copy(updateCornerRadius = v) }
                     }
+                }
+            }
+
+            CardStyleSection(s) {
+                if (previewOn) IslandBus.cardPreviewMode.value = when (selectedTab) {
+                    0 -> CardPreviewMode.MESSAGE
+                    1 -> CardPreviewMode.CALL
+                    else -> CardPreviewMode.UPDATE
                 }
             }
 
@@ -677,4 +682,142 @@ private fun IslandSettings.withMsgCallPlacement(from: IslandSettings) = copy(
     updateWidth = from.updateWidth,
     updateHeightExtra = from.updateHeightExtra,
     updateCornerRadius = from.updateCornerRadius,
+    cardBg = from.cardBg,
+    cardBgColor = from.cardBgColor,
+    cardBgOpacity = from.cardBgOpacity,
+    cardBgImage = from.cardBgImage,
+    cardImageDim = from.cardImageDim,
+    cardBorder = from.cardBorder,
+    cardBorderColor = from.cardBorderColor,
+    cardBorderWidth = from.cardBorderWidth,
+    cardStyleExpanded = from.cardStyleExpanded,
+    cardStylePills = from.cardStylePills,
 )
+
+@Composable
+private fun LivePreviewHint(text: String) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(Color(0xFF261A1C))
+            .border(1.dp, Color(0xFF4A3528), RoundedCornerShape(18.dp))
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.size(9.dp).clip(CircleShape).background(Tints.Green))
+        Spacer(Modifier.width(10.dp))
+        Text(text, color = Color(0xFFCDBFB4), fontSize = 12.5.sp, lineHeight = 17.sp, modifier = Modifier.weight(1f))
+    }
+}
+
+private val cardColors = listOf(
+    0xFF1F1719, 0xFF000000, 0xFF2B0A10, 0xFF7A0F1E, 0xFFC8102E, 0xFF3A2A12,
+    0xFF0F1E3A, 0xFF0E2A24, 0xFF2A1240, 0xFF3A3A40, 0xFFF5F0E6,
+)
+
+private val cardBorderColors = listOf(
+    0xFFE6C068, 0xFFFFD700, 0xFFC8102E, 0xFFFF453A, 0xFFFFFFFF, 0xFF8E8E93,
+    0xFF0A84FF, 0xFF34C759, 0xFFBF5AF2, 0xFF30B0C7,
+)
+
+/** Nền & viền dùng chung cho mọi thẻ thông báo: màu, ảnh nền, độ trong suốt, Liquid Glass, màu & độ dày viền. */
+@Composable
+private fun CardStyleSection(s: IslandSettings, preview: () -> Unit) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var bgDialog by remember { mutableStateOf(false) }
+    fun set(block: IslandSettings.() -> IslandSettings) {
+        preview()
+        SettingsRepo.update(block)
+    }
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            val path = withContext(Dispatchers.IO) { saveCardImage(context, uri) }
+            if (path != null) set { copy(cardBg = CardBg.IMAGE, cardBgImage = path) }
+            else Toast.makeText(context, tr("Không đọc được ảnh", "Couldn't read the image"), Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    SectionHeader(tr("Nền & viền bảng thông báo", "Banner background & border"))
+    Group {
+        GroupItem(
+            Pos.First, Icons.Rounded.Wallpaper, tr("Kiểu nền", "Background"), s.cardBg.title,
+            color = Tile.Orange, onClick = { bgDialog = true },
+        ) { Arrow() }
+        if (s.cardBg == CardBg.IMAGE) {
+            GroupItem(
+                Pos.Middle, Icons.Rounded.Image, tr("Chọn ảnh nền", "Pick an image"),
+                if (s.cardBgImage.isEmpty()) tr("Chưa chọn ảnh", "No image yet") else tr("Đã chọn — chạm để đổi ảnh khác", "Selected — tap to change"),
+                color = Tile.Pink,
+                onClick = { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+            ) { Arrow() }
+            GroupSlider(
+                Pos.Middle, Icons.Rounded.Contrast, tr("Làm tối ảnh để dễ đọc chữ", "Darken image for legibility"),
+                value = s.cardImageDim.toFloat(), range = 0f..80f, label = "${s.cardImageDim}%", color = Tile.Gray,
+            ) { v -> set { copy(cardImageDim = v.toInt()) } }
+        }
+        GroupSlider(
+            Pos.Middle, Icons.Rounded.Opacity,
+            if (s.cardBg == CardBg.GLASS) tr("Độ đậm kính", "Glass density") else tr("Độ đậm nền", "Background opacity"),
+            value = s.cardBgOpacity.toFloat(), range = 20f..100f, label = "${s.cardBgOpacity}%", color = Tile.Teal,
+        ) { v -> set { copy(cardBgOpacity = v.toInt()) } }
+        GroupToggle(
+            Pos.Middle, Icons.Rounded.Circle, tr("Áp dụng cho thông báo dạng viên nhỏ", "Also for small pill alerts"),
+            tr("Sạc pin, tai nghe, chế độ chuông, thanh toán… Tắt: giữ nền đen như cũ", "Charging, headphones, ring mode, payments… Off: keep the classic black"),
+            s.cardStylePills, color = Tile.Gray,
+        ) { v -> set { copy(cardStylePills = v) } }
+        GroupToggle(
+            Pos.Last, Icons.Rounded.DashboardCustomize, tr("Áp dụng cho bảng mở rộng", "Also for the expanded island"),
+            tr("Bảng Giờ – Pin, trình phát nhạc, hẹn giờ… dùng chung nền & viền này", "Clock, music player, timer… panels use the same background & border"),
+            s.cardStyleExpanded, color = Tile.Indigo,
+        ) { v -> set { copy(cardStyleExpanded = v) } }
+    }
+    if (s.cardBg == CardBg.COLOR || s.cardBg == CardBg.GLASS) {
+        Swatches(cardColors, s.cardBgColor) { c -> set { copy(cardBgColor = c) } }
+    }
+
+    Group {
+        GroupToggle(
+            if (s.cardBorder) Pos.First else Pos.Single, Icons.Rounded.BorderStyle, tr("Viền thẻ", "Card border"),
+            tr("Đường viền màu quanh thẻ thông báo", "A colored outline around notification cards"),
+            s.cardBorder, color = Tile.Yellow,
+        ) { v -> set { copy(cardBorder = v) } }
+        if (s.cardBorder) {
+            GroupSlider(
+                Pos.Last, Icons.Rounded.LineWeight, tr("Độ dày viền", "Border width"),
+                value = s.cardBorderWidth, range = 0.5f..4f, label = "%.1f dp".format(s.cardBorderWidth), color = Tile.Yellow,
+            ) { v -> set { copy(cardBorderWidth = (v * 2).roundToInt() / 2f) } }
+        }
+    }
+    if (s.cardBorder) {
+        Swatches(cardBorderColors, s.cardBorderColor) { c -> set { copy(cardBorderColor = c) } }
+    }
+
+    if (bgDialog) {
+        ChoiceDialog(tr("Kiểu nền thẻ", "Card background"), CardBg.entries, s.cardBg, { it.title }, { v ->
+            if (v == CardBg.IMAGE && s.cardBgImage.isEmpty()) {
+                picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+            } else {
+                set { copy(cardBg = v) }
+            }
+        }) { bgDialog = false }
+    }
+}
+
+/** Chép ảnh người dùng chọn vào bộ nhớ riêng của app (thu nhỏ tối đa 1080 px) để overlay đọc được lâu dài. */
+private fun saveCardImage(context: Context, uri: Uri): String? = runCatching {
+    val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+    context.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
+    var sample = 1
+    while (maxOf(bounds.outWidth, bounds.outHeight) / (sample * 2) >= 1080) sample *= 2
+    val bmp = context.contentResolver.openInputStream(uri)?.use {
+        BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = sample })
+    } ?: return@runCatching null
+    context.filesDir.listFiles { f -> f.name.startsWith("card_bg_") }?.forEach { it.delete() }
+    val file = File(context.filesDir, "card_bg_${System.currentTimeMillis()}.jpg")
+    file.outputStream().use { bmp.compress(Bitmap.CompressFormat.JPEG, 88, it) }
+    bmp.recycle()
+    file.absolutePath
+}.getOrNull()

@@ -41,7 +41,15 @@ sealed class Act(val id: String, val transient: Boolean = false) {
     data class PayA(val p: PayReady) : Act("pay", transient = true) {
         override val pkg: String get() = p.pkg
     }
+    /** Tin nhắn chưa đọc (viền LED đang sáng) — xem lại khi chạm vào Viên thuốc, vuốt qua lại như các hoạt động khác. */
+    data class UnreadA(val n: Notice) : Act(unreadId(n)) {
+        override val pkg: String? get() = n.message?.pkg
+    }
     data class AlarmA(val a: AlarmInfo) : Act("alarm") {
         override val pkg: String? get() = a.pkg
     }
 }
+
+const val UNREAD_ID = "unread"
+
+fun unreadId(n: Notice): String = "$UNREAD_ID:${n.message?.key ?: n.id}"

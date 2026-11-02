@@ -128,8 +128,15 @@ object Messages {
             otpCode = otpCode,
         )
         val brandColor = appBrandColor(sbn.packageName, message.accent)
-        IslandBus.unreadLedColor.value = brandColor
-        IslandBus.unreadLedPkg.value = sbn.packageName
+        val card = Notice(
+            title = title.ifEmpty { appName },
+            icon = Ios.load(service, R.drawable.ios_chatbubble_ellipses),
+            tint = brandColor,
+            style = NoticeStyle.MESSAGE,
+            message = message,
+            extraMs = if (actions.isEmpty()) 2_000 else 4_500,
+        )
+        IslandBus.setUnread(card)
 
         if (IslandBus.gamingActive.value && s.gameModeEnabled && s.gameSuppressPopups) {
             val shortBody = if (text.length > 22) text.take(22) + "…" else text
@@ -147,17 +154,7 @@ object Messages {
             return
         }
 
-        IslandBus.post(
-            Notice(
-                title = title.ifEmpty { appName },
-                icon = Ios.load(service, R.drawable.ios_chatbubble_ellipses),
-                tint = brandColor,
-                style = NoticeStyle.MESSAGE,
-                message = message,
-                
-                extraMs = if (actions.isEmpty()) 2_000 else 4_500,
-            ),
-        )
+        IslandBus.post(card)
         
         SystemBanners.onMessage(sbn.packageName, n.channelId, popsUp = !ranked || ranking.importance >= NotificationManager.IMPORTANCE_HIGH)
     }
@@ -234,16 +231,15 @@ object Messages {
 
     fun onReplied(key: String) {
         repliedAt[key] = SystemClock.elapsedRealtime()
-        IslandBus.unreadLedColor.value = null
-        IslandBus.unreadLedPkg.value = null
+        IslandBus.removeUnread(key)
     }
 
     fun forget(key: String) {
         shown.remove(key)
         repliedAt.remove(key)
+        IslandBus.removeUnread(key)
         if (shown.isEmpty()) {
-            IslandBus.unreadLedColor.value = null
-            IslandBus.unreadLedPkg.value = null
+            IslandBus.clearUnread()
         }
     }
 

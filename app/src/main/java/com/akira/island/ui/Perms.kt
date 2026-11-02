@@ -42,6 +42,13 @@ object Perms {
 
     fun openAccessibility(context: Context) = start(context, Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
 
+    fun openUsageAccess(context: Context) {
+        val detail = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).setData(android.net.Uri.parse("package:${context.packageName}"))
+        if (runCatching { context.startActivity(detail.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }.isFailure) {
+            start(context, Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
+        }
+    }
+
     fun openNotifications(context: Context) {
         val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             Intent(Settings.ACTION_NOTIFICATION_LISTENER_DETAIL_SETTINGS)

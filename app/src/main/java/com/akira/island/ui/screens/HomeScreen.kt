@@ -12,6 +12,12 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import android.widget.Toast
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -153,8 +159,10 @@ fun HomeScreen(open: (Screen) -> Unit) {
     val (perms, _) = rememberPermState()
     val missing = perms.missing
 
-    Page(tr("Capsule VN", "Dynamic Island")) {
-        IslandPreview()
+    Page(tr("Trang chủ", "Home")) {
+        BrandHero(on = s.enabled && running && perms.accessibility)
+        // Mới cài (lại): gợi ý phục hồi thiết lập cá nhân từ bản sao lưu
+        if (!SettingsRepo.hadSavedSettings && !s.restoreAsked) RestoreCard()
         UpdateSection()
 
         if (!perms.accessibility) {
@@ -173,7 +181,7 @@ fun HomeScreen(open: (Screen) -> Unit) {
 
         ToggleCard(
             Icons.Rounded.PowerSettingsNew,
-            tr("Viên thuốc đang bật", "Island on"),
+            if (s.enabled) tr("Viên thuốc đang bật", "Island on") else tr("Viên thuốc đang tắt", "Island off"),
             when {
                 !perms.accessibility -> tr("Trước tiên hãy bật dịch vụ trong Hỗ trợ tiếp cận", "First turn on the service in Accessibility")
                 running -> tr("Viên thuốc hiển thị bao quanh camera", "The capsule shows over the camera")
@@ -191,13 +199,98 @@ fun HomeScreen(open: (Screen) -> Unit) {
             ) { if (missing.isEmpty()) Arrow() else CountBadge(missing.size) }
             
             KeepAliveItem(Pos.Middle, open)
-            
-            BanksItem(Pos.Middle, open)
             GroupItem(
-                Pos.Last, Icons.Rounded.Science, tr("Thử nghiệm", "Try it"),
-                tr("Sự kiện, tin nhắn, cuộc gọi, thanh toán — ngay trên Viên thuốc", "An event, message, call, payment — right in the island"),
+                Pos.Last, Icons.Rounded.Science, tr("Thử nghiệm tính năng", "Try features"),
+                tr("Tin nhắn, cuộc gọi, nhạc, thanh toán… hiện ngay trên Viên thuốc", "Message, call, music, payment… shown right in the island"),
                 color = Tile.Purple, onClick = { open(Screen.TESTS) },
             ) { Arrow() }
+        }
+    }
+}
+
+@Composable
+private fun RestoreCard() {
+    val context = LocalContext.current
+    val picker = rememberLauncherForActivityResult(OpenBackup) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        val raw = runCatching { context.contentResolver.openInputStream(uri)?.use { it.readBytes().decodeToString() } }.getOrNull()
+        val ok = raw != null && SettingsRepo.importJson(raw)
+        if (ok) SettingsRepo.update { copy(restoreAsked = true) }
+        Toast.makeText(context, if (ok) tr("Đã khôi phục cài đặt của bạn", "Your settings are back") else tr("File không hợp lệ", "Invalid backup file"), Toast.LENGTH_SHORT).show()
+    }
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(28.dp))
+            .background(Ui.Card)
+            .border(1.dp, Ui.Primary.copy(alpha = 0.35f), RoundedCornerShape(28.dp))
+            .padding(20.dp),
+    ) {
+        Text(tr("Khôi phục cài đặt cũ?", "Restore your settings?"), color = Ui.Text, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(6.dp))
+        Text(
+            tr("Nếu trước đây bạn đã dùng Capsule VN, chọn file CapsuleVN-caidat.json trong thư mục Download/CapsuleVN để lấy lại toàn bộ thiết lập.", "If you used Capsule VN before, pick CapsuleVN-caidat.json in Download/CapsuleVN to get all your settings back."),
+            color = Ui.Sub, fontSize = 14.sp, lineHeight = 20.sp,
+        )
+        Spacer(Modifier.height(14.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            PillAction(tr("Chọn file sao lưu", "Pick backup file")) { picker.launch(BACKUP_TYPES) }
+            PillAction(tr("Bỏ qua", "Skip")) { SettingsRepo.update { copy(restoreAsked = true) } }
+        }
+    }
+}
+
+/** Thẻ thương hiệu đầu trang chủ: logo Viên thuốc Capsule VN trên nền đỏ rượu – đen ánh vàng. */
+@Composable
+private fun BrandHero(on: Boolean) {
+    val context = LocalContext.current
+    val version = remember { UpdateChecker.currentVersion(context) }
+    val gold = Color(0xFFE9C46A)
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(28.dp))
+            .background(Brush.verticalGradient(listOf(Color(0xFF3A0F18), Color(0xFF1C0B10), Color(0xFF120D10))))
+            .drawBehind {
+                // Quầng sáng vàng dịu phía sau logo
+                drawCircle(
+                    Brush.radialGradient(
+                        listOf(gold.copy(alpha = 0.22f), Color.Transparent),
+                        center = center.copy(y = size.height * 0.42f),
+                        radius = size.width * 0.55f,
+                    ),
+                    radius = size.width * 0.55f,
+                    center = center.copy(y = size.height * 0.42f),
+                )
+            }
+            .border(1.dp, gold.copy(alpha = 0.35f), RoundedCornerShape(28.dp))
+            .padding(horizontal = 20.dp, vertical = 18.dp),
+    ) {
+        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+            Image(
+                painterResource(R.drawable.logo_capsule_vn),
+                contentDescription = "Capsule VN",
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.fillMaxWidth(0.86f).aspectRatio(1100f / 412f),
+            )
+            Spacer(Modifier.height(14.dp))
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    Modifier
+                        .clip(CircleShape)
+                        .background((if (on) Tints.Green else Tints.Orange).copy(alpha = 0.16f))
+                        .padding(horizontal = 10.dp, vertical = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(Modifier.size(7.dp).clip(CircleShape).background(if (on) Tints.Green else Tints.Orange))
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        if (on) tr("Đang hoạt động", "Running") else tr("Chưa hoạt động", "Not running"),
+                        color = if (on) Tints.Green else Tints.Orange, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold,
+                    )
+                }
+                Text("v$version", color = gold.copy(alpha = 0.85f), fontSize = 12.5.sp, fontWeight = FontWeight.Medium)
+            }
         }
     }
 }
@@ -260,7 +353,7 @@ private fun DoubleBannerCard(app: String, onFix: () -> Unit, onHide: () -> Unit)
         Text(tr("Tin nhắn bị hiện 2 lần?", "Messages show up twice?"), color = Ui.Text, fontSize = 17.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(6.dp))
         Text(
-            tr("Both the island and $app itself show the message. Turn off its “Pop on screen” — only the island will remain, and the notification stays in the shade.", "Both the island and $app itself show the message. Turn off its “Pop on screen” — only the island will " +
+            tr("Cả Viên thuốc và chính $app đều hiện tin nhắn. Hãy tắt “Hiện trên màn hình” (pop-up) của ứng dụng đó — chỉ còn Viên thuốc hiển thị, thông báo vẫn nằm trong thanh thông báo.", "Both the island and $app itself show the message. Turn off its “Pop on screen” — only the island will " +
                     "remain, and the notification stays in the shade."),
             color = Ui.Sub, fontSize = 14.sp, lineHeight = 20.sp,
         )
@@ -335,7 +428,7 @@ fun TestsScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val haptic = rememberHaptic()
     val demos = remember { demos(context) }
-    Page(tr("Thử nghiệm", "Try it"), onBack,
+    Page(tr("Thử nghiệm tính năng", "Try features"), onBack,
         subtitle = tr("Chạm — ví dụ sẽ hiển thị trên Viên thuốc ở đầu màn hình", "Tap — the example shows up in the island at the top of the screen")) {
         demos.chunked(2).forEach { row ->
             Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -435,35 +528,13 @@ private fun demos(context: Context): List<Demo> {
         Demo(Icons.Rounded.LibraryMusic, tr("Trình phát nhạc", "Music Player"),
             tr("Đĩa bìa nhạc, sóng Equalizer động và điều khiển", "Rotating album art, dynamic equalizer & controls"), Tile.Pink) {
             IslandBus.media.value = MediaInfo(
-                key = "demo-media", pkg = context.packageName, title = "Tiến Quân Ca", artist = "Văn Cao · Quốc ca Việt Nam",
+                key = "demo-media", pkg = "capsulevn.demo.player", title = "Tiến Quân Ca", artist = "Văn Cao · Quốc ca Việt Nam",
                 album = "Việt Nam", art = null, accent = Tints.Lavender, durationMs = 180_000L, positionMs = 45_000L,
                 positionTime = SystemClock.elapsedRealtime(), speed = 1f, playing = true, canSeek = true,
             )
             IslandBus.scope.launch {
                 delay(8_000)
                 if (IslandBus.media.value?.key == "demo-media") IslandBus.media.value = null
-            }
-        },
-
-        // 6. Trứng phục sinh "Tuổi Trẻ Thế Hệ Bác Hồ"
-        Demo(Icons.Rounded.AutoAwesome, tr("Trứng phục sinh VN", "Vietnam Easter Egg"),
-            tr("Cờ Đỏ Sao Vàng hào hùng theo nhịp ca sĩ Tùng Dương", "Epic Red Flag & Gold Star pulsating with singer Tung Duong"), Tile.Red) {
-            IslandBus.egg.value = true
-            IslandBus.post(
-                Notice(
-                    title = "Tuổi Trẻ Thế Hệ Bác Hồ",
-                    caption = "Tùng Dương · Khát vọng cống hiến vì Tổ quốc!",
-                    state = "Tuổi Trẻ Thế Hệ Bác Hồ",
-                    icon = Ios.load(context, R.drawable.ic_star_vn),
-                    tint = Color(0xFFFF2D55),
-                    style = NoticeStyle.EGG,
-                    extraMs = 4_000,
-                    openPkg = context.packageName,
-                ),
-            )
-            IslandBus.scope.launch {
-                delay(4_500)
-                IslandBus.egg.value = false
             }
         },
 
@@ -674,7 +745,7 @@ fun IslandPreview(expanded: Boolean = false) {
     val demo = remember {
         MediaInfo(
             key = "demo", pkg = "", title = tr("Bản xem thử (Demo)", "Demo"), artist = "", album = null, art = null,
-            accent = Tints.Lavender, durationMs = 0, positionMs = 0, positionTime = SystemClock.elapsedRealtime(),
+            accent = Ui.Primary, durationMs = 0, positionMs = 0, positionTime = SystemClock.elapsedRealtime(),
             speed = 1f, playing = true, canSeek = false,
         )
     }
@@ -683,7 +754,7 @@ fun IslandPreview(expanded: Boolean = false) {
             .fillMaxWidth()
             .height(140.dp)
             .clip(RoundedCornerShape(28.dp))
-            .background(Brush.verticalGradient(listOf(Color(0xFF3B3860), Color(0xFF1F1E27)))),
+            .background(Brush.verticalGradient(listOf(Color(0xFF4A2030), Color(0xFF1E1519)))),
         contentAlignment = Alignment.TopCenter,
     ) {
         val act = if (expanded) Act.Idle else Act.MediaA(demo)
@@ -711,7 +782,7 @@ fun IslandPreview(expanded: Boolean = false) {
                         Modifier.background(Color(s.color))
                     },
                 )
-                .then(if (s.outline) Modifier.border(s.outlineWidth.dp, if (s.outlineFromArt) Tints.Lavender else Color(s.outlineColor), shape) else Modifier)
+                .then(if (s.outline) Modifier.border(s.outlineWidth.dp, if (s.outlineFromArt) Ui.Primary else Color(s.outlineColor), shape) else Modifier)
                 .animateContentSize(),
         ) {
             CompactContent(act, s, 400.dp)

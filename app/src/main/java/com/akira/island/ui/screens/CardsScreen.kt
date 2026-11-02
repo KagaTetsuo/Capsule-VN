@@ -35,7 +35,7 @@ fun CardsScreen(onBack: () -> Unit, onInstruction: () -> Unit, open: (Screen) ->
     val s by SettingsRepo.state.collectAsState()
     fun set(block: IslandSettings.() -> IslandSettings) = SettingsRepo.update(block)
 
-    Page(tr("Thẻ linh hoạt", "Dynamic cards"), onBack,
+    Page(tr("Thẻ hoạt động", "Live activity cards"), onBack,
         action = { IconAction(Icons.Rounded.Lightbulb, tr("Hướng dẫn", "Instructions"), onInstruction) }) {
         SectionHeader(tr("Nhạc & cuộc gọi", "Music and calls"))
         Group {

@@ -30,6 +30,7 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Remove
+import androidx.compose.material.icons.rounded.Restore
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
@@ -52,6 +53,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.akira.island.core.tr
@@ -260,7 +262,7 @@ fun GroupItem(
                     modifier = Modifier.align(Alignment.CenterVertically))
                 if (badge != null) Badge(badge, Modifier.align(Alignment.CenterVertically))
             }
-            if (subtitle != null) Text(subtitle, color = Ui.Sub, fontSize = 15.sp, lineHeight = 19.sp)
+            if (subtitle != null) Text(subtitle, color = Ui.Sub, fontSize = 14.sp, lineHeight = 18.sp, modifier = Modifier.padding(top = 2.dp))
         }
         if (trailing != null) {
             Spacer(Modifier.width(12.dp))
@@ -355,6 +357,7 @@ fun GroupStepSlider(
     unit: String = "dp",
     action: Pair<String, () -> Unit>? = null,
     color: Color? = null,
+    valueText: String? = null,
     onChange: (Int) -> Unit,
 ) {
     val view = androidx.compose.ui.platform.LocalView.current
@@ -366,19 +369,37 @@ fun GroupStepSlider(
             .background(Ui.Card)
             .padding(start = 20.dp, end = 14.dp, top = 16.dp, bottom = 8.dp),
     ) {
+        // Bố cục 2 tầng: tiêu đề chiếm trọn chiều ngang còn lại, nút "Mặc định" nằm ngay dưới tiêu đề,
+        // ô giá trị cố định bên phải -> không bao giờ bị bóp hẹp gây rớt chữ từng ký tự.
         Row(verticalAlignment = Alignment.CenterVertically) {
             ItemIcon(icon, color)
-            Spacer(Modifier.width(if (color != null) 16.dp else 22.dp))
-            Text(title, color = Ui.Text, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-            if (action != null) {
+            Spacer(Modifier.width(if (color != null) 14.dp else 20.dp))
+            Column(Modifier.weight(1f)) {
                 Text(
-                    action.first, color = Ui.Primary, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.clip(CircleShape).clickable { tick(); action.second() }.padding(horizontal = 10.dp, vertical = 4.dp),
+                    title, color = Ui.Text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, lineHeight = 20.sp,
+                    maxLines = 2, overflow = TextOverflow.Ellipsis,
                 )
-                Spacer(Modifier.width(4.dp))
+                if (action != null) {
+                    Row(
+                        Modifier
+                            .padding(top = 3.dp)
+                            .clip(CircleShape)
+                            .clickable { tick(); action.second() }
+                            .padding(end = 6.dp, top = 2.dp, bottom = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.Rounded.Restore, null, tint = Ui.Primary, modifier = Modifier.size(14.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            action.first, color = Ui.Primary, fontSize = 13.sp, fontWeight = FontWeight.Medium, lineHeight = 16.sp,
+                            maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
             }
-            Box(Modifier.clip(CircleShape).background(Ui.IconBg).padding(horizontal = 10.dp, vertical = 4.dp)) {
-                Text("$value $unit", color = Ui.Text, fontSize = 14.sp)
+            Spacer(Modifier.width(8.dp))
+            Box(Modifier.clip(CircleShape).background(Ui.IconBg).padding(horizontal = 10.dp, vertical = 5.dp)) {
+                Text(valueText ?: "$value $unit", color = Ui.Text, fontSize = 14.sp, maxLines = 1, softWrap = false)
             }
         }
         Row(verticalAlignment = Alignment.CenterVertically) {

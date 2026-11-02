@@ -56,7 +56,7 @@ private val outlineColors = listOf(
 @Composable
 fun ColorsScreen(onBack: () -> Unit) {
     val s by SettingsRepo.state.collectAsState()
-    Page(tr("Màu viên thuốc", "Capsule color"), onBack) {
+    Page(tr("Màu sắc & viền", "Color & border"), onBack) {
         IslandPreview()
 
         SectionHeader(tr("Màu sắc", "Color"))

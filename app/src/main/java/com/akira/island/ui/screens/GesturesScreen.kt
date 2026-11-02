@@ -5,6 +5,7 @@ import androidx.compose.material.icons.rounded.PanTool
 import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.TouchApp
+import androidx.compose.material.icons.rounded.ViewCarousel
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -30,8 +31,8 @@ fun GesturesScreen(onBack: () -> Unit) {
     val s by SettingsRepo.state.collectAsState()
     var dialog by remember { mutableStateOf<Which?>(null) }
 
-    Page(tr("Cử chỉ", "Gestures"), onBack,
-        subtitle = tr("Viên thuốc mở rộng sẽ thu nhỏ lại khi chạm vào hoặc chạm ra ngoài", "The expanded island collapses with a tap or a touch outside it")) {
+    Page(tr("Cử chỉ chạm & vuốt", "Taps & gestures"), onBack,
+        subtitle = tr("Khi đang mở rộng: chạm để thu nhỏ, vuốt trái / phải để chuyển giữa các hoạt động đang chạy", "When expanded: tap to collapse, swipe left / right to switch between running activities")) {
         SectionHeader(tr("Chạm", "Taps"))
         Group {
             GroupItem(Pos.First, Icons.Rounded.TouchApp, tr("Chạm một lần", "Single tap"), s.tapAction.title,
@@ -43,15 +44,20 @@ fun GesturesScreen(onBack: () -> Unit) {
         }
         SectionHeader(tr("Vuốt", "Swipes"))
         Group {
-            GroupToggle(Pos.First, Icons.Rounded.KeyboardArrowDown, tr("Kéo xuống", "Pull down"),
-                tr("Vuốt xuống mở rộng viên thuốc, vuốt lên — thu nhỏ", "Expand the capsule, up — collapse"),
+            GroupToggle(Pos.First, Icons.Rounded.KeyboardArrowDown, tr("Vuốt xuống để mở rộng", "Pull down to expand"),
+                tr("Vuốt xuống để mở rộng Viên thuốc, vuốt lên để thu nhỏ", "Pull down to expand the island, swipe up to collapse"),
                 s.swipeExpand, color = Tile.Teal) { v ->
                 SettingsRepo.update { copy(swipeExpand = v) }
             }
-            GroupToggle(Pos.Last, Icons.Rounded.SwapHoriz, tr("Đẩy sang bên", "Push sideways"),
-                tr("Trái — bài kế tiếp, phải — bài trước", "Left — next track, right — previous"),
+            GroupToggle(Pos.Middle, Icons.Rounded.SwapHoriz, tr("Vuốt ngang chuyển bài", "Swipe to change track"),
+                tr("Khi đang phát nhạc (Viên thuốc thu gọn): vuốt trái — bài kế tiếp, vuốt phải — bài trước", "While music plays (compact island): left — next track, right — previous"),
                 s.swipeTracks, color = Tile.Purple) { v ->
                 SettingsRepo.update { copy(swipeTracks = v) }
+            }
+            GroupToggle(Pos.Last, Icons.Rounded.ViewCarousel, tr("Vuốt ngang chuyển hoạt động", "Swipe to switch activity"),
+                tr("Khi Viên thuốc thu gọn có nhiều hoạt động (hẹn giờ, đèn pin, điều hướng…): vuốt trái / phải để đổi hoạt động hiển thị. Cần Viên thuốc đủ rộng để vuốt; khi đang phát nhạc, vuốt vẫn ưu tiên chuyển bài", "With several activities on the compact island (timer, flashlight, navigation…): swipe left / right to change which one shows. Needs a wide enough island; while music plays, swiping still changes tracks first"),
+                s.swipeSwitch, color = Tile.Blue) { v ->
+                SettingsRepo.update { copy(swipeSwitch = v) }
             }
         }
     }

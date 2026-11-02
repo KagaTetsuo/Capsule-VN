@@ -13,13 +13,30 @@ android {
         applicationId = "com.dynamicisland.vn"
         minSdk = 26
         targetSdk = 35
-        versionCode = 4
-        versionName = "1.2.0"
+        versionCode = 6
+        versionName = "1.3.0"
     }
 
     
     
+    // Khóa ký cố định cho bản phát hành (để cập nhật OTA cài đè được). CI giải mã khóa từ GitHub Secrets
+    // vào đường dẫn CAPSULE_KEYSTORE; không có biến này thì dùng khóa debug mặc định như trước.
+    val capsuleKeystore = System.getenv("CAPSULE_KEYSTORE")?.let { file(it) }?.takeIf { it.exists() }
+    signingConfigs {
+        if (capsuleKeystore != null) {
+            create("capsule") {
+                storeFile = capsuleKeystore
+                storePassword = System.getenv("CAPSULE_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("CAPSULE_KEY_ALIAS")
+                keyPassword = System.getenv("CAPSULE_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
+        debug {
+            if (capsuleKeystore != null) signingConfig = signingConfigs.getByName("capsule")
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
@@ -45,6 +62,9 @@ dependencies {
 
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.activity:activity-compose:1.9.3")
+    // Shizuku: cấp quyền 1 chạm cho Chế độ ngân hàng (không cần máy tính)
+    implementation("dev.rikka.shizuku:api:13.1.5")
+    implementation("dev.rikka.shizuku:provider:13.1.5")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7")

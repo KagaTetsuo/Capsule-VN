@@ -6,7 +6,7 @@
 
 **Trải nghiệm cụm Viên thuốc (Dynamic Island) thế hệ mới trên Android — Việt hóa 100%, tích hợp AI/Tiện ích thông minh, Vòng sáng LED RGB 360°, Chế độ Gaming toàn diện và Hệ sinh thái Samsung One UI & Android.**
 
-[![Phiên bản](https://img.shields.io/badge/Phiên_bản-v1.2.0-A855F7?style=for-the-badge)](https://github.com/KagaTetsuo/Capsule-VN/releases/latest)
+[![Phiên bản](https://img.shields.io/badge/Phiên_bản-v1.3.0-A855F7?style=for-the-badge)](https://github.com/KagaTetsuo/Capsule-VN/releases/latest)
 [![Android](https://img.shields.io/badge/Android-8.0%2B%20(Hỗ%20trợ%20One%20UI%209%20%2F%20Android%2016)-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://github.com/KagaTetsuo/Capsule-VN/releases/latest)
 [![Tác giả](https://img.shields.io/badge/Tác_giả-Nguyễn_Lê_Lý_Huỳnh-3B82F6?style=for-the-badge)](https://github.com/KagaTetsuo/Capsule-VN)
 [![Zalo](https://img.shields.io/badge/Zalo-0399991787-0068FF?style=for-the-badge)](https://zalo.me/0399991787)
