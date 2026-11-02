@@ -104,6 +104,8 @@ import com.akira.island.core.NoticeStyle
 import com.akira.island.core.Tints
 import com.akira.island.core.formatDuration
 import com.akira.island.data.IslandSettings
+import com.akira.island.core.CardPreviewMode
+import com.akira.island.data.NoticeKind
 import com.akira.island.data.SettingsRepo
 import com.akira.island.service.Messages
 import com.akira.island.service.OtpHelper
@@ -122,6 +124,17 @@ fun compactGap(s: IslandSettings): Dp = s.cameraGap.dp.coerceAtLeast(8.dp)
 fun sideMax(s: IslandSettings): Dp = activeHeight(s) * 2.6f
 
 fun noticeHeight(s: IslandSettings): Dp = ((s.height.dp * 1.68f).coerceAtLeast(56.dp) + s.noticeHeightExtra.dp).coerceAtLeast(36.dp)
+
+/** Phân loại "thông báo khác" để áp dụng vị trí / kích thước riêng. */
+fun noticeKindOf(n: Notice): NoticeKind = when {
+    n.style == NoticeStyle.PAY_DONE -> NoticeKind.PAYMENT
+    n.style == NoticeStyle.LIVE -> NoticeKind.NAV
+    n.style == NoticeStyle.ALARM -> NoticeKind.ALARM
+    n.style == NoticeStyle.PILL -> NoticeKind.MODE
+    n.battery != null -> NoticeKind.CHARGING
+    n.ring != null -> NoticeKind.AUDIO
+    else -> NoticeKind.OTHER
+}
 
 fun callHeight(s: IslandSettings): Dp = s.callHeight.dp.coerceIn(50.dp, 150.dp)
 
@@ -329,8 +342,13 @@ private fun MediaCompact(m: MediaInfo, s: IslandSettings) {
 }
 
 @Composable
-private fun NoticeCompact(n: Notice, s: IslandSettings, cardWidth: Dp) {
-    // Các thông báo khác dùng chiều rộng riêng (0 = tự động như trước)
+private fun NoticeCompact(n: Notice, base: IslandSettings, cardWidth: Dp) {
+    // Các thông báo khác dùng vị trí / kích thước riêng theo từng loại (chưa chỉnh thì dùng chung)
+    val previewKind by IslandBus.previewNoticeKind.collectAsState()
+    val preview by IslandBus.cardPreviewMode.collectAsState()
+    val kind = if (preview == CardPreviewMode.NOTICE) previewKind else noticeKindOf(n)
+    val tweak = base.tweakFor(kind)
+    val s = remember(base, tweak) { base.copy(noticeWidth = tweak.width, noticeHeightExtra = tweak.heightExtra) }
     val wideWidth = if (s.noticeWidth > 0) s.noticeWidth.dp.coerceAtMost(LocalConfiguration.current.screenWidthDp.dp) else cardWidth
     when {
         n.style == NoticeStyle.MESSAGE && n.message != null -> MessageCard(n, n.message, s, cardWidth)
