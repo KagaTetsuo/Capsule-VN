@@ -1,5 +1,11 @@
 # Lịch sử phiên bản Capsule VN
 
+## v1.3.1 (2026) — Sáng màn hình khi có tin nhắn
+- **Sáng màn hình khi có tin nhắn** (Tính năng → Hành vi hiển thị → Rung & màn hình, mặc định bật): khi màn hình đang tắt, tin nhắn tới sẽ làm màn hình sáng lên và hiện trên Viên thuốc ở màn hình khoá; hết thời gian hiển thị thì tự tắt lại.
+  - Không sáng khi máy để trong túi hoặc úp xuống (dùng cảm biến tiệm cận).
+  - Nếu bạn chạm vào Viên thuốc (trả lời, xem thêm) hoặc mở khoá máy thì màn hình không tự tắt.
+  - Tôn trọng cài đặt ẩn nội dung thông báo trên màn hình khoá và chế độ Không làm phiền.
+
 ## v1.3.0 (2026) — Icon khung vàng trọn vẹn, vuốt chuyển hoạt động, trang chủ mới & tinh gọn giao diện
 - **Tin nhắn chưa đọc xem lại được**: khi viền LED báo tin nhắn chưa đọc đang sáng, chạm vào Viên thuốc sẽ mở đúng thẻ tin nhắn đó (kèm nút Trả lời / Đã đọc) thay vì bảng Âm lịch – RAM – ROM; vẫn vuốt trái / phải sang nhạc, hẹn giờ… Chạm vào thẻ để mở cuộc trò chuyện; xem xong thu nhỏ thì viền tự tắt.
 - **Sửa báo nhầm "Thanh toán NFC – Chạm vào đầu đọc thẻ" khi đăng nhập ứng dụng**: siết nhận diện màn hình thanh toán (không còn khớp nhầm tên màn hình như "SetPayment/SmartPay" hay chữ "cài đặt … vào máy"); gợi ý khi mở app chỉ áp dụng cho ví / ngân hàng.
