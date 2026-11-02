@@ -9,6 +9,10 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.runtime.produceState
 import android.graphics.BitmapFactory
+import androidx.compose.ui.graphics.lerp
+import com.akira.island.data.LedMotion
+import android.provider.AlarmClock
+import android.content.Intent
 import android.content.Context
 import android.os.Build
 import android.os.SystemClock
@@ -179,6 +183,14 @@ private fun buildPreviewCall(): CallInfo = CallInfo(
     open = null,
 )
 
+private fun buildPreviewNotice(context: Context): Notice = Notice(
+    title = "Galaxy Buds3 Pro",
+    caption = tr("Đã kết nối", "Connected"),
+    icon = Ios.load(context, com.akira.island.R.drawable.ios_headset),
+    tint = Tints.Green,
+    ring = 0.92f,
+)
+
 private fun buildPreviewUpdate(context: Context): Notice = Notice(
     title = tr("Đã có phiên bản 1.1.0", "Version 1.1.0 is available"),
     icon = Ios.load(context, R.drawable.ios_download),
@@ -347,6 +359,7 @@ fun IslandOverlay(
     val previewMsgNotice = remember(context) { buildPreviewMessage(context) }
     val previewCallInfo = remember { buildPreviewCall() }
     val previewUpdateNotice = remember(context) { buildPreviewUpdate(context) }
+    val previewOtherNotice = remember(context) { buildPreviewNotice(context) }
 
     val unreadAct = unreadPages.firstOrNull { it.id == focus }
     val base = acts.firstOrNull() ?: Act.Idle
@@ -356,6 +369,7 @@ fun IslandOverlay(
         cardPreview == CardPreviewMode.MESSAGE -> Act.NoticeA(previewMsgNotice)
         cardPreview == CardPreviewMode.CALL -> Act.CallA(previewCallInfo)
         cardPreview == CardPreviewMode.UPDATE -> Act.NoticeA(previewUpdateNotice)
+        cardPreview == CardPreviewMode.NOTICE -> Act.NoticeA(previewOtherNotice)
         previewing -> Act.LiveA(WidthDemo)
         showUnread -> unreadAct!!
         else -> base
@@ -465,14 +479,33 @@ private fun IslandRow(
     onBubbleBounds: (Rect) -> Unit,
 ) {
     val cardPreview by IslandBus.cardPreviewMode.collectAsState()
+    val otherNotice = primary is Act.PayA || (
+        primary is Act.NoticeA && primary.n.style != NoticeStyle.MESSAGE && primary.n.style != NoticeStyle.UPDATE
+        )
+    val active = !showExpanded && primary !is Act.Idle && !primary.transient && !(primary is Act.CallA && primary.c.incoming)
     val extraYTarget = when {
         !calibrating && primary is Act.CallA && primary.c.incoming -> (s.topOffset + s.callOffsetY - s.windowBaseY).dp
         !calibrating && primary is Act.NoticeA && primary.n.style == NoticeStyle.MESSAGE -> (s.topOffset + s.msgOffsetY - s.windowBaseY).dp
         !calibrating && primary is Act.NoticeA && primary.n.style == NoticeStyle.UPDATE -> (s.topOffset + s.updateOffsetY - s.windowBaseY).dp
         // Bảng mở rộng: áp dụng vị trí trên / dưới riêng (expandedOffsetY)
         !calibrating && showExpanded -> (s.topOffset + s.expandedOffsetY - s.windowBaseY).dp
+        // Các thông báo khác (sạc, tai nghe, thanh toán…)
+        !calibrating && otherNotice -> (s.topOffset + s.noticeOffsetY - s.windowBaseY).dp
+        // Viên thuốc khi có hoạt động (nhạc, hẹn giờ, điều hướng…)
+        !calibrating && active -> (s.topOffset + s.activeOffsetY - s.windowBaseY).dp
         else -> (s.topOffset - s.windowBaseY).dp
     }
+    val extraXTarget = when {
+        calibrating || showExpanded -> 0.dp
+        otherNotice -> s.noticeOffsetX.dp
+        active -> s.activeOffsetX.dp
+        else -> 0.dp
+    }
+    val extraX = animateDpAsState(
+        extraXTarget,
+        if (cardPreview != CardPreviewMode.NONE && cardPreview != CardPreviewMode.EXPANDED) androidx.compose.animation.core.snap() else islandSpec(s),
+        label = "extraX",
+    )
     val extraY = animateDpAsState(
         extraYTarget,
         if (cardPreview != CardPreviewMode.NONE && cardPreview != CardPreviewMode.EXPANDED) androidx.compose.animation.core.snap() else islandSpec(s),
@@ -486,7 +519,7 @@ private fun IslandRow(
                 val p = measurable.measure(constraints)
                 layout(p.width, p.height + yOff) {
                     val room = ((constraints.maxWidth - p.width) / 2).coerceAtLeast(0)
-                    p.place(s.offsetX.dp.roundToPx().coerceIn(-room, room), yOff)
+                    p.place((s.offsetX.dp + extraX.value).roundToPx().coerceIn(-room, room), yOff)
                 }
             }
             .wrapContentSize(Alignment.TopCenter, unbounded = true)
@@ -553,6 +586,8 @@ private fun IslandBody(
         primary is Act.NoticeA && (primary.n.style == NoticeStyle.MESSAGE || primary.n.style == NoticeStyle.EGG) -> s.cardCornerRadius.dp
         primary is Act.NoticeA && primary.n.style == NoticeStyle.UPDATE -> s.updateCornerRadius.dp
         primary is Act.CallA && primary.c.incoming -> s.callCornerRadius.dp.coerceAtMost(callHeight(s) / 2)
+        s.noticeCornerRadius >= 0 && (primary is Act.PayA || (primary is Act.NoticeA && primary.n.style != NoticeStyle.MESSAGE &&
+            primary.n.style != NoticeStyle.UPDATE && primary.n.style != NoticeStyle.EGG)) -> s.noticeCornerRadius.dp
         primary is Act.NoticeA && primary.n.style == NoticeStyle.WIDE && primary.n.title.isNotBlank() -> {
             if (s.capsuleCornerRadius >= 0) s.capsuleCornerRadius.dp else noticeHeight(s) / 2
         }
@@ -581,6 +616,7 @@ private fun IslandBody(
         )
     val isCard = !calibrating && (
         primary is Act.UnreadA ||
+            (primary is Act.Idle && !expanded && s.cardStyleIdle) ||
             (primary is Act.NoticeA && !smallPill) ||
             (smallPill && s.cardStylePills) ||
             (expanded && s.cardStyleExpanded) ||
@@ -592,6 +628,9 @@ private fun IslandBody(
         } else null
     }
     val cardAlpha = s.cardBgOpacity.coerceIn(20, 100) / 100f
+    // Viền thẻ dạng hiệu ứng như Vòng sáng LED (cầu vồng, theo app, nhiều màu… kèm chuyển động)
+    val borderLed = isCard && s.cardBorder && s.cardBorderLed
+    val borderClock = rememberFxClock(borderLed && !s.reduceEffects)
     val shape = remember(corner, s.notch) { AnimatedIslandShape(corner, s.notch) }
     val accent = (primary as? Act.MediaA)?.m?.accent
     val outlineColor = if (s.outlineFromArt && accent != null) accent else Color(s.outlineColor)
@@ -682,7 +721,7 @@ private fun IslandBody(
                 if (glowAlpha > 0f || ledAlpha > 0f) {
                     Modifier.drawBehind {
                         if (glowAlpha > 0f) islandGlow(glowTint, glowAlpha, corner.value.toPx(), s.notch)
-                        if (ledAlpha > 0f) ledOuterGlow(s.ledStyle, adaptiveLedColor, Color(s.ledColor), ledAlpha, ledClock.value, corner.value.toPx(), s.notch)
+                        if (ledAlpha > 0f) ledOuterGlow(s.ledStyle, adaptiveLedColor, Color(s.ledColor), ledAlpha, ledClock.value, corner.value.toPx(), s.notch, s.ledFx())
                     }
                 } else Modifier
             )
@@ -715,15 +754,28 @@ private fun IslandBody(
             .then(
                 when {
                     calibrating -> Modifier.border(2.dp, Color.White, shape)
-                    isCard && s.cardBorder -> Modifier.border(s.cardBorderWidth.dp, Color(s.cardBorderColor), shape)
+                    isCard && s.cardBorder && !s.cardBorderLed -> Modifier.border(s.cardBorderWidth.dp, Color(s.cardBorderColor), shape)
                     s.outline -> Modifier.border(s.outlineWidth.dp, outlineColor, shape)
                     else -> Modifier
                 },
             )
             .then(
-                if ((egg || ledAlpha > 0f) && !calibrating) {
+                if ((egg || ledAlpha > 0f || borderLed) && !calibrating) {
                     Modifier.drawWithContent {
                         drawContent()
+                        if (borderLed) {
+                            drawLedRing(
+                                style = s.ledStyle,
+                                adaptive = adaptiveLedColor,
+                                custom = Color(s.ledColor),
+                                strokeDp = s.cardBorderWidth,
+                                alpha = 1f,
+                                timeMs = borderClock.value,
+                                corner = corner.value.toPx(),
+                                notch = s.notch,
+                                fx = s.ledFx(),
+                            )
+                        }
                         if (ledAlpha > 0f) {
                             drawLedRing(
                                 style = s.ledStyle,
@@ -734,6 +786,7 @@ private fun IslandBody(
                                 timeMs = ledClock.value,
                                 corner = corner.value.toPx(),
                                 notch = s.notch,
+                                fx = s.ledFx(),
                             )
                         }
                         if (egg) eggRim(corner.value.toPx(), s.notch)
@@ -1024,9 +1077,10 @@ private fun onTap(context: Context, act: Act, expanded: Boolean, s: IslandSettin
             IslandBus.notice.value = null
         }
         
-        is Act.Idle -> {
-            if (hasUnread(s)) expandUnread()
-            else if (s.idleExpand) Controls.expand(act.id)
+        is Act.Idle -> when {
+            hasUnread(s) -> expandUnread()
+            s.tapAction == TapAction.EXPAND -> if (s.idleExpand) Controls.expand(act.id)
+            else -> perform(context, s.tapAction, act)
         }
         
         is Act.PayA -> if (act.pkg != PayMonitor.GMS) Controls.openApp(context, act.pkg)
@@ -1041,16 +1095,56 @@ private fun onTap(context: Context, act: Act, expanded: Boolean, s: IslandSettin
 }
 
 private fun perform(context: Context, action: TapAction, act: Act) {
-    if (act.transient) return
     val hasMedia = IslandBus.media.value != null
+    // Thông báo / thanh toán không mở rộng được: "Mở rộng" và "Mở ứng dụng" đều mở ứng dụng của thông báo đó
+    val canExpand = !act.transient
     when (action) {
-        TapAction.EXPAND -> Controls.expand(act.id)
-        TapAction.OPEN_APP -> act.pkg?.let { Controls.openApp(context, it) } ?: Controls.expand(act.id)
-        TapAction.PLAY_PAUSE -> if (hasMedia) Controls.playPause() else Controls.expand(act.id)
-        TapAction.NEXT_TRACK -> if (hasMedia) Controls.next() else Controls.expand(act.id)
+        TapAction.EXPAND -> if (canExpand) Controls.expand(act.id) else openActApp(context, act)
+        TapAction.OPEN_APP -> openActApp(context, act)
+        TapAction.PLAY_PAUSE -> when {
+            hasMedia -> Controls.playPause()
+            canExpand -> Controls.expand(act.id)
+        }
+        TapAction.NEXT_TRACK -> when {
+            hasMedia -> Controls.next()
+            canExpand -> Controls.expand(act.id)
+        }
         TapAction.SCREENSHOT -> Controls.screenshot()
         TapAction.NOTHING -> Unit
     }
+}
+
+/** Mở đúng ứng dụng của hoạt động / thông báo đang hiển thị; Viên thuốc trống thì mở Capsule VN. */
+private fun openActApp(context: Context, act: Act) {
+    when (act) {
+        is Act.NoticeA -> {
+            val n = act.n
+            when {
+                n.message != null -> if (!Controls.send(context, n.message.intent)) Controls.openApp(context, n.message.pkg)
+                n.openPkg != null -> Controls.openApp(context, n.openPkg)
+                n.alarm != null -> openAlarm(context, n.alarm)
+                n.live?.open != null -> Controls.send(context, n.live?.open)
+                else -> Controls.openApp(context, context.packageName)
+            }
+            IslandBus.notice.value = null
+        }
+        is Act.UnreadA -> act.n.message?.let { m ->
+            if (!Controls.send(context, m.intent)) Controls.openApp(context, m.pkg)
+            IslandBus.removeUnread(m.key)
+        }
+        is Act.CallA -> Controls.openCall(context, act.c)
+        is Act.LiveA -> if (!Controls.send(context, act.l.open)) Controls.openApp(context, act.l.pkg)
+        is Act.AlarmA -> openAlarm(context, act.a)
+        is Act.TimerA, is Act.StopwatchA -> runCatching {
+            context.startActivity(
+                Intent(if (act is Act.TimerA) AlarmClock.ACTION_SHOW_TIMERS else AlarmClock.ACTION_SHOW_ALARMS)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            )
+        }
+        is Act.PayA -> if (act.pkg != PayMonitor.GMS) Controls.openApp(context, act.pkg)
+        else -> Controls.openApp(context, act.pkg ?: context.packageName)
+    }
+    Controls.collapse()
 }
 
 @Composable
@@ -1145,6 +1239,37 @@ private class AnimatedIslandShape(private val corner: State<Dp>, private val not
         islandShape(corner.value, notch).createOutline(size, layoutDirection, density)
 }
 
+/** Tham số hiệu ứng viền sáng: kiểu chuyển động, tốc độ và bảng màu tự chọn. */
+data class LedFx(val motion: LedMotion = LedMotion.ROTATE, val speed: Int = 50, val multi: List<Color> = emptyList())
+
+fun IslandSettings.ledFx(): LedFx = LedFx(ledMotion, ledSpeed, ledColors.take(ledColorCount.coerceIn(2, 3)).map { Color(it) })
+
+private fun ledPeriod(fx: LedFx): Long = (3600 - fx.speed.coerceIn(0, 100) * 30).toLong().coerceIn(600L, 3600L)
+
+private fun ledBase(style: LedStyle, adaptive: Color, custom: Color, fx: LedFx): List<Color> = when (style) {
+    LedStyle.ROTATE_RGB -> List(8) { i -> Color.hsv(i * 45f, 0.88f, 1f) }
+    LedStyle.AUTO_APP -> listOf(adaptive, lerp(adaptive, Color.White, 0.55f), adaptive, adaptive.copy(alpha = 0.45f))
+    LedStyle.CYBER_NEON -> listOf(Color(0xFF00F2FE), Color(0xFF7F00FF), Color(0xFFFF0844))
+    LedStyle.BREATHE_GOLD -> listOf(Color(0xFFFF8C00), Color(0xFFFFD700), Color(0xFFFFF8DC), Color(0xFFFFD700))
+    LedStyle.CUSTOM -> listOf(custom, lerp(custom, Color.White, 0.6f), custom, custom.copy(alpha = 0.5f))
+    LedStyle.MULTI -> fx.multi.ifEmpty { listOf(custom, lerp(custom, Color.White, 0.6f)) }
+}
+
+/** Nội suy vòng tròn qua danh sách màu (t trong [0,1)). */
+private fun cyc(colors: List<Color>, t: Float): Color {
+    val n = colors.size
+    if (n == 1) return colors[0]
+    val x = t.mod(1f) * n
+    val i = x.toInt() % n
+    return lerp(colors[i], colors[(i + 1) % n], x - x.toInt())
+}
+
+private fun motionAlpha(fx: LedFx, phase: Float): Float = when (fx.motion) {
+    LedMotion.BREATHE -> 0.22f + 0.78f * (0.5f + 0.5f * sin(phase * 2f * Math.PI.toFloat()))
+    LedMotion.BLINK -> if (phase < 0.55f) 1f else 0.06f
+    else -> 0.95f
+}
+
 internal fun DrawScope.ledOuterGlow(
     style: LedStyle,
     adaptive: Color,
@@ -1153,16 +1278,13 @@ internal fun DrawScope.ledOuterGlow(
     timeMs: Long,
     corner: Float,
     notch: Boolean,
+    fx: LedFx = LedFx(),
 ) {
-    val phase = (timeMs % 2400L).toFloat() / 2400f
-    val pulse = 0.65f + 0.35f * sin(phase * 2f * Math.PI.toFloat())
-    val glowColor = when (style) {
-        LedStyle.ROTATE_RGB -> Color.hsv((phase * 360f) % 360f, 0.85f, 1f)
-        LedStyle.AUTO_APP -> adaptive
-        LedStyle.CYBER_NEON -> if (phase < 0.5f) Color(0xFF00F2FE) else Color(0xFFFF0844)
-        LedStyle.BREATHE_GOLD -> Color(0xFFFFD700)
-        LedStyle.CUSTOM -> custom
-    }
+    val period = ledPeriod(fx)
+    val phase = (timeMs % period).toFloat() / period
+    val base = ledBase(style, adaptive, custom, fx)
+    val glowColor = if (fx.motion == LedMotion.ROTATE || fx.motion == LedMotion.COMET) cyc(base, phase) else base.first()
+    val pulse = motionAlpha(fx, phase) * 0.85f
     val maxSpread = 7.dp.toPx()
     for (i in 1..5) {
         val d = maxSpread * i / 5f
@@ -1186,40 +1308,25 @@ internal fun DrawScope.drawLedRing(
     timeMs: Long,
     corner: Float,
     notch: Boolean,
+    fx: LedFx = LedFx(),
 ) {
-    val w = strokeDp.coerceIn(1f, 6f).dp.toPx()
-    val phase = (timeMs % 2200L).toFloat() / 2200f
-    val angle = phase * 360f
-    val pulse = 0.72f + 0.28f * sin(phase * 2f * Math.PI.toFloat())
-
-    val colors = when (style) {
-        LedStyle.ROTATE_RGB -> List(9) { i ->
-            Color.hsv((angle + i * 45f) % 360f, 0.88f, 1f)
+    val w = strokeDp.coerceIn(0.5f, 6f).dp.toPx()
+    val period = ledPeriod(fx)
+    val phase = (timeMs % period).toFloat() / period
+    val base = ledBase(style, adaptive, custom, fx)
+    val samples = 48
+    val rotate = fx.motion == LedMotion.ROTATE || fx.motion == LedMotion.COMET
+    val colors = List(samples + 1) { k ->
+        val pos = k.toFloat() / samples
+        var c = cyc(base, if (rotate) pos - phase else pos)
+        if (fx.motion == LedMotion.COMET) {
+            // Đầu sao chổi sáng rực, đuôi mờ dần theo chiều chạy
+            val d = (phase - pos).mod(1f)
+            val tail = (1f - d / 0.35f).coerceIn(0f, 1f)
+            c = c.copy(alpha = c.alpha * (0.1f + 0.9f * tail * tail))
         }
-        LedStyle.AUTO_APP -> {
-            val dim = adaptive.copy(alpha = 0.22f)
-            val bright = Color.White.copy(alpha = 0.92f)
-            shiftRing(listOf(dim, adaptive, bright, adaptive, dim, adaptive.copy(alpha = 0.5f), dim), phase)
-        }
-        LedStyle.CYBER_NEON -> {
-            val c1 = Color(0xFF00F2FE)
-            val c2 = Color(0xFF7F00FF)
-            val c3 = Color(0xFFFF0844)
-            shiftRing(listOf(c1, c2, c3, Color.White, c1, c2, c1), phase)
-        }
-        LedStyle.BREATHE_GOLD -> {
-            val g1 = Color(0xFFFFD700)
-            val g2 = Color(0xFFFF8C00)
-            val g3 = Color(0xFFFFF8DC)
-            shiftRing(listOf(g2, g1, g3, g1, g2, g1, g2), phase)
-        }
-        LedStyle.CUSTOM -> {
-            val dim = custom.copy(alpha = 0.25f)
-            val crest = Color.White.copy(alpha = 0.9f)
-            shiftRing(listOf(dim, custom, crest, custom, dim, custom.copy(alpha = 0.55f), dim), phase)
-        }
+        c
     }
-
     drawIslandRect(
         brush = Brush.sweepGradient(colors, center),
         topLeft = Offset(w / 2f, w / 2f),
@@ -1227,7 +1334,7 @@ internal fun DrawScope.drawLedRing(
         corner = (corner - w / 2f).coerceAtLeast(0f),
         notch = notch,
         style = Stroke(w),
-        alpha = (alpha * pulse).coerceIn(0f, 1f),
+        alpha = (alpha * motionAlpha(fx, phase)).coerceIn(0f, 1f),
     )
 }
 

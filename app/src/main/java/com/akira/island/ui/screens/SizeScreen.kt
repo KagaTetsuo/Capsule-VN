@@ -46,6 +46,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Animation
+import androidx.compose.material.icons.rounded.NotificationsActive
 import androidx.compose.material.icons.rounded.AspectRatio
 import androidx.compose.material.icons.rounded.BorderStyle
 import androidx.compose.material.icons.rounded.Call
@@ -336,11 +338,7 @@ fun MsgCallSizeScreen(onBack: () -> Unit) {
 
     DisposableEffect(selectedTab, previewOn) {
         if (previewOn) {
-            IslandBus.cardPreviewMode.value = when (selectedTab) {
-                0 -> CardPreviewMode.MESSAGE
-                1 -> CardPreviewMode.CALL
-                else -> CardPreviewMode.UPDATE
-            }
+            IslandBus.cardPreviewMode.value = tabPreview(selectedTab)
         } else {
             IslandBus.cardPreviewMode.value = CardPreviewMode.NONE
         }
@@ -386,7 +384,8 @@ fun MsgCallSizeScreen(onBack: () -> Unit) {
                             when (selectedTab) {
                                 0 -> set { copy(msgOffsetY = d.msgOffsetY, msgWidth = d.msgWidth, msgHeightExtra = d.msgHeightExtra, msgLines = d.msgLines, cardCornerRadius = d.cardCornerRadius) }
                                 1 -> set { copy(callOffsetY = d.callOffsetY, callWidth = d.callWidth, callHeight = d.callHeight, callCornerRadius = d.callCornerRadius) }
-                                else -> set { copy(updateOffsetY = d.updateOffsetY, updateWidth = d.updateWidth, updateHeightExtra = d.updateHeightExtra, updateCornerRadius = d.updateCornerRadius) }
+                                2 -> set { copy(updateOffsetY = d.updateOffsetY, updateWidth = d.updateWidth, updateHeightExtra = d.updateHeightExtra, updateCornerRadius = d.updateCornerRadius) }
+                                else -> set { copy(noticeOffsetX = d.noticeOffsetX, noticeOffsetY = d.noticeOffsetY, noticeWidth = d.noticeWidth, noticeHeightExtra = d.noticeHeightExtra, noticeCornerRadius = d.noticeCornerRadius) }
                             }
                         },
                         contentAlignment = Alignment.Center,
@@ -408,9 +407,10 @@ fun MsgCallSizeScreen(onBack: () -> Unit) {
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 val tabs = listOf(
-                    Icons.Rounded.ChatBubble to tr("Thẻ tin nhắn", "Message"),
-                    Icons.Rounded.Call to tr("Cuộc gọi đến", "Call"),
+                    Icons.Rounded.ChatBubble to tr("Tin nhắn", "Message"),
+                    Icons.Rounded.Call to tr("Cuộc gọi", "Call"),
                     Icons.Rounded.SystemUpdate to tr("Cập nhật", "Update"),
+                    Icons.Rounded.NotificationsActive to tr("Khác", "Other"),
                 )
                 tabs.forEachIndexed { idx, (icon, label) ->
                     val active = selectedTab == idx
@@ -423,26 +423,25 @@ fun MsgCallSizeScreen(onBack: () -> Unit) {
                                 haptic()
                                 selectedTab = idx
                                 if (previewOn) {
-                                    IslandBus.cardPreviewMode.value = when (idx) {
-                                        0 -> CardPreviewMode.MESSAGE
-                                        1 -> CardPreviewMode.CALL
-                                        else -> CardPreviewMode.UPDATE
-                                    }
+                                    IslandBus.cardPreviewMode.value = tabPreview(idx)
                                 }
                             }
-                            .padding(vertical = 12.dp, horizontal = 6.dp),
+                            .padding(vertical = 8.dp, horizontal = 4.dp),
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(icon, null, tint = if (active) Ui.OnPrimary else Ui.Sub, modifier = Modifier.size(17.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text(
-                            label,
-                            color = if (active) Ui.OnPrimary else Ui.Text,
-                            fontSize = 13.sp,
-                            fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
-                            maxLines = 1,
-                        )
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(icon, null, tint = if (active) Ui.OnPrimary else Ui.Sub, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.height(3.dp))
+                            Text(
+                                label,
+                                color = if (active) Ui.OnPrimary else Ui.Text,
+                                fontSize = 12.5.sp,
+                                fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
                     }
                 }
             }
@@ -566,7 +565,7 @@ fun MsgCallSizeScreen(onBack: () -> Unit) {
                         set { copy(callCornerRadius = v) }
                     }
                 }
-            } else {
+            } else if (selectedTab == 2) {
                 SectionHeader(tr("Tùy chỉnh Thẻ cập nhật", "Update card adjustments"))
                 Group {
                     GroupStepSlider(
@@ -620,12 +619,40 @@ fun MsgCallSizeScreen(onBack: () -> Unit) {
                 }
             }
 
-            CardStyleSection(s) {
-                if (previewOn) IslandBus.cardPreviewMode.value = when (selectedTab) {
-                    0 -> CardPreviewMode.MESSAGE
-                    1 -> CardPreviewMode.CALL
-                    else -> CardPreviewMode.UPDATE
+            if (selectedTab == 3) {
+                fun prev() { if (previewOn) IslandBus.cardPreviewMode.value = CardPreviewMode.NOTICE }
+                val autoW = (LocalConfiguration.current.screenWidthDp - 22).coerceAtMost(460)
+                SectionHeader(tr("Thông báo khác: sạc, tai nghe, thanh toán, sự kiện…", "Other alerts: charging, headphones, payments, events…"))
+                Group {
+                    GroupStepSlider(
+                        Pos.First, Icons.Rounded.SwapVert, tr("Vị trí dọc (lên / xuống)", "Vertical position (up / down)"), s.noticeOffsetY, -30..120,
+                        action = tr("Mặc định 0 dp", "Default 0 dp") to { set { copy(noticeOffsetY = 0) } }, color = Tile.Indigo,
+                    ) { v -> prev(); set { copy(noticeOffsetY = v) } }
+                    GroupStepSlider(
+                        Pos.Middle, Icons.Rounded.SwapHoriz, tr("Vị trí ngang (trái / phải)", "Horizontal position"), s.noticeOffsetX, -120..120,
+                        action = tr("Chính giữa", "Center") to { set { copy(noticeOffsetX = 0) } }, color = Tile.Teal,
+                    ) { v -> prev(); set { copy(noticeOffsetX = v) } }
+                    GroupStepSlider(
+                        Pos.Middle, Icons.Rounded.Straighten, tr("Chiều rộng", "Width"),
+                        if (s.noticeWidth == 0) autoW.coerceIn(200, 460) else s.noticeWidth, 200..460,
+                        action = tr("Tự động theo màn hình", "Auto (screen width)") to { set { copy(noticeWidth = 0) } }, color = Tile.Blue,
+                        valueText = if (s.noticeWidth == 0) tr("Tự động", "Auto") else null,
+                    ) { v -> prev(); set { copy(noticeWidth = v) } }
+                    GroupStepSlider(
+                        Pos.Middle, Icons.Rounded.Height, tr("Chiều cao thêm", "Extra height"), s.noticeHeightExtra, -16..40,
+                        action = tr("Mặc định 0 dp", "Default 0 dp") to { set { copy(noticeHeightExtra = 0) } }, color = Tile.Purple,
+                    ) { v -> prev(); set { copy(noticeHeightExtra = v) } }
+                    GroupStepSlider(
+                        Pos.Last, Icons.Rounded.BorderStyle, tr("Bo góc", "Corner radius"),
+                        if (s.noticeCornerRadius < 0) 28 else s.noticeCornerRadius, 0..44,
+                        action = tr("Tự động (tròn đều)", "Auto (fully round)") to { set { copy(noticeCornerRadius = -1) } }, color = Tile.Yellow,
+                        valueText = if (s.noticeCornerRadius < 0) tr("Tự động", "Auto") else null,
+                    ) { v -> prev(); set { copy(noticeCornerRadius = v) } }
                 }
+            }
+
+            CardStyleSection(s) {
+                if (previewOn) IslandBus.cardPreviewMode.value = tabPreview(selectedTab)
             }
 
             Spacer(Modifier.height(90.dp))
@@ -692,6 +719,13 @@ private fun IslandSettings.withMsgCallPlacement(from: IslandSettings) = copy(
     cardBorderWidth = from.cardBorderWidth,
     cardStyleExpanded = from.cardStyleExpanded,
     cardStylePills = from.cardStylePills,
+    cardStyleIdle = from.cardStyleIdle,
+    cardBorderLed = from.cardBorderLed,
+    noticeOffsetX = from.noticeOffsetX,
+    noticeOffsetY = from.noticeOffsetY,
+    noticeWidth = from.noticeWidth,
+    noticeHeightExtra = from.noticeHeightExtra,
+    noticeCornerRadius = from.noticeCornerRadius,
 )
 
 @Composable
@@ -769,6 +803,11 @@ private fun CardStyleSection(s: IslandSettings, preview: () -> Unit) {
             s.cardStylePills, color = Tile.Gray,
         ) { v -> set { copy(cardStylePills = v) } }
         GroupToggle(
+            Pos.Middle, Icons.Rounded.AspectRatio, tr("Áp dụng cho Viên thuốc khi không hoạt động", "Also for the idle island"),
+            tr("Viên thuốc trống quanh camera cũng dùng nền ảnh / màu / Liquid Glass & viền này", "The empty island around the camera uses this background & border too"),
+            s.cardStyleIdle, color = Tile.Blue,
+        ) { v -> set { copy(cardStyleIdle = v) } }
+        GroupToggle(
             Pos.Last, Icons.Rounded.DashboardCustomize, tr("Áp dụng cho bảng mở rộng", "Also for the expanded island"),
             tr("Bảng Giờ – Pin, trình phát nhạc, hẹn giờ… dùng chung nền & viền này", "Clock, music player, timer… panels use the same background & border"),
             s.cardStyleExpanded, color = Tile.Indigo,
@@ -785,13 +824,18 @@ private fun CardStyleSection(s: IslandSettings, preview: () -> Unit) {
             s.cardBorder, color = Tile.Yellow,
         ) { v -> set { copy(cardBorder = v) } }
         if (s.cardBorder) {
+            GroupToggle(
+                Pos.Middle, Icons.Rounded.Animation, tr("Viền hiệu ứng (như Vòng sáng LED)", "Animated border (like the LED ring)"),
+                tr("Cầu vồng xoay 360°, theo màu app, 1–3 màu tự chọn, sao chổi, nhịp thở… — chọn màu & chuyển động ở Giao diện → Vòng sáng LED", "Rainbow 360°, app color, 1–3 custom colors, comet, breathing… — pick colors & motion in Appearance → LED ring"),
+                s.cardBorderLed, color = Tile.Purple,
+            ) { v -> set { copy(cardBorderLed = v) } }
             GroupSlider(
                 Pos.Last, Icons.Rounded.LineWeight, tr("Độ dày viền", "Border width"),
                 value = s.cardBorderWidth, range = 0.5f..4f, label = "%.1f dp".format(s.cardBorderWidth), color = Tile.Yellow,
             ) { v -> set { copy(cardBorderWidth = (v * 2).roundToInt() / 2f) } }
         }
     }
-    if (s.cardBorder) {
+    if (s.cardBorder && !s.cardBorderLed) {
         Swatches(cardBorderColors, s.cardBorderColor) { c -> set { copy(cardBorderColor = c) } }
     }
 
@@ -821,3 +865,10 @@ private fun saveCardImage(context: Context, uri: Uri): String? = runCatching {
     bmp.recycle()
     file.absolutePath
 }.getOrNull()
+
+private fun tabPreview(tab: Int): CardPreviewMode = when (tab) {
+    0 -> CardPreviewMode.MESSAGE
+    1 -> CardPreviewMode.CALL
+    2 -> CardPreviewMode.UPDATE
+    else -> CardPreviewMode.NOTICE
+}

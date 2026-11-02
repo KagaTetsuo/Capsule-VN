@@ -1,5 +1,19 @@
 # Lịch sử phiên bản Capsule VN
 
+## v1.4.0 (2026) — Tuỳ chỉnh chuyên sâu vị trí, kích thước, viền sáng & cử chỉ
+- **Viên thuốc khi có hoạt động** (Giao diện → Khi có hoạt động): thêm Vị trí dọc (lên / xuống) và Vị trí ngang (trái / phải), xem trước trực tiếp.
+- **Khung thẻ thông báo → tab "Khác"** cho mọi thông báo còn lại (sạc, tai nghe, thanh toán, sự kiện…): vị trí dọc / ngang, chiều rộng, chiều cao thêm, bo góc — xem trước trực tiếp.
+- **Nền & viền cho Viên thuốc khi không hoạt động** (bật được): dùng chung nền màu / ảnh / Liquid Glass và viền.
+- **Viền sáng chuyên sâu** (Vòng sáng LED & viền thẻ):
+  - Màu: Cầu vồng 360°, Theo màu ứng dụng / sự kiện, Neon, Vàng hoàng gia, Màu đơn tự chọn, **2–3 màu tự chọn**.
+  - Chuyển động: **Xoay 360°, Sao chổi chạy quanh viền, Nhịp thở, Nhấp nháy, Đứng yên**, kèm **tốc độ**.
+  - Viền thẻ thông báo có thể dùng hiệu ứng như Vòng sáng LED thay cho màu đơn.
+- **Cử chỉ hợp lý hơn**:
+  - Sửa "Mở ứng dụng" không hoạt động: mở đúng app của hoạt động / thông báo (tin nhắn, điều hướng, cuộc gọi, hẹn giờ → Đồng hồ…); Viên thuốc trống mở Capsule VN. Chạm đúp / nhấn giữ trên thông báo cũng hoạt động.
+  - Mỗi lựa chọn có mô tả rõ; thêm "Dùng cài đặt khuyên dùng": Chạm = Mở rộng, Chạm đúp = Mở ứng dụng, Giữ = Phát / Tạm dừng.
+- **Tin nhắn hiện 2 lần trên Samsung**: nút Thiết lập mở trang thông báo của ứng dụng kèm hướng dẫn One UI (bỏ chọn "Cửa sổ bật lên" / "Biểu ngữ"); thêm tuỳ chọn **"Thu gọn khi app tự hiện pop-up"** — Viên thuốc chỉ báo viên nhỏ khi app đó tự bật pop-up.
+- **Icon**: khung vàng thu về 60 dp để hiện trọn trên launcher Samsung One UI (bản trước bị cắt góc).
+
 ## v1.3.2 (2026) — Sáng màn hình cho mọi thông báo & giờ ngủ
 - **Sáng màn hình khi có thông báo** giờ áp dụng cho mọi thông báo (tin nhắn, sạc pin, tai nghe, thanh toán, sự kiện hệ thống…), không chỉ tin nhắn. Vẫn tự tắt lại, không sáng khi máy trong túi / úp xuống.
 - **Không sáng trong giờ ngủ** (mặc định bật, 23:00–6:00, chỉnh được): trong khung giờ này thông báo vẫn hiện trên Viên thuốc nhưng không làm sáng màn hình.

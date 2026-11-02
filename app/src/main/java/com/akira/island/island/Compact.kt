@@ -121,7 +121,7 @@ fun compactGap(s: IslandSettings): Dp = s.cameraGap.dp.coerceAtLeast(8.dp)
 
 fun sideMax(s: IslandSettings): Dp = activeHeight(s) * 2.6f
 
-fun noticeHeight(s: IslandSettings): Dp = (s.height.dp * 1.68f).coerceAtLeast(56.dp)
+fun noticeHeight(s: IslandSettings): Dp = ((s.height.dp * 1.68f).coerceAtLeast(56.dp) + s.noticeHeightExtra.dp).coerceAtLeast(36.dp)
 
 fun callHeight(s: IslandSettings): Dp = s.callHeight.dp.coerceIn(50.dp, 150.dp)
 
@@ -329,15 +329,17 @@ private fun MediaCompact(m: MediaInfo, s: IslandSettings) {
 }
 
 @Composable
-private fun NoticeCompact(n: Notice, s: IslandSettings, wideWidth: Dp) {
+private fun NoticeCompact(n: Notice, s: IslandSettings, cardWidth: Dp) {
+    // Các thông báo khác dùng chiều rộng riêng (0 = tự động như trước)
+    val wideWidth = if (s.noticeWidth > 0) s.noticeWidth.dp.coerceAtMost(LocalConfiguration.current.screenWidthDp.dp) else cardWidth
     when {
-        n.style == NoticeStyle.MESSAGE && n.message != null -> MessageCard(n, n.message, s, wideWidth)
+        n.style == NoticeStyle.MESSAGE && n.message != null -> MessageCard(n, n.message, s, cardWidth)
         n.style == NoticeStyle.PAY_DONE -> PayDone(n, s, wideWidth)
         n.style == NoticeStyle.LIVE && n.live != null -> LiveBanner(n, n.live, s, wideWidth)
         n.style == NoticeStyle.ALARM && n.alarm != null -> AlarmBanner(n, n.alarm, s, wideWidth)
         n.style == NoticeStyle.EGG -> EggBanner(n, s)
         n.style == NoticeStyle.SENT -> SentBanner(n, s, wideWidth)
-        n.style == NoticeStyle.UPDATE -> UpdateCard(n, s, wideWidth)
+        n.style == NoticeStyle.UPDATE -> UpdateCard(n, s, cardWidth)
         n.style == NoticeStyle.PILL || n.title.isBlank() && n.state == null -> PillNotice(n, s)
         else -> WideNotice(n, s, wideWidth)
     }

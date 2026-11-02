@@ -26,6 +26,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import com.akira.island.ui.GroupStepSlider
+import androidx.compose.material.icons.rounded.SwapVert
 import androidx.compose.material.icons.rounded.Restore
 import androidx.compose.material.icons.rounded.Animation
 import androidx.compose.material.icons.rounded.AutoAwesome
@@ -83,6 +85,8 @@ import com.akira.island.data.IslandSettings
 import com.akira.island.data.LedStyle
 import com.akira.island.data.SettingsRepo
 import com.akira.island.island.drawLedRing
+import com.akira.island.island.ledFx
+import com.akira.island.data.LedMotion
 import com.akira.island.island.glassSurface
 import com.akira.island.island.islandSpec
 import com.akira.island.island.ledOuterGlow
@@ -125,7 +129,7 @@ fun CapsuleScreen(open: (Screen) -> Unit) {
             GroupItem(
                 Pos.Middle,
                 Icons.Rounded.SwapHoriz,
-                tr("Kích thước khi có hoạt động", "Size with activity"),
+                tr("Khi có hoạt động", "With activity"),
                 if (s.activeWidth == 0) tr("Độ dày +${s.activeExtra} dp, chiều rộng giữ nguyên", "Thickness +${s.activeExtra} dp, width as without it")
                 else tr("Độ dày +${s.activeExtra}, chiều rộng +${s.activeWidth} dp", "Thickness +${s.activeExtra}, width +${s.activeWidth} dp"),
                 color = Tile.Purple,
@@ -208,7 +212,7 @@ fun CapsuleScreen(open: (Screen) -> Unit) {
 @Composable
 fun LookScreen(onBack: () -> Unit) {
     val s by SettingsRepo.state.collectAsState()
-    Page(tr("Kích thước khi có hoạt động", "Size with activity"), onBack) {
+    Page(tr("Khi có hoạt động", "With activity"), onBack, subtitle = tr("Kích thước & vị trí Viên thuốc khi đang có nhạc, hẹn giờ, điều hướng… — xem trước trực tiếp trên đỉnh màn hình", "Size & position of the island while music, timers, navigation… are running — live preview at the top")) {
         IslandPreview()
         Group {
             GroupSlider(
@@ -225,6 +229,24 @@ fun LookScreen(onBack: () -> Unit) {
             ) { v ->
                 previewActivity()
                 SettingsRepo.update { copy(activeWidth = (v / 5).toInt() * 5) }
+            }
+        }
+
+        SectionHeader(tr("Vị trí khi có hoạt động", "Position with activity"))
+        Group {
+            GroupStepSlider(
+                Pos.First, Icons.Rounded.SwapVert, tr("Vị trí dọc (lên / xuống)", "Vertical position (up / down)"), s.activeOffsetY, -30..60,
+                action = tr("Mặc định 0 dp", "Default 0 dp") to { SettingsRepo.update { copy(activeOffsetY = 0) } }, color = Tile.Indigo,
+            ) { v ->
+                previewActivity()
+                SettingsRepo.update { copy(activeOffsetY = v) }
+            }
+            GroupStepSlider(
+                Pos.Last, Icons.Rounded.SwapHoriz, tr("Vị trí ngang (trái / phải)", "Horizontal position"), s.activeOffsetX, -120..120,
+                action = tr("Chính giữa", "Center") to { SettingsRepo.update { copy(activeOffsetX = 0) } }, color = Tile.Teal,
+            ) { v ->
+                previewActivity()
+                SettingsRepo.update { copy(activeOffsetX = v) }
             }
         }
     }
@@ -531,6 +553,7 @@ private fun LedRingPreviewCard(s: IslandSettings) {
                         timeMs = animatedMs.toLong(),
                         corner = cornerDp.toPx(),
                         notch = false,
+                        fx = s.ledFx(),
                     )
                 }
                 .clip(RoundedCornerShape(cornerDp))
@@ -546,6 +569,7 @@ private fun LedRingPreviewCard(s: IslandSettings) {
                         timeMs = animatedMs.toLong(),
                         corner = cornerDp.toPx(),
                         notch = false,
+                        fx = s.ledFx(),
                     )
                 },
             contentAlignment = Alignment.CenterStart,
@@ -624,6 +648,7 @@ private fun LedRingPreviewCard(s: IslandSettings) {
                     LedStyle.CYBER_NEON -> Color(0xFF00F2FE)
                     LedStyle.BREATHE_GOLD -> Color(0xFFFFD700)
                     LedStyle.CUSTOM -> Color(s.ledColor)
+                    LedStyle.MULTI -> Color(s.ledColors.first())
                 }
 
                 Box(
@@ -664,6 +689,8 @@ private fun LedRingPreviewCard(s: IslandSettings) {
 fun LedRingScreen(onBack: () -> Unit) {
     val s by SettingsRepo.state.collectAsState()
     var styleDialog by remember { mutableStateOf(false) }
+    var motionDialog by remember { mutableStateOf(false) }
+    var slot by remember { mutableStateOf(0) }
 
     DisposableEffect(Unit) {
         IslandBus.previewLed.value = true
@@ -682,9 +709,19 @@ fun LedRingScreen(onBack: () -> Unit) {
                 s.ledEnabled, color = Tile.Purple,
             ) { v -> SettingsRepo.update { copy(ledEnabled = v) } }
             GroupItem(
-                Pos.Middle, Icons.Rounded.Palette, tr("Kiểu hiệu ứng ánh sáng LED", "LED Lighting Style"),
+                Pos.Middle, Icons.Rounded.Palette, tr("Màu viền", "Colors"),
                 s.ledStyle.title, color = Tile.Blue, onClick = { styleDialog = true },
-            )
+            ) { Arrow() }
+            GroupItem(
+                Pos.Middle, Icons.Rounded.Animation, tr("Hiệu ứng chuyển động", "Motion"),
+                s.ledMotion.title, color = Tile.Indigo, onClick = { motionDialog = true },
+            ) { Arrow() }
+            if (s.ledMotion != LedMotion.STATIC) {
+                GroupSlider(
+                    Pos.Middle, Icons.Rounded.Speed, tr("Tốc độ", "Speed"),
+                    value = s.ledSpeed.toFloat(), range = 0f..100f, label = "${s.ledSpeed}%", color = Tile.Orange,
+                ) { v -> SettingsRepo.update { copy(ledSpeed = v.toInt()) } }
+            }
             GroupSlider(
                 Pos.Last, Icons.Rounded.LineWeight, tr("Độ dày viền sáng LED", "LED Ring Thickness"),
                 value = s.ledWidth, range = 1f..6f, label = "%.1f dp".format(s.ledWidth), color = Tile.Teal,
@@ -694,6 +731,44 @@ fun LedRingScreen(onBack: () -> Unit) {
         if (s.ledStyle == LedStyle.CUSTOM) {
             SectionHeader(tr("Màu viền LED tùy chọn", "Custom LED Color"))
             Swatches(ledPalette, s.ledColor) { c -> SettingsRepo.update { copy(ledColor = c) } }
+        }
+        if (s.ledStyle == LedStyle.MULTI) {
+            SectionHeader(tr("Chọn 2–3 màu (xoay / chạy quanh viền)", "Pick 2–3 colors"))
+            // Chọn ô màu cần đổi, rồi chạm vào bảng màu bên dưới
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                repeat(3) { i ->
+                    val on = i < s.ledColorCount
+                    Box(
+                        Modifier
+                            .size(46.dp)
+                            .clip(CircleShape)
+                            .background(if (on) Color(s.ledColors.getOrElse(i) { s.ledColor }) else Ui.Card)
+                            .border(if (slot == i) 3.dp else 1.dp, if (slot == i) Ui.Primary else Ui.Divider, CircleShape)
+                            .clickable {
+                                slot = i
+                                if (!on) SettingsRepo.update { copy(ledColorCount = i + 1) }
+                            },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(if (on) "${i + 1}" else "+", color = if (on) Color.Black.copy(alpha = 0.6f) else Ui.Sub, fontWeight = FontWeight.Bold)
+                    }
+                }
+                Spacer(Modifier.weight(1f))
+                if (s.ledColorCount == 3) {
+                    Text(
+                        tr("Bỏ màu 3", "Remove 3rd"), color = Ui.Primary, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.clip(CircleShape).clickable { slot = 0; SettingsRepo.update { copy(ledColorCount = 2) } }.padding(8.dp),
+                    )
+                }
+            }
+            Swatches(ledPalette, s.ledColors.getOrElse(slot) { s.ledColor }) { c ->
+                SettingsRepo.update {
+                    val list = ledColors.toMutableList()
+                    while (list.size < 3) list += ledColor
+                    list[slot] = c
+                    copy(ledColors = list)
+                }
+            }
         }
 
         SectionHeader(tr("Khi nào Vòng sáng LED bật?", "LED Triggers"))
@@ -750,5 +825,11 @@ fun LedRingScreen(onBack: () -> Unit) {
             { it.title },
             { v -> SettingsRepo.update { copy(ledStyle = v) } },
         ) { styleDialog = false }
+    }
+    if (motionDialog) {
+        ChoiceDialog(
+            tr("Hiệu ứng chuyển động", "Motion"), LedMotion.entries, s.ledMotion, { it.title },
+            { v -> SettingsRepo.update { copy(ledMotion = v) } },
+        ) { motionDialog = false }
     }
 }

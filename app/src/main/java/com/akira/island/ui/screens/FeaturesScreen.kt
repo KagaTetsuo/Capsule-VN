@@ -346,6 +346,9 @@ fun NotificationsScreen(onBack: () -> Unit, open: (Screen) -> Unit = {}) {
             GroupToggle(Pos.Middle, Icons.AutoMirrored.Rounded.Reply, tr("Các nút trên thông báo", "Notification buttons"),
                 tr("Gõ phím trả lời ngay trên Viên thuốc, và Đánh dấu đã đọc", "Reply with typing right in the island, and Mark as read"),
                 s.msgActions, color = Tile.Indigo) { v -> SettingsRepo.update { copy(msgActions = v) } }
+            GroupToggle(Pos.Middle, Icons.Rounded.UnfoldLess, tr("Thu gọn khi app tự hiện pop-up", "Compact when the app pops up"),
+                tr("Tin nhắn bị hiện 2 lần mà không tắt được pop-up của app (vd. Samsung): Viên thuốc chỉ báo dạng viên nhỏ, nội dung xem ở pop-up của app", "Messages show twice and the app's pop-up can't be turned off (e.g. Samsung): the island shows a small pill, read it in the app's pop-up"),
+                s.msgCompactWhenPopup, color = Tile.Orange) { v -> SettingsRepo.update { copy(msgCompactWhenPopup = v) } }
             GroupToggle(Pos.Middle, Icons.Rounded.Smartphone, tr("Từ ứng dụng đang mở", "From the open app"),
                 tr("Hiển thị cả thông báo từ ứng dụng đang mở trên màn hình", "Also show notifications from the app that's on screen"),
                 s.msgInApp, color = Tile.Teal) { v ->

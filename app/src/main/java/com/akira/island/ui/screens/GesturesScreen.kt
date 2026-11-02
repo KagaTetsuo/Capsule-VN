@@ -2,6 +2,7 @@ package com.akira.island.ui.screens
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.PanTool
+import androidx.compose.material.icons.rounded.AutoFixHigh
 import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.TouchApp
@@ -35,12 +36,21 @@ fun GesturesScreen(onBack: () -> Unit) {
         subtitle = tr("Khi đang mở rộng: chạm để thu nhỏ, vuốt trái / phải để chuyển giữa các hoạt động đang chạy", "When expanded: tap to collapse, swipe left / right to switch between running activities")) {
         SectionHeader(tr("Chạm", "Taps"))
         Group {
-            GroupItem(Pos.First, Icons.Rounded.TouchApp, tr("Chạm một lần", "Single tap"), s.tapAction.title,
-                onClick = { dialog = Which.TAP }, color = Tile.Blue)
-            GroupItem(Pos.Middle, Icons.Rounded.TouchApp, tr("Chạm đúp", "Double tap"), s.doubleTapAction.title,
-                onClick = { dialog = Which.DOUBLE }, color = Tile.Indigo)
-            GroupItem(Pos.Last, Icons.Rounded.PanTool, tr("Nhấn giữ", "Long press"), s.longPressAction.title,
-                onClick = { dialog = Which.LONG }, color = Tile.Orange)
+            GroupItem(Pos.First, Icons.Rounded.TouchApp, tr("Chạm một lần", "Single tap"), "${s.tapAction.title} — ${s.tapAction.hint}",
+                onClick = { dialog = Which.TAP }, color = Tile.Blue) { Arrow() }
+            GroupItem(Pos.Middle, Icons.Rounded.TouchApp, tr("Chạm đúp", "Double tap"), "${s.doubleTapAction.title} — ${s.doubleTapAction.hint}",
+                onClick = { dialog = Which.DOUBLE }, color = Tile.Indigo) { Arrow() }
+            GroupItem(Pos.Middle, Icons.Rounded.PanTool, tr("Nhấn giữ", "Long press"), "${s.longPressAction.title} — ${s.longPressAction.hint}",
+                onClick = { dialog = Which.LONG }, color = Tile.Orange) { Arrow() }
+            val recommended = s.tapAction == TapAction.EXPAND && s.doubleTapAction == TapAction.OPEN_APP && s.longPressAction == TapAction.PLAY_PAUSE
+            GroupItem(Pos.Last, Icons.Rounded.AutoFixHigh, tr("Dùng cài đặt khuyên dùng", "Use recommended"),
+                if (recommended) tr("Đang dùng: Chạm = Mở rộng · Chạm đúp = Mở ứng dụng · Giữ = Phát / Tạm dừng", "In use: Tap = Expand · Double tap = Open app · Hold = Play / pause")
+                else tr("Chạm = Mở rộng · Chạm đúp = Mở ứng dụng · Giữ = Phát / Tạm dừng", "Tap = Expand · Double tap = Open app · Hold = Play / pause"),
+                color = if (recommended) Tile.Green else Tile.Gray,
+                onClick = {
+                    SettingsRepo.update { copy(tapAction = TapAction.EXPAND, doubleTapAction = TapAction.OPEN_APP, longPressAction = TapAction.PLAY_PAUSE) }
+                },
+            )
         }
         SectionHeader(tr("Vuốt", "Swipes"))
         Group {
@@ -63,11 +73,11 @@ fun GesturesScreen(onBack: () -> Unit) {
     }
 
     when (dialog) {
-        Which.TAP -> ChoiceDialog(tr("Chạm một lần", "Single tap"), TapAction.entries, s.tapAction, { it.title },
+        Which.TAP -> ChoiceDialog(tr("Chạm một lần", "Single tap"), TapAction.entries, s.tapAction, { "${it.title} — ${it.hint}" },
             { v -> SettingsRepo.update { copy(tapAction = v) } }) { dialog = null }
-        Which.DOUBLE -> ChoiceDialog(tr("Chạm đúp", "Double tap"), TapAction.entries, s.doubleTapAction, { it.title },
+        Which.DOUBLE -> ChoiceDialog(tr("Chạm đúp", "Double tap"), TapAction.entries, s.doubleTapAction, { "${it.title} — ${it.hint}" },
             { v -> SettingsRepo.update { copy(doubleTapAction = v) } }) { dialog = null }
-        Which.LONG -> ChoiceDialog(tr("Nhấn giữ", "Long press"), TapAction.entries, s.longPressAction, { it.title },
+        Which.LONG -> ChoiceDialog(tr("Nhấn giữ", "Long press"), TapAction.entries, s.longPressAction, { "${it.title} — ${it.hint}" },
             { v -> SettingsRepo.update { copy(longPressAction = v) } }) { dialog = null }
         null -> Unit
     }
