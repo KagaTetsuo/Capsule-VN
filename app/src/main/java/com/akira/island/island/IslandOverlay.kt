@@ -573,9 +573,10 @@ private fun IslandBody(
     
     val corner = animateDpAsState(cornerTarget, islandSpec(s), label = "corner")
 
-    // Thẻ thông báo (tin nhắn, cuộc gọi đến, cập nhật, tin chưa đọc) dùng nền & viền tuỳ chỉnh riêng
+    // Thẻ thông báo (tin nhắn, cuộc gọi đến, cập nhật, tin chưa đọc) và bảng mở rộng dùng nền & viền tuỳ chỉnh riêng
     val isCard = !calibrating && (
         primary is Act.UnreadA ||
+            (expanded && s.cardStyleExpanded) ||
             (primary is Act.NoticeA && (primary.n.style == NoticeStyle.MESSAGE || primary.n.style == NoticeStyle.UPDATE)) ||
             (primary is Act.CallA && primary.c.incoming)
         )

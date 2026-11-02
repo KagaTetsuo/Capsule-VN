@@ -1,0 +1,167 @@
+package com.akira.island.service
+
+import android.Manifest
+import android.accessibilityservice.AccessibilityService
+import android.app.AppOpsManager
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
+import android.os.Process
+import android.provider.Settings
+import com.akira.island.data.SettingsRepo
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import rikka.shizuku.Shizuku
+
+/**
+ * Chế độ ngân hàng tự động: ngân hàng / VNeID chặn mọi app đang bật Dịch vụ hỗ trợ tiếp cận.
+ * Khi mở các app này, Capsule VN tự tắt dịch vụ của mình; khi rời app, tự bật lại.
+ *
+ * - Tự bật lại cần quyền WRITE_SECURE_SETTINGS (cấp 1 lần qua Shizuku hoặc ADB).
+ * - Biết lúc rời app ngân hàng (khi dịch vụ đã tắt) cần quyền Truy cập dữ liệu sử dụng.
+ */
+object BankMode {
+
+    /** Ứng dụng ngân hàng, ví điện tử & định danh phổ biến tại Việt Nam (được tự chọn sẵn nếu đã cài). */
+    private val knownVn = setOf(
+        "com.VCB", "com.vietinbank.ipay", "com.bidv.smartbanking", "com.vnpay.Agribank3g", "vn.com.techcombank.bb.app",
+        "com.mbmobile", "mobile.acb.com.vn", "com.vnpay.vpbankonline", "com.vpbank.neo", "com.tpb.mb.gprsandroid",
+        "com.sacombank.ewallet", "com.hdbank.mobilebanking", "com.vib.myvib2", "vn.shb.mbanking", "com.ocb.omni",
+        "vn.com.msb.smartBanking", "vn.seabank.digitalbanking", "com.lpb.lienviet24h", "com.eximbank.ebmobile",
+        "com.namabank.mobilebanking", "com.cake.cakebank", "io.lifestyle.plus", "vn.timo.android", "com.vnid",
+        "com.mservice.momotransfer", "vn.com.vng.zalopay", "com.vnpay.wallet", "vn.viettelpay.viettelmoney",
+        "com.shopeepay.vn", "com.bplus.vtpay", "com.vnpt.vnptmoney", "com.vietbank.mobilebanking",
+    )
+
+    private val bankish = Regex(
+        "bank|banking|vcb|vietin|bidv|agri|techcom|mbmobile|acb|vpbank|tpb|sacom|hdbank|vib|shb|ocb|msb|seabank|" +
+            "lienviet|lpb|eximbank|namabank|vnid|vneid|momo|zalopay|vnpay|viettelpay|viettelmoney|shopeepay|vnptmoney|wallet",
+        RegexOption.IGNORE_CASE,
+    )
+
+    /** Danh sách app áp dụng: người dùng đã chỉnh thì theo người dùng, chưa thì tự nhận diện. */
+    fun apps(context: Context): Set<String> {
+        val s = SettingsRepo.current
+        return if (s.bankAppsEdited) s.bankApps.toSet() else detected(context)
+    }
+
+    @Volatile private var detectedCache: Set<String>? = null
+
+    fun detected(context: Context): Set<String> = detectedCache ?: launchable(context)
+        .map { it.first }
+        .filter { it in knownVn || bankish.containsMatchIn(it) }
+        .filter { it != context.packageName }
+        .toSet()
+        .also { detectedCache = it }
+
+    /** Các app có biểu tượng ở màn hình chính: (gói, tên hiển thị). */
+    fun launchable(context: Context): List<Pair<String, String>> {
+        val pm = context.packageManager
+        val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+        return runCatching {
+            pm.queryIntentActivities(intent, 0)
+                .map { it.activityInfo.packageName to it.loadLabel(pm).toString() }
+                .distinctBy { it.first }
+                .filter { it.first != context.packageName }
+                .sortedBy { it.second.lowercase() }
+        }.getOrDefault(emptyList())
+    }
+
+    @Volatile private var labelCache: Map<String, String>? = null
+    @Volatile private var homeCache: String? = null
+
+    fun invalidate() {
+        detectedCache = null
+        labelCache = null
+    }
+
+    /** Ứng dụng màn hình chính (launcher) hiện tại. */
+    fun homePackage(context: Context): String? = homeCache ?: runCatching {
+        context.packageManager.resolveActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME), 0)?.activityInfo?.packageName
+    }.getOrNull().also { homeCache = it }
+
+    /** Chạm vào biểu tượng ở màn hình chính: đoán gói từ tên hiển thị (để tắt Viên thuốc TRƯỚC khi app ngân hàng kịp kiểm tra). */
+    fun pkgForLabel(context: Context, label: String): String? {
+        val map = labelCache ?: run {
+            val list = apps(context)
+            launchable(context).filter { it.first in list }.associate { it.second.trim().lowercase() to it.first }
+        }.also { labelCache = it }
+        val l = label.trim().lowercase()
+        return map.entries.firstOrNull { (name, _) -> l == name || l.startsWith("$name,") || l.startsWith("$name\n") || l.startsWith("$name (") }?.value
+    }
+
+    fun canWriteSecure(context: Context): Boolean =
+        context.checkSelfPermission(Manifest.permission.WRITE_SECURE_SETTINGS) == PackageManager.PERMISSION_GRANTED
+
+    fun hasUsageAccess(context: Context): Boolean = runCatching {
+        val ops = context.getSystemService(AppOpsManager::class.java)
+        val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ops.unsafeCheckOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, Process.myUid(), context.packageName)
+        } else {
+            @Suppress("DEPRECATION")
+            ops.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, Process.myUid(), context.packageName)
+        }
+        mode == AppOpsManager.MODE_ALLOWED
+    }.getOrDefault(false)
+
+    fun shouldPause(context: Context, pkg: String): Boolean {
+        val s = SettingsRepo.current
+        return s.enabled && s.bankMode && pkg != context.packageName && pkg in apps(context)
+    }
+
+    /** Tắt Viên thuốc ngay (trước / khi app ngân hàng mở) và bật dịch vụ canh để tự bật lại. */
+    fun pause(service: AccessibilityService, pkg: String) {
+        BankWatchService.start(service, pkg)
+        if (canWriteSecure(service)) setAccessibility(service, false)
+        service.disableSelf()
+    }
+
+    /** Bật lại Dịch vụ hỗ trợ tiếp cận của Capsule VN (cần WRITE_SECURE_SETTINGS). */
+    fun resume(context: Context): Boolean = canWriteSecure(context) && setAccessibility(context, true)
+
+    private fun setAccessibility(context: Context, on: Boolean): Boolean = runCatching {
+        val cr = context.contentResolver
+        val me = ComponentName(context, IslandService::class.java)
+        val current = Settings.Secure.getString(cr, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES).orEmpty()
+        val others = current.split(':').filter { it.isNotBlank() && ComponentName.unflattenFromString(it) != me }
+        val next = if (on) others + me.flattenToString() else others
+        Settings.Secure.putString(cr, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES, next.joinToString(":"))
+        if (on) Settings.Secure.putInt(cr, Settings.Secure.ACCESSIBILITY_ENABLED, 1)
+        true
+    }.getOrDefault(false)
+
+    // ---------- Cấp quyền 1 chạm qua Shizuku ----------
+
+    fun shizukuRunning(): Boolean = runCatching { Shizuku.pingBinder() }.getOrDefault(false)
+
+    fun shizukuGranted(): Boolean = runCatching { Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED }.getOrDefault(false)
+
+    fun requestShizuku(code: Int) {
+        runCatching { Shizuku.requestPermission(code) }
+    }
+
+    /** Lệnh ADB tương đương, cho người dùng có máy tính. */
+    fun adbCommands(context: Context): String =
+        "adb shell pm grant ${context.packageName} android.permission.WRITE_SECURE_SETTINGS\n" +
+            "adb shell appops set ${context.packageName} GET_USAGE_STATS allow"
+
+    /** Dùng Shizuku để tự cấp WRITE_SECURE_SETTINGS và quyền truy cập dữ liệu sử dụng. */
+    suspend fun grantWithShizuku(context: Context): Boolean = withContext(Dispatchers.IO) {
+        val pkg = context.packageName
+        val a = shell("pm grant $pkg android.permission.WRITE_SECURE_SETTINGS")
+        val b = shell("appops set $pkg GET_USAGE_STATS allow")
+        a && b || canWriteSecure(context)
+    }
+
+    private fun shell(cmd: String): Boolean = runCatching {
+        // Shizuku.newProcess bị ẩn ở API 13 nhưng vẫn hoạt động — gọi qua phản chiếu
+        val m = Shizuku::class.java.getDeclaredMethod(
+            "newProcess", Array<String>::class.java, Array<String>::class.java, String::class.java,
+        )
+        m.isAccessible = true
+        val p = m.invoke(null, arrayOf("sh", "-c", cmd), null, null) as java.lang.Process
+        p.waitFor() == 0
+    }.getOrDefault(false)
+}

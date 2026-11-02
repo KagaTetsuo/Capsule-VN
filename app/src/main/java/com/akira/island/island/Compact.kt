@@ -68,6 +68,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
@@ -423,7 +425,7 @@ private fun PillNotice(n: Notice, s: IslandSettings) {
 internal fun MessageCard(n: Notice, m: AppMessage, s: IslandSettings, @Suppress("UNUSED_PARAMETER") wideWidth: Dp) {
     val context = LocalContext.current
     val haptic = rememberHaptic()
-    val iconSize = 40.dp
+    val iconSize = 44.dp
     val reply by IslandBus.reply.collectAsState()
     val locked by IslandBus.locked.collectAsState()
     
@@ -477,7 +479,7 @@ internal fun MessageCard(n: Notice, m: AppMessage, s: IslandSettings, @Suppress(
             Column(Modifier.weight(1f)) {
                 Row(Modifier.fillMaxWidth().heightIn(min = 22.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        if (hidden) m.appName else n.title, color = Color.White, fontSize = 15.sp, lineHeight = 20.sp,
+                        if (hidden) m.appName else n.title, color = Color.White, fontSize = 16.sp, lineHeight = 21.sp,
                         fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
                     )
                     if (m.history.size > 1 && !hidden) {
@@ -500,8 +502,8 @@ internal fun MessageCard(n: Notice, m: AppMessage, s: IslandSettings, @Suppress(
                     }
                 } else if (m.text.isNotEmpty()) {
                     Text(
-                        m.text, color = Color.White.copy(alpha = 0.88f), fontSize = 14.sp, lineHeight = 19.sp, maxLines = s.msgLines.coerceIn(1, 8),
-                        overflow = TextOverflow.Ellipsis,
+                        m.text, color = Color.White.copy(alpha = 0.85f), fontSize = 14.5.sp, lineHeight = 20.sp, maxLines = s.msgLines.coerceIn(1, 8),
+                        overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 1.dp),
                     )
                 }
             }
@@ -578,14 +580,14 @@ internal fun MessageCard(n: Notice, m: AppMessage, s: IslandSettings, @Suppress(
             }
         } else if (m.actions.isNotEmpty() && !locked) {
             
+            // Nút thao tác dạng viên tròn, chia đều bề ngang & thẳng hàng với ảnh đại diện
             Row(
-                Modifier.fillMaxWidth().padding(start = 16.dp + iconSize + 12.dp, end = 16.dp, top = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(18.dp),
+                Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                m.actions.forEachIndexed { i, a ->
-                    
-                    TextAction(a.title, accent, if (i == m.actions.lastIndex) Modifier.weight(1f, fill = false) else Modifier, size = 14.sp) {
+                m.actions.forEach { a ->
+                    ActionPill(a.title, accent, Modifier.weight(1f)) {
                         if (a.isReply) {
                             IslandBus.reply.value = ReplyState(n.id, a)
                         } else {
@@ -623,7 +625,8 @@ private fun statusBarHeight(): Dp {
 @Composable
 private fun NotifIcon(m: AppMessage, n: Notice, size: Dp, ring: Color) {
     Box(Modifier.size(size + 4.dp)) {
-        val big = m.avatar ?: m.appIcon
+        val raw = m.avatar ?: m.appIcon
+        val big = remember(raw) { raw?.let { runCatching { circleCrop(it) }.getOrDefault(it) } }
         if (big != null) {
             Image(big, null, Modifier.size(size).clip(CircleShape), contentScale = ContentScale.Crop)
         } else {
@@ -634,7 +637,7 @@ private fun NotifIcon(m: AppMessage, n: Notice, size: Dp, ring: Color) {
         if (m.avatar != null && m.appIcon != null) {
             Image(
                 m.appIcon, null,
-                Modifier.align(Alignment.BottomEnd).size(size * 0.44f).clip(CircleShape).background(ring).padding(2.dp).clip(CircleShape),
+                Modifier.align(Alignment.BottomEnd).size(size * 0.42f).clip(CircleShape).background(Color.Black).padding(2.dp).clip(CircleShape),
             )
         }
     }
@@ -651,6 +654,41 @@ private fun CountPill(count: Int, open: Boolean, accent: Color, onClick: () -> U
         Text("$count", color = ink, fontSize = 13.sp, style = Digits, maxLines = 1)
         Icon(Icons.Rounded.KeyboardArrowDown, null, tint = ink, modifier = Modifier.size(17.dp).graphicsLayer { rotationZ = rotation })
     }
+}
+
+@Composable
+private fun ActionPill(title: String, accent: Color, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    val haptic = rememberHaptic()
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    Box(
+        modifier
+            .height(38.dp)
+            .clip(CircleShape)
+            .background(accent.copy(alpha = if (pressed) 0.28f else 0.16f))
+            .clickable(interaction, indication = null) {
+                haptic()
+                onClick()
+            }
+            .padding(horizontal = 12.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(title, color = accent, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+/** Cắt ảnh đại diện thành hình tròn ngay trên bitmap — luôn tròn kể cả khi lớp vẽ không hỗ trợ clip. */
+private fun circleCrop(src: ImageBitmap): ImageBitmap {
+    val b = src.asAndroidBitmap()
+    val d = minOf(b.width, b.height)
+    val out = android.graphics.Bitmap.createBitmap(d, d, android.graphics.Bitmap.Config.ARGB_8888)
+    val canvas = android.graphics.Canvas(out)
+    val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG or android.graphics.Paint.FILTER_BITMAP_FLAG)
+    paint.shader = android.graphics.BitmapShader(b, android.graphics.Shader.TileMode.CLAMP, android.graphics.Shader.TileMode.CLAMP).apply {
+        setLocalMatrix(android.graphics.Matrix().apply { setTranslate(-(b.width - d) / 2f, -(b.height - d) / 2f) })
+    }
+    canvas.drawCircle(d / 2f, d / 2f, d / 2f, paint)
+    return out.asImageBitmap()
 }
 
 @Composable

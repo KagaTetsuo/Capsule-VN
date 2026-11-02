@@ -689,6 +689,7 @@ private fun IslandSettings.withMsgCallPlacement(from: IslandSettings) = copy(
     cardBorder = from.cardBorder,
     cardBorderColor = from.cardBorderColor,
     cardBorderWidth = from.cardBorderWidth,
+    cardStyleExpanded = from.cardStyleExpanded,
 )
 
 @Composable
@@ -737,7 +738,7 @@ private fun CardStyleSection(s: IslandSettings, preview: () -> Unit) {
         }
     }
 
-    SectionHeader(tr("Nền & viền thẻ (mọi thẻ)", "Card background & border (all cards)"))
+    SectionHeader(tr("Nền & viền thẻ", "Card background & border"))
     Group {
         GroupItem(
             Pos.First, Icons.Rounded.Wallpaper, tr("Kiểu nền", "Background"), s.cardBg.title,
@@ -756,10 +757,15 @@ private fun CardStyleSection(s: IslandSettings, preview: () -> Unit) {
             ) { v -> set { copy(cardImageDim = v.toInt()) } }
         }
         GroupSlider(
-            Pos.Last, Icons.Rounded.Opacity,
+            Pos.Middle, Icons.Rounded.Opacity,
             if (s.cardBg == CardBg.GLASS) tr("Độ đậm kính", "Glass density") else tr("Độ đậm nền", "Background opacity"),
             value = s.cardBgOpacity.toFloat(), range = 20f..100f, label = "${s.cardBgOpacity}%", color = Tile.Teal,
         ) { v -> set { copy(cardBgOpacity = v.toInt()) } }
+        GroupToggle(
+            Pos.Last, Icons.Rounded.DashboardCustomize, tr("Áp dụng cho bảng mở rộng", "Also for the expanded island"),
+            tr("Bảng Giờ – Pin, trình phát nhạc, hẹn giờ… dùng chung nền & viền này", "Clock, music player, timer… panels use the same background & border"),
+            s.cardStyleExpanded, color = Tile.Indigo,
+        ) { v -> set { copy(cardStyleExpanded = v) } }
     }
     if (s.cardBg == CardBg.COLOR || s.cardBg == CardBg.GLASS) {
         Swatches(cardColors, s.cardBgColor) { c -> set { copy(cardBgColor = c) } }

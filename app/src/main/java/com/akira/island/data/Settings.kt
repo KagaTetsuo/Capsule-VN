@@ -219,6 +219,8 @@ data class IslandSettings(
     val cardBorder: Boolean = false,
     val cardBorderColor: Long = 0xFFE6C068,
     val cardBorderWidth: Float = 1.5f,
+    /** Áp dụng nền & viền thẻ cho cả bảng mở rộng (Giờ, Pin, nhạc, hẹn giờ…). */
+    val cardStyleExpanded: Boolean = true,
 
     val color: Long = 0xFF000000,
     val outline: Boolean = false,
@@ -272,6 +274,10 @@ data class IslandSettings(
     val doubleTapAction: TapAction = TapAction.NOTHING,
     val longPressAction: TapAction = TapAction.OPEN_APP,
     val swipeTracks: Boolean = true,
+    /** Chế độ ngân hàng: tự tắt Viên thuốc khi mở app ngân hàng / VNeID, tự bật lại khi rời app. */
+    val bankMode: Boolean = false,
+    val bankApps: List<String> = emptyList(),
+    val bankAppsEdited: Boolean = false,
     /** Vuốt ngang trên Viên thuốc thu gọn để chuyển giữa các hoạt động đang chạy. */
     val swipeSwitch: Boolean = false,
     val swipeExpand: Boolean = true,

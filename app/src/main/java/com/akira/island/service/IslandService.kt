@@ -178,6 +178,9 @@ class IslandService : AccessibilityService() {
         IslandBus.landscape.value = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
         createWindows()
+        // Viên thuốc đã bật lại -> dừng dịch vụ canh của chế độ ngân hàng (nếu có)
+        stopService(Intent(this, BankWatchService::class.java))
+        BankMode.invalidate()
         KeepAliveService.sync(this)
         IslandTile.refresh(this)
         events = SystemEvents(this).also { it.start() }
@@ -380,6 +383,7 @@ class IslandService : AccessibilityService() {
             display?.let { v -> runCatching { wm?.updateViewLayout(v, displayParams) } }
         }
         updateTouchWindow()
+        applyEventTypes()
     }
 
     private fun screenshotWithoutIsland() {
@@ -526,17 +530,41 @@ class IslandService : AccessibilityService() {
                 clockReader?.onContentChanged(event)
                 payReader?.onContentChanged(event)
             }
-            AccessibilityEvent.TYPE_VIEW_CLICKED -> clockReader?.onClicked(event)
+            AccessibilityEvent.TYPE_VIEW_CLICKED -> {
+                if (bankClick(event)) return
+                clockReader?.onClicked(event)
+            }
         }
     }
 
     private fun setScreenEvents(on: Boolean) {
         if (on == screenEvents) return
         screenEvents = on
+        applyEventTypes()
+    }
+
+    private fun applyEventTypes() {
         val info = serviceInfo ?: return
         val extra = AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED or AccessibilityEvent.TYPE_VIEW_CLICKED
-        info.eventTypes = if (on) info.eventTypes or extra else info.eventTypes and extra.inv()
+        var types = info.eventTypes and extra.inv()
+        if (screenEvents) types = types or extra
+        // Chế độ ngân hàng: nghe cú chạm biểu tượng ở màn hình chính để tắt Viên thuốc trước khi app ngân hàng mở
+        if (SettingsRepo.current.bankMode) types = types or AccessibilityEvent.TYPE_VIEW_CLICKED
+        if (types == info.eventTypes) return
+        info.eventTypes = types
         runCatching { serviceInfo = info }
+    }
+
+    private fun bankClick(event: AccessibilityEvent): Boolean {
+        val s = SettingsRepo.current
+        if (!s.bankMode || !s.enabled) return false
+        val src = event.packageName?.toString() ?: return false
+        if (src != BankMode.homePackage(this)) return false
+        val label = event.text.joinToString(" ").ifBlank { event.contentDescription?.toString().orEmpty() }
+        if (label.isBlank()) return false
+        val pkg = BankMode.pkgForLabel(this, label) ?: return false
+        BankMode.pause(this, pkg)
+        return true
     }
 
     private fun onWindowsChanged() {
@@ -563,6 +591,11 @@ class IslandService : AccessibilityService() {
         
         val cls = event.className?.toString().orEmpty()
         if (pkg == "com.android.systemui" || isKeyboard(pkg, cls)) return
+        // Chế độ ngân hàng: app ngân hàng / VNeID lên màn hình -> Viên thuốc tạm nghỉ
+        if (BankMode.shouldPause(this, pkg)) {
+            BankMode.pause(this, pkg)
+            return
+        }
         
         if (pkg == PayMonitor.GMS && "tapandpay" in cls.lowercase()) {
             PayMonitor.onTapAndPay(this)
