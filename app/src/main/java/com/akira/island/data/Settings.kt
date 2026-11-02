@@ -108,6 +108,31 @@ enum class LedStyle(private val ru: String, private val en: String) {
     val title: String get() = tr(ru, en)
 }
 
+/** Nhóm "thông báo khác" để chỉnh vị trí / kích thước riêng từng loại. */
+@Serializable
+enum class NoticeKind(private val ru: String, private val en: String) {
+    CHARGING("Sạc pin", "Charging"),
+    AUDIO("Tai nghe & Bluetooth", "Headphones & Bluetooth"),
+    PAYMENT("Thanh toán", "Payments"),
+    NAV("Điều hướng", "Navigation"),
+    ALARM("Báo thức", "Alarm"),
+    MODE("Chế độ chuông", "Ring mode"),
+    OTHER("Sự kiện khác", "Other events"),
+    ;
+
+    val title: String get() = tr(ru, en)
+}
+
+/** Vị trí / kích thước riêng của một nhóm thông báo (width 0 = tự động, corner -1 = tự động). */
+@Serializable
+data class NoticeTweak(
+    val offsetX: Int = 0,
+    val offsetY: Int = 0,
+    val width: Int = 0,
+    val heightExtra: Int = 0,
+    val corner: Int = -1,
+)
+
 /** Kiểu chuyển động của viền sáng. */
 @Serializable
 enum class LedMotion(private val ru: String, private val en: String) {
@@ -231,6 +256,8 @@ data class IslandSettings(
     val noticeWidth: Int = 0,
     val noticeHeightExtra: Int = 0,
     val noticeCornerRadius: Int = -1,
+    /** Chỉnh riêng từng loại (chưa có thì dùng chung các giá trị notice* ở trên). */
+    val noticeTweaks: Map<NoticeKind, NoticeTweak> = emptyMap(),
     val expandedWidth: Int = 0,
     val expandedHeightExtra: Int = 0,
 
@@ -409,7 +436,13 @@ data class IslandSettings(
         minOf(topOffset, topOffset + msgOffsetY, topOffset + callOffsetY),
         minOf(topOffset + updateOffsetY, topOffset + expandedOffsetY),
         minOf(topOffset + activeOffsetY, topOffset + noticeOffsetY),
+        topOffset + (noticeTweaks.values.minOfOrNull { it.offsetY } ?: 0),
     )
+
+    /** Cài đặt chung cho mọi "thông báo khác". */
+    val noticeGeneral: NoticeTweak get() = NoticeTweak(noticeOffsetX, noticeOffsetY, noticeWidth, noticeHeightExtra, noticeCornerRadius)
+
+    fun tweakFor(kind: NoticeKind?): NoticeTweak = kind?.let { noticeTweaks[it] } ?: noticeGeneral
 
     val liveEqualizer: Boolean get() = fxEqualizer && !reduceEffects
 }

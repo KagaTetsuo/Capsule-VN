@@ -55,6 +55,8 @@ object IslandBus {
     val widthPreviewUntil = MutableStateFlow(0L)
     
     val cardPreviewMode = MutableStateFlow(CardPreviewMode.NONE)
+    /** Loại thông báo đang xem trước trong tab "Khác" (null = mẫu chung). */
+    val previewNoticeKind = MutableStateFlow<com.akira.island.data.NoticeKind?>(null)
 
     private var motionDemoJob: Job? = null
 

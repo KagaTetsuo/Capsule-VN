@@ -127,6 +127,8 @@ import com.akira.island.core.tr
 import com.akira.island.data.Elasticity
 import com.akira.island.data.ExpandStyle
 import com.akira.island.data.IslandSettings
+import com.akira.island.data.NoticeTweak
+import com.akira.island.data.NoticeKind
 import com.akira.island.data.SettingsRepo
 import com.akira.island.data.TapAction
 import com.akira.island.service.CallMonitor
@@ -190,6 +192,20 @@ private fun buildPreviewNotice(context: Context): Notice = Notice(
     tint = Tints.Green,
     ring = 0.92f,
 )
+
+/** Thẻ mẫu cho từng loại trong tab "Khác". */
+private fun buildPreviewKind(context: Context, kind: NoticeKind): Notice = when (kind) {
+    NoticeKind.CHARGING -> Notice(tr("Đang sạc", "Charging"), "85%", Ios.load(context, com.akira.island.R.drawable.ios_flash), Tints.Green, battery = 85)
+    NoticeKind.AUDIO -> buildPreviewNotice(context)
+    NoticeKind.PAYMENT -> Notice(
+        tr("Đã thanh toán", "Paid"), "150.000 đ", Ios.load(context, com.akira.island.R.drawable.ios_checkmark_circle), Tints.Green,
+        caption = "Vietcombank · NFC", style = NoticeStyle.PAY_DONE,
+    )
+    NoticeKind.NAV -> Notice(tr("Rẽ phải sau 300 m", "Turn right in 300 m"), "300 m", Ios.load(context, com.akira.island.R.drawable.ios_navigate), Tints.Blue)
+    NoticeKind.ALARM -> Notice(tr("Báo thức", "Alarm"), "06:30", Ios.load(context, com.akira.island.R.drawable.ios_alarm), Tints.Orange)
+    NoticeKind.MODE -> Notice("", tr("Im lặng", "Silent"), Ios.load(context, com.akira.island.R.drawable.ios_notifications_off), Tints.Red, style = NoticeStyle.PILL)
+    NoticeKind.OTHER -> Notice(tr("Wi-Fi", "Wi-Fi"), tr("Đã kết nối", "Connected"), Ios.load(context, com.akira.island.R.drawable.ios_wifi), Tints.Blue)
+}
 
 private fun buildPreviewUpdate(context: Context): Notice = Notice(
     title = tr("Đã có phiên bản 1.1.0", "Version 1.1.0 is available"),
@@ -360,6 +376,8 @@ fun IslandOverlay(
     val previewCallInfo = remember { buildPreviewCall() }
     val previewUpdateNotice = remember(context) { buildPreviewUpdate(context) }
     val previewOtherNotice = remember(context) { buildPreviewNotice(context) }
+    val previewNoticeKind by IslandBus.previewNoticeKind.collectAsState()
+    val previewKindNotice = remember(context, previewNoticeKind) { previewNoticeKind?.let { buildPreviewKind(context, it) } }
 
     val unreadAct = unreadPages.firstOrNull { it.id == focus }
     val base = acts.firstOrNull() ?: Act.Idle
@@ -369,7 +387,7 @@ fun IslandOverlay(
         cardPreview == CardPreviewMode.MESSAGE -> Act.NoticeA(previewMsgNotice)
         cardPreview == CardPreviewMode.CALL -> Act.CallA(previewCallInfo)
         cardPreview == CardPreviewMode.UPDATE -> Act.NoticeA(previewUpdateNotice)
-        cardPreview == CardPreviewMode.NOTICE -> Act.NoticeA(previewOtherNotice)
+        cardPreview == CardPreviewMode.NOTICE -> Act.NoticeA(previewKindNotice ?: previewOtherNotice)
         previewing -> Act.LiveA(WidthDemo)
         showUnread -> unreadAct!!
         else -> base
@@ -483,6 +501,8 @@ private fun IslandRow(
         primary is Act.NoticeA && primary.n.style != NoticeStyle.MESSAGE && primary.n.style != NoticeStyle.UPDATE
         )
     val active = !showExpanded && primary !is Act.Idle && !primary.transient && !(primary is Act.CallA && primary.c.incoming)
+    val previewKind by IslandBus.previewNoticeKind.collectAsState()
+    val tweak = otherTweak(s, primary, cardPreview, previewKind)
     val extraYTarget = when {
         !calibrating && primary is Act.CallA && primary.c.incoming -> (s.topOffset + s.callOffsetY - s.windowBaseY).dp
         !calibrating && primary is Act.NoticeA && primary.n.style == NoticeStyle.MESSAGE -> (s.topOffset + s.msgOffsetY - s.windowBaseY).dp
@@ -490,14 +510,14 @@ private fun IslandRow(
         // Bảng mở rộng: áp dụng vị trí trên / dưới riêng (expandedOffsetY)
         !calibrating && showExpanded -> (s.topOffset + s.expandedOffsetY - s.windowBaseY).dp
         // Các thông báo khác (sạc, tai nghe, thanh toán…)
-        !calibrating && otherNotice -> (s.topOffset + s.noticeOffsetY - s.windowBaseY).dp
+        !calibrating && otherNotice -> (s.topOffset + tweak.offsetY - s.windowBaseY).dp
         // Viên thuốc khi có hoạt động (nhạc, hẹn giờ, điều hướng…)
         !calibrating && active -> (s.topOffset + s.activeOffsetY - s.windowBaseY).dp
         else -> (s.topOffset - s.windowBaseY).dp
     }
     val extraXTarget = when {
         calibrating || showExpanded -> 0.dp
-        otherNotice -> s.noticeOffsetX.dp
+        otherNotice -> tweak.offsetX.dp
         active -> s.activeOffsetX.dp
         else -> 0.dp
     }
@@ -581,13 +601,16 @@ private fun IslandBody(
     val expandedWidth = if (s.expandedWidth > 0) s.expandedWidth.dp.coerceAtMost(conf.screenWidthDp.dp) else (conf.screenWidthDp.dp - 22.dp).coerceAtMost(460.dp)
     val h = s.height.dp
 
+    val cardPreviewNow by IslandBus.cardPreviewMode.collectAsState()
+    val previewKindNow by IslandBus.previewNoticeKind.collectAsState()
+    val noticeCorner = otherTweak(s, primary, cardPreviewNow, previewKindNow).corner
     val cornerTarget = when {
         expanded -> s.expandedCornerRadius.dp
         primary is Act.NoticeA && (primary.n.style == NoticeStyle.MESSAGE || primary.n.style == NoticeStyle.EGG) -> s.cardCornerRadius.dp
         primary is Act.NoticeA && primary.n.style == NoticeStyle.UPDATE -> s.updateCornerRadius.dp
         primary is Act.CallA && primary.c.incoming -> s.callCornerRadius.dp.coerceAtMost(callHeight(s) / 2)
-        s.noticeCornerRadius >= 0 && (primary is Act.PayA || (primary is Act.NoticeA && primary.n.style != NoticeStyle.MESSAGE &&
-            primary.n.style != NoticeStyle.UPDATE && primary.n.style != NoticeStyle.EGG)) -> s.noticeCornerRadius.dp
+        noticeCorner >= 0 && (primary is Act.PayA || (primary is Act.NoticeA && primary.n.style != NoticeStyle.MESSAGE &&
+            primary.n.style != NoticeStyle.UPDATE && primary.n.style != NoticeStyle.EGG)) -> noticeCorner.dp
         primary is Act.NoticeA && primary.n.style == NoticeStyle.WIDE && primary.n.title.isNotBlank() -> {
             if (s.capsuleCornerRadius >= 0) s.capsuleCornerRadius.dp else noticeHeight(s) / 2
         }
@@ -922,6 +945,14 @@ private fun IslandBody(
             PageDots(pages.size, page, Modifier.align(Alignment.BottomCenter).padding(bottom = 7.dp))
         }
     }
+}
+
+/** Vị trí / kích thước của "thông báo khác" đang hiển thị (theo loại; xem trước dùng loại đang chọn). */
+private fun otherTweak(s: IslandSettings, primary: Act, preview: CardPreviewMode, previewKind: NoticeKind?): NoticeTweak = when {
+    primary is Act.PayA -> s.tweakFor(NoticeKind.PAYMENT)
+    primary is Act.NoticeA && preview == CardPreviewMode.NOTICE -> s.tweakFor(previewKind)
+    primary is Act.NoticeA -> s.tweakFor(noticeKindOf(primary.n))
+    else -> s.noticeGeneral
 }
 
 /** Vẽ ảnh nền thẻ kiểu "cắt vừa khung" (center-crop), phủ thêm lớp tối để chữ trắng luôn dễ đọc. */

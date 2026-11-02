@@ -1,5 +1,10 @@
 # Lịch sử phiên bản Capsule VN
 
+## v1.4.1 (2026) — Tab "Khác" chỉnh riêng từng loại thông báo
+- **Khung thẻ thông báo → Khác** giờ chia mục: **Tất cả** (chung) và từng loại **Sạc pin, Tai nghe & Bluetooth, Thanh toán, Điều hướng, Báo thức, Chế độ chuông, Sự kiện khác**.
+  - Mỗi loại chỉnh riêng vị trí dọc / ngang, chiều rộng, chiều cao thêm, bo góc; chọn loại nào thì thẻ mẫu đúng loại đó hiện trực tiếp trên đỉnh màn hình.
+  - Loại chưa chỉnh dùng chung thiết lập "Tất cả"; loại đã chỉnh có chấm vàng, bấm "Dùng chung như Tất cả" để bỏ.
+
 ## v1.4.0 (2026) — Tuỳ chỉnh chuyên sâu vị trí, kích thước, viền sáng & cử chỉ
 - **Viên thuốc khi có hoạt động** (Giao diện → Khi có hoạt động): thêm Vị trí dọc (lên / xuống) và Vị trí ngang (trái / phải), xem trước trực tiếp.
 - **Khung thẻ thông báo → tab "Khác"** cho mọi thông báo còn lại (sạc, tai nghe, thanh toán, sự kiện…): vị trí dọc / ngang, chiều rộng, chiều cao thêm, bo góc — xem trước trực tiếp.

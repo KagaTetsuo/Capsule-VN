@@ -46,6 +46,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
+import com.akira.island.data.NoticeTweak
+import com.akira.island.data.NoticeKind
 import androidx.compose.material.icons.rounded.Animation
 import androidx.compose.material.icons.rounded.NotificationsActive
 import androidx.compose.material.icons.rounded.AspectRatio
@@ -385,7 +389,7 @@ fun MsgCallSizeScreen(onBack: () -> Unit) {
                                 0 -> set { copy(msgOffsetY = d.msgOffsetY, msgWidth = d.msgWidth, msgHeightExtra = d.msgHeightExtra, msgLines = d.msgLines, cardCornerRadius = d.cardCornerRadius) }
                                 1 -> set { copy(callOffsetY = d.callOffsetY, callWidth = d.callWidth, callHeight = d.callHeight, callCornerRadius = d.callCornerRadius) }
                                 2 -> set { copy(updateOffsetY = d.updateOffsetY, updateWidth = d.updateWidth, updateHeightExtra = d.updateHeightExtra, updateCornerRadius = d.updateCornerRadius) }
-                                else -> set { copy(noticeOffsetX = d.noticeOffsetX, noticeOffsetY = d.noticeOffsetY, noticeWidth = d.noticeWidth, noticeHeightExtra = d.noticeHeightExtra, noticeCornerRadius = d.noticeCornerRadius) }
+                                else -> set { copy(noticeOffsetX = d.noticeOffsetX, noticeOffsetY = d.noticeOffsetY, noticeWidth = d.noticeWidth, noticeHeightExtra = d.noticeHeightExtra, noticeCornerRadius = d.noticeCornerRadius, noticeTweaks = emptyMap()) }
                             }
                         },
                         contentAlignment = Alignment.Center,
@@ -620,35 +624,7 @@ fun MsgCallSizeScreen(onBack: () -> Unit) {
             }
 
             if (selectedTab == 3) {
-                fun prev() { if (previewOn) IslandBus.cardPreviewMode.value = CardPreviewMode.NOTICE }
-                val autoW = (LocalConfiguration.current.screenWidthDp - 22).coerceAtMost(460)
-                SectionHeader(tr("Thông báo khác: sạc, tai nghe, thanh toán, sự kiện…", "Other alerts: charging, headphones, payments, events…"))
-                Group {
-                    GroupStepSlider(
-                        Pos.First, Icons.Rounded.SwapVert, tr("Vị trí dọc (lên / xuống)", "Vertical position (up / down)"), s.noticeOffsetY, -30..120,
-                        action = tr("Mặc định 0 dp", "Default 0 dp") to { set { copy(noticeOffsetY = 0) } }, color = Tile.Indigo,
-                    ) { v -> prev(); set { copy(noticeOffsetY = v) } }
-                    GroupStepSlider(
-                        Pos.Middle, Icons.Rounded.SwapHoriz, tr("Vị trí ngang (trái / phải)", "Horizontal position"), s.noticeOffsetX, -120..120,
-                        action = tr("Chính giữa", "Center") to { set { copy(noticeOffsetX = 0) } }, color = Tile.Teal,
-                    ) { v -> prev(); set { copy(noticeOffsetX = v) } }
-                    GroupStepSlider(
-                        Pos.Middle, Icons.Rounded.Straighten, tr("Chiều rộng", "Width"),
-                        if (s.noticeWidth == 0) autoW.coerceIn(200, 460) else s.noticeWidth, 200..460,
-                        action = tr("Tự động theo màn hình", "Auto (screen width)") to { set { copy(noticeWidth = 0) } }, color = Tile.Blue,
-                        valueText = if (s.noticeWidth == 0) tr("Tự động", "Auto") else null,
-                    ) { v -> prev(); set { copy(noticeWidth = v) } }
-                    GroupStepSlider(
-                        Pos.Middle, Icons.Rounded.Height, tr("Chiều cao thêm", "Extra height"), s.noticeHeightExtra, -16..40,
-                        action = tr("Mặc định 0 dp", "Default 0 dp") to { set { copy(noticeHeightExtra = 0) } }, color = Tile.Purple,
-                    ) { v -> prev(); set { copy(noticeHeightExtra = v) } }
-                    GroupStepSlider(
-                        Pos.Last, Icons.Rounded.BorderStyle, tr("Bo góc", "Corner radius"),
-                        if (s.noticeCornerRadius < 0) 28 else s.noticeCornerRadius, 0..44,
-                        action = tr("Tự động (tròn đều)", "Auto (fully round)") to { set { copy(noticeCornerRadius = -1) } }, color = Tile.Yellow,
-                        valueText = if (s.noticeCornerRadius < 0) tr("Tự động", "Auto") else null,
-                    ) { v -> prev(); set { copy(noticeCornerRadius = v) } }
-                }
+                OtherNoticesTab(s, previewOn) { block -> set(block) }
             }
 
             CardStyleSection(s) {
@@ -726,6 +702,7 @@ private fun IslandSettings.withMsgCallPlacement(from: IslandSettings) = copy(
     noticeWidth = from.noticeWidth,
     noticeHeightExtra = from.noticeHeightExtra,
     noticeCornerRadius = from.noticeCornerRadius,
+    noticeTweaks = from.noticeTweaks,
 )
 
 @Composable
@@ -871,4 +848,100 @@ private fun tabPreview(tab: Int): CardPreviewMode = when (tab) {
     1 -> CardPreviewMode.CALL
     2 -> CardPreviewMode.UPDATE
     else -> CardPreviewMode.NOTICE
+}
+
+/** Tab "Khác": chỉnh chung cho mọi thông báo còn lại, hoặc tách riêng từng loại (sạc, tai nghe, thanh toán…). */
+@Composable
+private fun OtherNoticesTab(s: IslandSettings, previewOn: Boolean, set: (IslandSettings.() -> IslandSettings) -> Unit) {
+    var kind by remember { mutableStateOf<NoticeKind?>(null) }
+    DisposableEffect(kind) {
+        IslandBus.previewNoticeKind.value = kind
+        onDispose { IslandBus.previewNoticeKind.value = null }
+    }
+    val k = kind
+    val own = k != null && s.noticeTweaks.containsKey(k)
+    val cur = if (k == null) s.noticeGeneral else s.noticeTweaks[k] ?: s.noticeGeneral
+    fun prev() { if (previewOn) IslandBus.cardPreviewMode.value = CardPreviewMode.NOTICE }
+    fun put(tw: NoticeTweak) {
+        prev()
+        if (k == null) {
+            set { copy(noticeOffsetX = tw.offsetX, noticeOffsetY = tw.offsetY, noticeWidth = tw.width, noticeHeightExtra = tw.heightExtra, noticeCornerRadius = tw.corner) }
+        } else {
+            set { copy(noticeTweaks = noticeTweaks + (k to tw)) }
+        }
+    }
+    val autoW = (LocalConfiguration.current.screenWidthDp - 22).coerceAtMost(460)
+
+    SectionHeader(tr("Thông báo khác", "Other alerts"))
+    // Chọn loại thông báo cần chỉnh
+    Row(
+        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        (listOf<NoticeKind?>(null) + NoticeKind.entries).forEach { item ->
+            val on = item == kind
+            val custom = item != null && s.noticeTweaks.containsKey(item)
+            Row(
+                Modifier
+                    .clip(CircleShape)
+                    .background(if (on) Ui.Primary else Ui.Card)
+                    .clickable {
+                        kind = item
+                        if (previewOn) IslandBus.cardPreviewMode.value = CardPreviewMode.NOTICE
+                    }
+                    .padding(horizontal = 14.dp, vertical = 9.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    item?.title ?: tr("Tất cả", "All"),
+                    color = if (on) Ui.OnPrimary else Ui.Text, fontSize = 13.5.sp,
+                    fontWeight = if (on) FontWeight.Bold else FontWeight.Medium, maxLines = 1,
+                )
+                if (custom) {
+                    Spacer(Modifier.width(6.dp))
+                    Box(Modifier.size(6.dp).clip(CircleShape).background(if (on) Ui.OnPrimary else Ui.Primary))
+                }
+            }
+        }
+    }
+    LivePreviewHint(
+        when {
+            k == null -> tr("Áp dụng cho mọi thông báo khác chưa được chỉnh riêng (sạc, tai nghe, thanh toán, điều hướng, báo thức, chế độ chuông, Wi-Fi…)", "Applies to every other alert that has no own setting (charging, headphones, payments, navigation, alarm, ring mode, Wi-Fi…)")
+            own -> tr("${k?.title.orEmpty()}: đang dùng thiết lập riêng (chấm vàng). Kéo thanh trượt để chỉnh, hoặc “Dùng chung như Tất cả”", "${k?.title.orEmpty()}: has its own setting (gold dot). Drag to adjust, or “Use All”")
+            else -> tr("${k?.title.orEmpty()}: đang dùng chung với Tất cả — kéo bất kỳ thanh trượt nào để tách riêng loại này", "${k?.title.orEmpty()}: follows All — drag any slider to give it its own setting")
+        },
+    )
+    Group {
+        GroupStepSlider(
+            Pos.First, Icons.Rounded.SwapVert, tr("Vị trí dọc (lên / xuống)", "Vertical position (up / down)"), cur.offsetY, -30..120,
+            action = tr("Mặc định 0 dp", "Default 0 dp") to { put(cur.copy(offsetY = 0)) }, color = Tile.Indigo,
+        ) { v -> put(cur.copy(offsetY = v)) }
+        GroupStepSlider(
+            Pos.Middle, Icons.Rounded.SwapHoriz, tr("Vị trí ngang (trái / phải)", "Horizontal position"), cur.offsetX, -120..120,
+            action = tr("Chính giữa", "Center") to { put(cur.copy(offsetX = 0)) }, color = Tile.Teal,
+        ) { v -> put(cur.copy(offsetX = v)) }
+        GroupStepSlider(
+            Pos.Middle, Icons.Rounded.Straighten, tr("Chiều rộng", "Width"),
+            if (cur.width == 0) autoW.coerceIn(200, 460) else cur.width, 200..460,
+            action = tr("Tự động theo màn hình", "Auto (screen width)") to { put(cur.copy(width = 0)) }, color = Tile.Blue,
+            valueText = if (cur.width == 0) tr("Tự động", "Auto") else null,
+        ) { v -> put(cur.copy(width = v)) }
+        GroupStepSlider(
+            Pos.Middle, Icons.Rounded.Height, tr("Chiều cao thêm", "Extra height"), cur.heightExtra, -16..40,
+            action = tr("Mặc định 0 dp", "Default 0 dp") to { put(cur.copy(heightExtra = 0)) }, color = Tile.Purple,
+        ) { v -> put(cur.copy(heightExtra = v)) }
+        GroupStepSlider(
+            if (own) Pos.Middle else Pos.Last, Icons.Rounded.BorderStyle, tr("Bo góc", "Corner radius"),
+            if (cur.corner < 0) 28 else cur.corner, 0..44,
+            action = tr("Tự động (tròn đều)", "Auto (fully round)") to { put(cur.copy(corner = -1)) }, color = Tile.Yellow,
+            valueText = if (cur.corner < 0) tr("Tự động", "Auto") else null,
+        ) { v -> put(cur.copy(corner = v)) }
+        if (own && k != null) {
+            GroupItem(
+                Pos.Last, Icons.Rounded.Restore, tr("Dùng chung như Tất cả", "Use the All setting"),
+                tr("Bỏ thiết lập riêng của ${k.title}", "Remove the own setting of ${k.title}"),
+                color = Tile.Gray, onClick = { prev(); set { copy(noticeTweaks = noticeTweaks - k) } },
+            )
+        }
+    }
 }
