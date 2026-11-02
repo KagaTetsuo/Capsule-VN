@@ -5,6 +5,7 @@ import androidx.compose.material.icons.rounded.PanTool
 import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.TouchApp
+import androidx.compose.material.icons.rounded.ViewCarousel
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -48,10 +49,15 @@ fun GesturesScreen(onBack: () -> Unit) {
                 s.swipeExpand, color = Tile.Teal) { v ->
                 SettingsRepo.update { copy(swipeExpand = v) }
             }
-            GroupToggle(Pos.Last, Icons.Rounded.SwapHoriz, tr("Vuốt ngang chuyển bài", "Swipe to change track"),
+            GroupToggle(Pos.Middle, Icons.Rounded.SwapHoriz, tr("Vuốt ngang chuyển bài", "Swipe to change track"),
                 tr("Khi đang phát nhạc (Viên thuốc thu gọn): vuốt trái — bài kế tiếp, vuốt phải — bài trước", "While music plays (compact island): left — next track, right — previous"),
                 s.swipeTracks, color = Tile.Purple) { v ->
                 SettingsRepo.update { copy(swipeTracks = v) }
+            }
+            GroupToggle(Pos.Last, Icons.Rounded.ViewCarousel, tr("Vuốt ngang chuyển hoạt động", "Swipe to switch activity"),
+                tr("Khi Viên thuốc thu gọn có nhiều hoạt động (hẹn giờ, đèn pin, điều hướng…): vuốt trái / phải để đổi hoạt động hiển thị. Cần Viên thuốc đủ rộng để vuốt; khi đang phát nhạc, vuốt vẫn ưu tiên chuyển bài", "With several activities on the compact island (timer, flashlight, navigation…): swipe left / right to change which one shows. Needs a wide enough island; while music plays, swiping still changes tracks first"),
+                s.swipeSwitch, color = Tile.Blue) { v ->
+                SettingsRepo.update { copy(swipeSwitch = v) }
             }
         }
     }

@@ -128,6 +128,13 @@ fun ExpandedContent(act: Act, s: IslandSettings, lyrics: Lyrics?, battery: Batte
         TorchCard(act.t, s)
         return
     }
+    if (act is Act.UnreadA) {
+        val m = act.n.message
+        if (m != null) {
+            Box(Modifier.width(width), contentAlignment = Alignment.TopCenter) { MessageCard(act.n, m, s, width) }
+            return
+        }
+    }
     
     Box(Modifier.width(width).padding(start = 22.dp, end = 22.dp, top = cameraInset(s), bottom = (20 + s.expandedHeightExtra).coerceAtLeast(6).dp)) {
         when (act) {

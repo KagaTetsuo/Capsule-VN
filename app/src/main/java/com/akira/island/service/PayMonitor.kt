@@ -115,7 +115,8 @@ object PayMonitor {
     fun onTapAndPay(context: Context) = onPayScreen(context, GMS)
 
     fun onAppOpened(context: Context, pkg: String) {
-        if (SettingsRepo.current.payHintOnOpen && isPayApp(context, pkg)) onPayScreen(context, pkg)
+        // Chỉ gợi ý với ví / ngân hàng thật sự, không phải mọi ứng dụng có dịch vụ NFC (ví dụ app định danh, thẻ ra vào)
+        if (SettingsRepo.current.payHintOnOpen && (pkg in known || bankish.containsMatchIn(pkg))) onPayScreen(context, pkg)
     }
 
     fun onForeground(pkg: String) {

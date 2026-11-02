@@ -582,10 +582,7 @@ class IslandService : AccessibilityService() {
         payReader?.onForeground(pkg, cls)
         setScreenEvents(clockReader?.active == true || payReader?.active == true)
         IslandBus.foregroundPackage.value = pkg
-        if (pkg == IslandBus.unreadLedPkg.value) {
-            IslandBus.unreadLedColor.value = null
-            IslandBus.unreadLedPkg.value = null
-        }
+        if (pkg == IslandBus.unreadLedPkg.value) IslandBus.clearUnread()
         updateRamAndGame(pkg)
     }
 

@@ -31,8 +31,11 @@ object PayScreenParser {
         RegexOption.IGNORE_CASE,
     )
 
+    // Chỉ nhận "đưa / chạm / đặt … gần / vào … đầu đọc / máy POS / máy thanh toán";
+    // có ranh giới từ để không khớp nhầm "cài đặt … vào máy" trên màn hình đăng nhập
     private val readyWords = Regex(
-        "(đưa|chạm|đặt)\\S*\\s+(\\S+\\s+){0,4}?(gần|vào)\\s+(\\S+\\s+)?(máy|đầu đọc|thiết bị)|" +
+        "(?<!\\p{L})(đưa|chạm|đặt|giữ)\\s+(\\S+\\s+){0,4}?(lại\\s+)?(gần|vào|lên)\\s+(\\S+\\s+)?" +
+            "(đầu đọc|máy pos|pos|máy thanh toán|thiết bị đọc|thiết bị thanh toán|thiết bị chấp nhận)|" +
             "hold\\s+(\\S+\\s+){0,4}?(to|near|close to|against)\\s+(the\\s+)?(payment\\s+)?(terminal|reader)|" +
             "tap\\s+(\\S+\\s+){0,3}?(to|on)\\s+(the\\s+)?(terminal|reader)|ready to pay|sẵn sàng thanh toán",
         RegexOption.IGNORE_CASE,
@@ -231,6 +234,7 @@ class PayScreenReader(private val service: AccessibilityService, private val sco
     }
 
     private companion object {
-        val PayWindow = Regex("nfc|hce|contactless|tapandpay|tap_and_pay|tappay|tpay|sberpay|mirpay", RegexOption.IGNORE_CASE)
+        // Phân biệt hoa/thường để không khớp nhầm tên màn hình như "SetPayment", "SmartPay", "GetPay"
+        val PayWindow = Regex("Hce[A-Z_]|HCE|Nfc|NFC|\\.nfc\\.|Contactless|contactless|TapAndPay|tapandpay|tap_and_pay|TapToPay|TapPay|SberPay|MirPay")
     }
 }

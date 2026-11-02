@@ -658,13 +658,13 @@ private fun LivePreviewHint(text: String) {
         Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(18.dp))
-            .background(Color(0xFF1E2032))
-            .border(1.dp, Color(0xFF2E324A), RoundedCornerShape(18.dp))
+            .background(Color(0xFF261A1C))
+            .border(1.dp, Color(0xFF4A3528), RoundedCornerShape(18.dp))
             .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(Modifier.size(9.dp).clip(CircleShape).background(Tints.Green))
         Spacer(Modifier.width(10.dp))
-        Text(text, color = Color(0xFFB0B6CE), fontSize = 12.5.sp, lineHeight = 17.sp, modifier = Modifier.weight(1f))
+        Text(text, color = Color(0xFFCDBFB4), fontSize = 12.5.sp, lineHeight = 17.sp, modifier = Modifier.weight(1f))
     }
 }

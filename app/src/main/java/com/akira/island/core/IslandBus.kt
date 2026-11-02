@@ -93,6 +93,20 @@ object IslandBus {
     
     val unreadLedColor = MutableStateFlow<Color?>(null)
     val unreadLedPkg = MutableStateFlow<String?>(null)
+    /** Thẻ tin nhắn chưa đọc gần nhất (để chạm vào Viên thuốc là xem lại được). */
+    val unreadNotice = MutableStateFlow<Notice?>(null)
+
+    fun setUnread(color: Color, pkg: String, n: Notice) {
+        unreadLedColor.value = color
+        unreadLedPkg.value = pkg
+        unreadNotice.value = n
+    }
+
+    fun clearUnread() {
+        unreadLedColor.value = null
+        unreadLedPkg.value = null
+        unreadNotice.value = null
+    }
     val previewLed = MutableStateFlow(false)
     
     val otpFillRequests = MutableSharedFlow<String>(extraBufferCapacity = 4)

@@ -19,7 +19,24 @@ android {
 
     
     
+    // Khóa ký cố định cho bản phát hành (để cập nhật OTA cài đè được). CI giải mã khóa từ GitHub Secrets
+    // vào đường dẫn CAPSULE_KEYSTORE; không có biến này thì dùng khóa debug mặc định như trước.
+    val capsuleKeystore = System.getenv("CAPSULE_KEYSTORE")?.let { file(it) }?.takeIf { it.exists() }
+    signingConfigs {
+        if (capsuleKeystore != null) {
+            create("capsule") {
+                storeFile = capsuleKeystore
+                storePassword = System.getenv("CAPSULE_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("CAPSULE_KEY_ALIAS")
+                keyPassword = System.getenv("CAPSULE_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
+        debug {
+            if (capsuleKeystore != null) signingConfig = signingConfigs.getByName("capsule")
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true

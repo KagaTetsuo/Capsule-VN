@@ -243,6 +243,8 @@ fun CompactContent(act: Act, s: IslandSettings, wideWidth: Dp) {
 
         is Act.NoticeA -> NoticeCompact(act.n, s, wideWidth)
 
+        is Act.UnreadA -> NoticeCompact(act.n, s, wideWidth)
+
         is Act.PayA -> PayReady(tr("Thanh toán", "Pay"), tr("Chạm vào đầu đọc thẻ", "Hold near reader"), act.p.icon, s, wideWidth)
 
     }
@@ -418,7 +420,7 @@ private fun PillNotice(n: Notice, s: IslandSettings) {
 }
 
 @Composable
-private fun MessageCard(n: Notice, m: AppMessage, s: IslandSettings, @Suppress("UNUSED_PARAMETER") wideWidth: Dp) {
+internal fun MessageCard(n: Notice, m: AppMessage, s: IslandSettings, @Suppress("UNUSED_PARAMETER") wideWidth: Dp) {
     val context = LocalContext.current
     val haptic = rememberHaptic()
     val iconSize = 40.dp

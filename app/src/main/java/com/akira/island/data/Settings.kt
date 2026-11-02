@@ -250,6 +250,8 @@ data class IslandSettings(
     val doubleTapAction: TapAction = TapAction.NOTHING,
     val longPressAction: TapAction = TapAction.OPEN_APP,
     val swipeTracks: Boolean = true,
+    /** Vuốt ngang trên Viên thuốc thu gọn để chuyển giữa các hoạt động đang chạy. */
+    val swipeSwitch: Boolean = false,
     val swipeExpand: Boolean = true,
 
     val lyricsEnabled: Boolean = true,

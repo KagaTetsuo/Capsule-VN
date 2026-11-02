@@ -732,7 +732,7 @@ fun IslandPreview(expanded: Boolean = false) {
     val demo = remember {
         MediaInfo(
             key = "demo", pkg = "", title = tr("Bản xem thử (Demo)", "Demo"), artist = "", album = null, art = null,
-            accent = Tints.Lavender, durationMs = 0, positionMs = 0, positionTime = SystemClock.elapsedRealtime(),
+            accent = Ui.Primary, durationMs = 0, positionMs = 0, positionTime = SystemClock.elapsedRealtime(),
             speed = 1f, playing = true, canSeek = false,
         )
     }
@@ -769,7 +769,7 @@ fun IslandPreview(expanded: Boolean = false) {
                         Modifier.background(Color(s.color))
                     },
                 )
-                .then(if (s.outline) Modifier.border(s.outlineWidth.dp, if (s.outlineFromArt) Tints.Lavender else Color(s.outlineColor), shape) else Modifier)
+                .then(if (s.outline) Modifier.border(s.outlineWidth.dp, if (s.outlineFromArt) Ui.Primary else Color(s.outlineColor), shape) else Modifier)
                 .animateContentSize(),
         ) {
             CompactContent(act, s, 400.dp)

@@ -1,9 +1,15 @@
 # Lịch sử phiên bản Capsule VN
 
 ## v1.3.0 (2026) — Icon khung vàng trọn vẹn, vuốt chuyển hoạt động, trang chủ mới & tinh gọn giao diện
+- **Tin nhắn chưa đọc xem lại được**: khi viền LED báo tin nhắn chưa đọc đang sáng, chạm vào Viên thuốc sẽ mở đúng thẻ tin nhắn đó (kèm nút Trả lời / Đã đọc) thay vì bảng Âm lịch – RAM – ROM; vẫn vuốt trái / phải sang nhạc, hẹn giờ… Chạm vào thẻ để mở cuộc trò chuyện; xem xong thu nhỏ thì viền tự tắt.
+- **Sửa báo nhầm "Thanh toán NFC – Chạm vào đầu đọc thẻ" khi đăng nhập ứng dụng**: siết nhận diện màn hình thanh toán (không còn khớp nhầm tên màn hình như "SetPayment/SmartPay" hay chữ "cài đặt … vào máy"); gợi ý khi mở app chỉ áp dụng cho ví / ngân hàng.
+- **Vuốt ngang chuyển hoạt động khi thu gọn** (tuỳ chọn trong Cử chỉ chạm & vuốt, mặc định tắt). Khi đang phát nhạc, vuốt vẫn ưu tiên chuyển bài; khi mở rộng, vuốt luôn chuyển hoạt động.
+- **Giao diện đen – đỏ – vàng kim** đồng bộ với logo: nền đen ấm, thẻ đỏ thẫm, nút & điểm nhấn vàng kim.
+- **Icon phóng to vừa khung squircle** (HyperOS, One UI, ColorOS) — khung vàng chiếm 68/72 dp.
+- **Cập nhật OTA ổn định**: CI ký APK bằng khóa cố định (GitHub Secrets) để các bản sau cài đè được qua cập nhật trong app.
+- Thêm lối vào "Giới thiệu về Viên thuốc" trong tab Giới thiệu.
 - **Icon ứng dụng giữ khung vàng, tách nền ngoài khung**:
   - Giữ nguyên khung vàng và toàn bộ nền khói đỏ/đen bên trong khung; 4 góc đen bên ngoài được tách bỏ (trong suốt).
-  - Khung đặt gọn trong 60 dp của vùng hiển thị 72 dp → hiện trọn vẹn trên mặt nạ tròn (Pixel), squircle (HyperOS, One UI, ColorOS) và giọt nước, không còn bị cắt góc.
   - Icon trong mục Giới thiệu, icon tròn kiểu cũ và ảnh README dùng chung bản khung vàng tách nền.
 - **Vuốt qua lại giữa các hoạt động khi mở rộng**:
   - Chạm vào Viên thuốc mở đúng hoạt động đang hiển thị; vuốt trái / phải để chuyển sang hoạt động khác đang chạy (nhạc, hẹn giờ, đèn pin, điều hướng, tải xuống…), có chấm chỉ báo trang.

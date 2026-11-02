@@ -293,8 +293,8 @@ fun AnimScreen(onBack: () -> Unit) {
             Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(18.dp))
-                .background(Color(0xFF1E2032))
-                .border(1.dp, Color(0xFF2E324A), RoundedCornerShape(18.dp))
+                .background(Color(0xFF261A1C))
+                .border(1.dp, Color(0xFF4A3528), RoundedCornerShape(18.dp))
                 .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -305,7 +305,7 @@ fun AnimScreen(onBack: () -> Unit) {
                     "Mỗi thay đổi sẽ được bung thử trực tiếp trên Viên thuốc ở đỉnh màn hình. Nhấn ▶ để xem lại.",
                     "Every change is played live on the island at the top of the screen. Tap ▶ to replay.",
                 ),
-                color = Color(0xFFB0B6CE), fontSize = 12.5.sp, lineHeight = 17.sp, modifier = Modifier.weight(1f),
+                color = Color(0xFFCDBFB4), fontSize = 12.5.sp, lineHeight = 17.sp, modifier = Modifier.weight(1f),
             )
         }
 
@@ -488,12 +488,12 @@ private fun LedRingPreviewCard(s: IslandSettings) {
             .background(
                 Brush.verticalGradient(
                     listOf(
-                        Color(0xFF141724),
-                        Color(0xFF0D0E15),
+                        Color(0xFF1C1416),
+                        Color(0xFF0E0B0C),
                     )
                 )
             )
-            .border(1.dp, Color(0xFF262A3E), RoundedCornerShape(28.dp))
+            .border(1.dp, Color(0xFF33262A), RoundedCornerShape(28.dp))
             .padding(top = 16.dp, bottom = 14.dp, start = 14.dp, end = 14.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -504,14 +504,14 @@ private fun LedRingPreviewCard(s: IslandSettings) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("09:41", color = Color(0xFF7A8099), fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+            Text("09:41", color = Color(0xFF9A8A84), fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("5G", color = Color(0xFF7A8099), fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(end = 4.dp))
+                Text("5G", color = Color(0xFF9A8A84), fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(end = 4.dp))
                 Box(
                     Modifier
                         .size(14.dp, 8.dp)
                         .clip(RoundedCornerShape(2.dp))
-                        .background(Color(0xFF7A8099))
+                        .background(Color(0xFF9A8A84))
                 )
             }
         }
@@ -562,20 +562,20 @@ private fun LedRingPreviewCard(s: IslandSettings) {
                         .size(13.dp)
                         .clip(CircleShape)
                         .background(Color(0xFF030305))
-                        .border(1.dp, Color(0xFF222738), CircleShape),
+                        .border(1.dp, Color(0xFF2E2224), CircleShape),
                     contentAlignment = Alignment.Center,
                 ) {
                     Box(
                         Modifier
                             .size(5.dp)
                             .clip(CircleShape)
-                            .background(Color(0xFF0B1428))
+                            .background(Color(0xFF1A0E10))
                     )
                 }
 
                 Text(
                     "Capsule VN",
-                    color = Color(0xFFC7CBD9),
+                    color = Color(0xFFE0D6CC),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold,
                 )
@@ -584,7 +584,7 @@ private fun LedRingPreviewCard(s: IslandSettings) {
                     Modifier
                         .size(7.dp)
                         .clip(CircleShape)
-                        .background(if (s.ledEnabled) Color(0xFF34C759) else Color(0xFF8E92A8))
+                        .background(if (s.ledEnabled) Color(0xFF34C759) else Color(0xFFA2948D))
                 )
             }
         }
@@ -629,10 +629,10 @@ private fun LedRingPreviewCard(s: IslandSettings) {
                 Box(
                     Modifier
                         .clip(RoundedCornerShape(12.dp))
-                        .background(if (selected) Ui.Primary.copy(alpha = 0.22f) else Color(0xFF1E2130))
+                        .background(if (selected) Ui.Primary.copy(alpha = 0.22f) else Color(0xFF261A1C))
                         .border(
                             if (selected) 1.5.dp else 1.dp,
-                            if (selected) Ui.Primary else Color(0xFF2E3348),
+                            if (selected) Ui.Primary else Color(0xFF4A3528),
                             RoundedCornerShape(12.dp),
                         )
                         .clickable { SettingsRepo.update { copy(ledStyle = style) } }
@@ -649,7 +649,7 @@ private fun LedRingPreviewCard(s: IslandSettings) {
                         Spacer(Modifier.width(5.dp))
                         Text(
                             style.title,
-                            color = if (selected) Color.White else Color(0xFF9AA0B6),
+                            color = if (selected) Color.White else Color(0xFFB3A69F),
                             fontSize = 11.sp,
                             fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
                         )
@@ -736,8 +736,7 @@ fun LedRingScreen(onBack: () -> Unit) {
                 tr("Tắt hiệu ứng đèn báo chưa đọc đang sáng", "Turn off the active unread LED indicator"),
                 color = Tile.Gray,
                 onClick = {
-                    IslandBus.unreadLedColor.value = null
-                    IslandBus.unreadLedPkg.value = null
+                    IslandBus.clearUnread()
                 },
             )
         }

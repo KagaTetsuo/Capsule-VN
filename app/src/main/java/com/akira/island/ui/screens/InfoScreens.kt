@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AutoStories
 import androidx.compose.material.icons.rounded.CreditCard
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Lightbulb
@@ -188,7 +189,10 @@ fun AppInfoScreen(open: (Screen) -> Unit) {
 
         SectionHeader(tr("Thông tin & Tác quyền", "Information & Credits"))
         Group {
-            GroupItem(Pos.Single, ImageVector.vectorResource(R.drawable.ic_github), "Capsule VN",
+            GroupItem(Pos.First, Icons.Rounded.AutoStories, tr("Giới thiệu về Viên thuốc", "About the island"),
+                tr("Tính năng, cách hoạt động, phát triển & tác quyền", "Features, how it works, development & rights"),
+                onClick = { open(Screen.ABOUT) }, color = Tile.Orange) { Arrow() }
+            GroupItem(Pos.Last, ImageVector.vectorResource(R.drawable.ic_github), "Capsule VN",
                 "© 2026 Capsule VN · Nguyễn Lê Lý Huỳnh (github.com/KagaTetsuo/Capsule-VN)",
                 onClick = { openGithub(context) }, color = GithubPurple) { Arrow() }
         }
@@ -236,7 +240,7 @@ fun IdeaScreen(onBack: () -> Unit) {
         IslandPreview()
         SectionHeader(tr("Tính năng", "What it does"))
         InfoText(
-            tr("Viên thuốc kiểu iPhone bao quanh camera Android của bạn: âm nhạc với ảnh bìa, sóng nhạc động và lời đồng bộ; hẹn giờ với vòng đếm ngược; đồng hồ bấm giờ; tiến trình tải xuống; đèn pin tùy chỉnh độ sáng; thông báo kèm nút trả lời nhanh; thanh toán chạm; bản đồ điều hướng; trạng thái sạc và sự kiện hệ thống. Khi có hai hoạt động, hoạt động thứ hai sẽ thành bong bóng tròn cạnh Viên thuốc.", "An iPhone-style capsule over your Android camera: music with artwork, an equalizer and synced lyrics, a " +
+            tr("Viên thuốc kiểu iPhone bao quanh camera Android của bạn: âm nhạc với ảnh bìa, sóng nhạc động và lời đồng bộ; hẹn giờ với vòng đếm ngược; đồng hồ bấm giờ; tiến trình tải xuống; đèn pin tùy chỉnh độ sáng; thông báo kèm nút trả lời nhanh; thanh toán chạm; bản đồ điều hướng; trạng thái sạc và sự kiện hệ thống. Khi có nhiều hoạt động, hoạt động thứ hai thành bong bóng tròn cạnh Viên thuốc; mở rộng rồi vuốt trái / phải để xem từng hoạt động, kể cả tin nhắn chưa đọc.", "An iPhone-style capsule over your Android camera: music with artwork, an equalizer and synced lyrics, a " +
                     "timer with a progress ring, a stopwatch, download progress, a flashlight with brightness control, " +
                     "notifications with replies, payments, navigation, charging and system events. A second activity goes into" +
                     " a bubble next to the island."),

@@ -26,6 +26,11 @@ object Controls {
         IslandBus.expanded.value = true
     }
 
+    /** Đưa một hoạt động lên hiển thị chính mà không mở rộng Viên thuốc. */
+    fun focusOn(id: String) {
+        IslandBus.focus.value = id
+    }
+
     fun collapse() {
         IslandBus.expanded.value = false
         IslandBus.focus.value = null
