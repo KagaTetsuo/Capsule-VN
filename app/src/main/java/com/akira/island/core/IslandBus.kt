@@ -93,19 +93,38 @@ object IslandBus {
     
     val unreadLedColor = MutableStateFlow<Color?>(null)
     val unreadLedPkg = MutableStateFlow<String?>(null)
-    /** Thẻ tin nhắn chưa đọc gần nhất (để chạm vào Viên thuốc là xem lại được). */
-    val unreadNotice = MutableStateFlow<Notice?>(null)
+    /** Tin nhắn chưa đọc — mỗi cuộc trò chuyện một thẻ, mới nhất đứng đầu (chạm Viên thuốc để xem, vuốt qua lại). */
+    val unreadNotices = MutableStateFlow<List<Notice>>(emptyList())
+    private const val MAX_UNREAD = 6
 
-    fun setUnread(color: Color, pkg: String, n: Notice) {
-        unreadLedColor.value = color
-        unreadLedPkg.value = pkg
-        unreadNotice.value = n
+    fun setUnread(n: Notice) {
+        val key = n.message?.key
+        unreadNotices.value = (listOf(n) + unreadNotices.value.filter { it.message?.key != key }).take(MAX_UNREAD)
+        syncUnreadLed()
+    }
+
+    /** Bỏ một cuộc trò chuyện khỏi danh sách chưa đọc (đã mở, đã trả lời hoặc thông báo đã bị xoá). */
+    fun removeUnread(key: String) {
+        unreadNotices.value = unreadNotices.value.filter { it.message?.key != key }
+        syncUnreadLed()
+    }
+
+    fun removeUnreadPkg(pkg: String) {
+        if (unreadNotices.value.none { it.message?.pkg == pkg } && unreadLedPkg.value != pkg) return
+        unreadNotices.value = unreadNotices.value.filter { it.message?.pkg != pkg }
+        syncUnreadLed()
     }
 
     fun clearUnread() {
-        unreadLedColor.value = null
-        unreadLedPkg.value = null
-        unreadNotice.value = null
+        unreadNotices.value = emptyList()
+        syncUnreadLed()
+    }
+
+    // Viền LED lấy màu của cuộc trò chuyện chưa đọc mới nhất
+    private fun syncUnreadLed() {
+        val top = unreadNotices.value.firstOrNull()
+        unreadLedColor.value = top?.tint
+        unreadLedPkg.value = top?.message?.pkg
     }
     val previewLed = MutableStateFlow(false)
     

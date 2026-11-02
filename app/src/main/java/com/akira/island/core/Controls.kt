@@ -142,7 +142,17 @@ object Controls {
             IslandBus.calls.value = IslandBus.calls.value + (TEST_CALL to call.copy(incoming = false, base = System.currentTimeMillis()))
             return
         }
-        if (send(context, call.answer)) return
+        if (send(context, call.answer)) {
+            // Cuộc gọi qua ứng dụng (Zalo, Messenger…): một số app chỉ tắt chuông / rung khi màn hình cuộc gọi
+            // của chính nó hiện lên. Mở màn hình đó ngay sau khi nghe — giống khi bấm Nghe trên biểu ngữ hệ thống.
+            if (call.key != CallMonitorKey && call.open != null) {
+                IslandBus.scope.launch {
+                    delay(500)
+                    send(context, call.open)
+                }
+            }
+            return
+        }
         val ok = runCatching { context.getSystemService(TelecomManager::class.java)!!.acceptRingingCall() }.isSuccess
         if (!ok) showCallScreen(context, call)
     }
@@ -211,6 +221,7 @@ object Controls {
     }
 
     const val TEST_CALL = "test-call"
+    private val CallMonitorKey get() = com.akira.island.service.CallMonitor.KEY
 
     fun showTestLive(context: Context) {
         val live = LiveInfo(

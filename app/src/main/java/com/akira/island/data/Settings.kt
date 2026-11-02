@@ -21,6 +21,18 @@ enum class FxRate(val fps: Int, private val ru: String, private val en: String) 
     val title: String get() = tr(ru, en)
 }
 
+/** Kiểu nền cho các thẻ thông báo (tin nhắn, cuộc gọi đến, cập nhật). */
+@Serializable
+enum class CardBg(private val ru: String, private val en: String) {
+    DEFAULT("Như Viên thuốc", "Same as the island"),
+    COLOR("Màu tuỳ chọn", "Custom color"),
+    IMAGE("Ảnh nền", "Background image"),
+    GLASS("Liquid Glass (iOS)", "Liquid Glass (iOS)"),
+    ;
+
+    val title: String get() = tr(ru, en)
+}
+
 @Serializable
 enum class ExpandStyle(private val ru: String, private val en: String) {
     FRUIT("Như Táo khuyết (iOS)", "Like a Fruit"),
@@ -197,6 +209,16 @@ data class IslandSettings(
     val cardCornerRadius: Int = 32,
     val callCornerRadius: Int = 32,
     val updateCornerRadius: Int = 32,
+
+    // Nền & viền của các thẻ thông báo
+    val cardBg: CardBg = CardBg.DEFAULT,
+    val cardBgColor: Long = 0xFF1F1719,
+    val cardBgOpacity: Int = 100,
+    val cardBgImage: String = "",
+    val cardImageDim: Int = 40,
+    val cardBorder: Boolean = false,
+    val cardBorderColor: Long = 0xFFE6C068,
+    val cardBorderWidth: Float = 1.5f,
 
     val color: Long = 0xFF000000,
     val outline: Boolean = false,

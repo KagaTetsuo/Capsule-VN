@@ -1,5 +1,14 @@
 package com.akira.island.island
 
+import com.akira.island.data.CardBg
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.runtime.produceState
+import android.graphics.BitmapFactory
 import android.content.Context
 import android.os.Build
 import android.os.SystemClock
@@ -224,7 +233,7 @@ fun IslandOverlay(
     val nextAlarm by IslandBus.nextAlarm.collectAsState()
     val egg by IslandBus.egg.collectAsState()
     val payReady by IslandBus.payReady.collectAsState()
-    val unreadNotice by IslandBus.unreadNotice.collectAsState()
+    val unreadList by IslandBus.unreadNotices.collectAsState()
 
     val screenOn by IslandBus.screenOn.collectAsState()
     var alarmNow by remember { mutableLongStateOf(System.currentTimeMillis()) }
@@ -285,7 +294,11 @@ fun IslandOverlay(
     }
     
     val callHidden by IslandBus.callHidden.collectAsState()
-    // Thứ tự ổn định của các hoạt động đang chạy, dùng để vuốt qua lại khi đang mở rộng
+    // Thứ tự ổn định của các hoạt động đang chạy, dùng để vuốt qua lại khi đang mở rộng.
+    // Mỗi cuộc trò chuyện chưa đọc (viền LED đang sáng) là một trang, đứng trước các hoạt động khác.
+    val unreadPages = if (s.cardMessages && s.ledEnabled && s.ledOnUnread) {
+        unreadList.filter { it.message != null }.map { Act.UnreadA(it) }
+    } else emptyList()
     var pageOrder: List<Act> = emptyList()
     val acts = buildList {
         
@@ -311,9 +324,7 @@ fun IslandOverlay(
         val alarm = nextAlarm
         if (s.cardAlarm && alarm != null && alarm.triggerAt - alarmNow in 1..ALARM_LEAD_MS) persistent += Act.AlarmA(alarm)
 
-        // Tin nhắn chưa đọc (viền LED đang sáng) là trang đầu tiên khi vuốt qua lại
-        val unreadPage = unreadNotice?.takeIf { it.message != null && s.cardMessages && s.ledEnabled && s.ledOnUnread }?.let { Act.UnreadA(it) }
-        pageOrder = listOfNotNull(unreadPage) + persistent.filter { !it.transient }
+        pageOrder = unreadPages + persistent.filter { !it.transient }
         val ringing = (persistent.firstOrNull() as? Act.TimerA)?.t?.ringing == true || call?.incoming == true
         val i = persistent.indexOfFirst { it.id == focus }
         if (i > 0 && !ringing) persistent.add(0, persistent.removeAt(i))
@@ -337,9 +348,9 @@ fun IslandOverlay(
     val previewCallInfo = remember { buildPreviewCall() }
     val previewUpdateNotice = remember(context) { buildPreviewUpdate(context) }
 
-    val unreadAct = pageOrder.firstOrNull() as? Act.UnreadA
+    val unreadAct = unreadPages.firstOrNull { it.id == focus }
     val base = acts.firstOrNull() ?: Act.Idle
-    val showUnread = expanded && focus == UNREAD_ID && unreadAct != null && !base.transient
+    val showUnread = expanded && unreadAct != null && !base.transient
     val primary = when {
         calibrating -> Act.Idle
         cardPreview == CardPreviewMode.MESSAGE -> Act.NoticeA(previewMsgNotice)
@@ -363,14 +374,14 @@ fun IslandOverlay(
     val slot = animateDpAsState(if (bubbleVisible) activeHeight(s) + 6.dp else 0.dp, islandSpec(s), label = "slot")
 
     val focusGone = expanded && focus != null && focus != Act.Idle.id && acts.none { it.id == focus } &&
-        !(focus == UNREAD_ID && unreadAct != null)
-    // Đã xem tin nhắn chưa đọc trên bảng mở rộng -> khi thu nhỏ thì tắt viền báo chưa đọc
-    var unreadSeen by remember { mutableStateOf(false) }
+        unreadPages.none { it.id == focus }
+    // Cuộc trò chuyện nào đã xem trên bảng mở rộng -> khi thu nhỏ thì bỏ khỏi danh sách chưa đọc
+    val seenUnread = remember { mutableSetOf<String>() }
     LaunchedEffect(showExpanded, primary.id) {
-        if (showExpanded && primary is Act.UnreadA) unreadSeen = true
-        if (!showExpanded && unreadSeen) {
-            unreadSeen = false
-            IslandBus.clearUnread()
+        if (showExpanded && primary is Act.UnreadA) primary.n.message?.key?.let { seenUnread += it }
+        if (!showExpanded && seenUnread.isNotEmpty()) {
+            seenUnread.toList().forEach(IslandBus::removeUnread)
+            seenUnread.clear()
         }
     }
     LaunchedEffect(focusGone) { if (focusGone) Controls.collapse() }
@@ -561,6 +572,19 @@ private fun IslandBody(
     }
     
     val corner = animateDpAsState(cornerTarget, islandSpec(s), label = "corner")
+
+    // Thẻ thông báo (tin nhắn, cuộc gọi đến, cập nhật, tin chưa đọc) dùng nền & viền tuỳ chỉnh riêng
+    val isCard = !calibrating && (
+        primary is Act.UnreadA ||
+            (primary is Act.NoticeA && (primary.n.style == NoticeStyle.MESSAGE || primary.n.style == NoticeStyle.UPDATE)) ||
+            (primary is Act.CallA && primary.c.incoming)
+        )
+    val cardImage by produceState<ImageBitmap?>(null, s.cardBg, s.cardBgImage) {
+        value = if (s.cardBg == CardBg.IMAGE && s.cardBgImage.isNotEmpty()) {
+            withContext(Dispatchers.IO) { runCatching { BitmapFactory.decodeFile(s.cardBgImage)?.asImageBitmap() }.getOrNull() }
+        } else null
+    }
+    val cardAlpha = s.cardBgOpacity.coerceIn(20, 100) / 100f
     val shape = remember(corner, s.notch) { AnimatedIslandShape(corner, s.notch) }
     val accent = (primary as? Act.MediaA)?.m?.accent
     val outlineColor = if (s.outlineFromArt && accent != null) accent else Color(s.outlineColor)
@@ -669,15 +693,22 @@ private fun IslandBody(
                 }
             }
             .then(
-                if (s.liquidGlass && !calibrating) {
-                    Modifier.glassSurface(shape, Color(s.color), s.glassOpacity / 100f, s.glassRefraction / 100f, s.glassSpecular / 100f, tilt = { tilt.value }) { sheen.value }
-                } else {
-                    Modifier.background(if (calibrating) CalibrationRed else Color(s.color))
+                when {
+                    isCard && s.cardBg == CardBg.GLASS ->
+                        Modifier.glassSurface(shape, Color(s.cardBgColor), cardAlpha, s.glassRefraction / 100f, s.glassSpecular / 100f, tilt = { tilt.value }) { sheen.value }
+                    isCard && s.cardBg == CardBg.IMAGE && cardImage != null ->
+                        Modifier.background(Color.Black.copy(alpha = cardAlpha)).cardImage(cardImage!!, cardAlpha, s.cardImageDim / 100f)
+                    isCard && s.cardBg == CardBg.COLOR -> Modifier.background(Color(s.cardBgColor).copy(alpha = cardAlpha))
+                    isCard && !s.liquidGlass -> Modifier.background(Color(s.color).copy(alpha = cardAlpha))
+                    s.liquidGlass && !calibrating ->
+                        Modifier.glassSurface(shape, Color(s.color), s.glassOpacity / 100f, s.glassRefraction / 100f, s.glassSpecular / 100f, tilt = { tilt.value }) { sheen.value }
+                    else -> Modifier.background(if (calibrating) CalibrationRed else Color(s.color))
                 },
             )
             .then(
                 when {
                     calibrating -> Modifier.border(2.dp, Color.White, shape)
+                    isCard && s.cardBorder -> Modifier.border(s.cardBorderWidth.dp, Color(s.cardBorderColor), shape)
                     s.outline -> Modifier.border(s.outlineWidth.dp, outlineColor, shape)
                     else -> Modifier
                 },
@@ -833,6 +864,24 @@ private fun IslandBody(
     }
 }
 
+/** Vẽ ảnh nền thẻ kiểu "cắt vừa khung" (center-crop), phủ thêm lớp tối để chữ trắng luôn dễ đọc. */
+private fun Modifier.cardImage(img: ImageBitmap, alpha: Float, dim: Float) = drawBehind {
+    val sw = img.width.toFloat()
+    val sh = img.height.toFloat()
+    if (sw <= 0f || sh <= 0f || size.width <= 0f || size.height <= 0f) return@drawBehind
+    val scale = maxOf(size.width / sw, size.height / sh)
+    val cw = (size.width / scale).coerceAtMost(sw)
+    val ch = (size.height / scale).coerceAtMost(sh)
+    drawImage(
+        img,
+        srcOffset = IntOffset(((sw - cw) / 2).toInt(), ((sh - ch) / 2).toInt()),
+        srcSize = IntSize(cw.toInt().coerceAtLeast(1), ch.toInt().coerceAtLeast(1)),
+        dstSize = IntSize(size.width.toInt(), size.height.toInt()),
+        alpha = alpha,
+    )
+    if (dim > 0f) drawRect(Color.Black, alpha = dim.coerceIn(0f, 0.9f))
+}
+
 /** Chấm chỉ báo: có nhiều hoạt động đang chạy, vuốt trái / phải để chuyển. */
 @Composable
 private fun PageDots(count: Int, selected: Int, modifier: Modifier = Modifier) {
@@ -931,14 +980,20 @@ private fun GraphicsLayerScope.blurLayer(dp: Float) {
 }
 
 private fun hasUnread(s: IslandSettings): Boolean =
-    s.ledEnabled && s.ledOnUnread && s.cardMessages && IslandBus.unreadNotice.value?.message != null
+    s.ledEnabled && s.ledOnUnread && s.cardMessages && IslandBus.unreadNotices.value.any { it.message != null }
+
+private fun expandUnread() {
+    IslandBus.unreadNotices.value.firstOrNull { it.message != null }?.let { Controls.expand(unreadId(it)) }
+}
 
 private fun onTap(context: Context, act: Act, expanded: Boolean, s: IslandSettings) {
     if (expanded) {
         // Đang xem tin nhắn chưa đọc: chạm để mở cuộc trò chuyện trong ứng dụng
         if (act is Act.UnreadA && IslandBus.reply.value == null) {
-            act.n.message?.let { m -> if (!Controls.send(context, m.intent)) Controls.openApp(context, m.pkg) }
-            IslandBus.clearUnread()
+            act.n.message?.let { m ->
+                if (!Controls.send(context, m.intent)) Controls.openApp(context, m.pkg)
+                IslandBus.removeUnread(m.key)
+            }
         }
         Controls.collapse()
         return
@@ -946,7 +1001,7 @@ private fun onTap(context: Context, act: Act, expanded: Boolean, s: IslandSettin
     // Viền LED báo tin nhắn chưa đọc đang sáng: chạm để xem lại tin nhắn (vẫn vuốt được sang hoạt động khác)
     val urgent = act is Act.NoticeA || act is Act.PayA || (act is Act.CallA && act.c.incoming) || (act is Act.TimerA && act.t.ringing)
     if (!urgent && act !is Act.Idle && hasUnread(s)) {
-        Controls.expand(UNREAD_ID)
+        expandUnread()
         return
     }
     when (act) {
@@ -963,7 +1018,7 @@ private fun onTap(context: Context, act: Act, expanded: Boolean, s: IslandSettin
         }
         
         is Act.Idle -> {
-            if (hasUnread(s)) Controls.expand(UNREAD_ID)
+            if (hasUnread(s)) expandUnread()
             else if (s.idleExpand) Controls.expand(act.id)
         }
         

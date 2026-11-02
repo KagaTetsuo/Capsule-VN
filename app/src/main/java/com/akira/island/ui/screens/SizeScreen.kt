@@ -1,5 +1,28 @@
 ﻿package com.akira.island.ui.screens
 
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlin.math.roundToInt
+import java.io.File
+import com.akira.island.ui.GroupSlider
+import com.akira.island.ui.ChoiceDialog
+import com.akira.island.data.CardBg
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material.icons.rounded.LineWeight
+import androidx.compose.material.icons.rounded.Opacity
+import androidx.compose.material.icons.rounded.Contrast
+import androidx.compose.material.icons.rounded.Image
+import androidx.compose.material.icons.rounded.Wallpaper
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import android.widget.Toast
+import android.net.Uri
+import android.graphics.BitmapFactory
+import android.graphics.Bitmap
+import android.content.Context
 import android.app.PendingIntent
 import android.content.Intent
 import android.os.Build
@@ -596,6 +619,14 @@ fun MsgCallSizeScreen(onBack: () -> Unit) {
                 }
             }
 
+            CardStyleSection(s) {
+                if (previewOn) IslandBus.cardPreviewMode.value = when (selectedTab) {
+                    0 -> CardPreviewMode.MESSAGE
+                    1 -> CardPreviewMode.CALL
+                    else -> CardPreviewMode.UPDATE
+                }
+            }
+
             Spacer(Modifier.height(90.dp))
         }
 
@@ -650,6 +681,14 @@ private fun IslandSettings.withMsgCallPlacement(from: IslandSettings) = copy(
     updateWidth = from.updateWidth,
     updateHeightExtra = from.updateHeightExtra,
     updateCornerRadius = from.updateCornerRadius,
+    cardBg = from.cardBg,
+    cardBgColor = from.cardBgColor,
+    cardBgOpacity = from.cardBgOpacity,
+    cardBgImage = from.cardBgImage,
+    cardImageDim = from.cardImageDim,
+    cardBorder = from.cardBorder,
+    cardBorderColor = from.cardBorderColor,
+    cardBorderWidth = from.cardBorderWidth,
 )
 
 @Composable
@@ -668,3 +707,104 @@ private fun LivePreviewHint(text: String) {
         Text(text, color = Color(0xFFCDBFB4), fontSize = 12.5.sp, lineHeight = 17.sp, modifier = Modifier.weight(1f))
     }
 }
+
+private val cardColors = listOf(
+    0xFF1F1719, 0xFF000000, 0xFF2B0A10, 0xFF7A0F1E, 0xFFC8102E, 0xFF3A2A12,
+    0xFF0F1E3A, 0xFF0E2A24, 0xFF2A1240, 0xFF3A3A40, 0xFFF5F0E6,
+)
+
+private val cardBorderColors = listOf(
+    0xFFE6C068, 0xFFFFD700, 0xFFC8102E, 0xFFFF453A, 0xFFFFFFFF, 0xFF8E8E93,
+    0xFF0A84FF, 0xFF34C759, 0xFFBF5AF2, 0xFF30B0C7,
+)
+
+/** Nền & viền dùng chung cho mọi thẻ thông báo: màu, ảnh nền, độ trong suốt, Liquid Glass, màu & độ dày viền. */
+@Composable
+private fun CardStyleSection(s: IslandSettings, preview: () -> Unit) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var bgDialog by remember { mutableStateOf(false) }
+    fun set(block: IslandSettings.() -> IslandSettings) {
+        preview()
+        SettingsRepo.update(block)
+    }
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            val path = withContext(Dispatchers.IO) { saveCardImage(context, uri) }
+            if (path != null) set { copy(cardBg = CardBg.IMAGE, cardBgImage = path) }
+            else Toast.makeText(context, tr("Không đọc được ảnh", "Couldn't read the image"), Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    SectionHeader(tr("Nền & viền thẻ (mọi thẻ)", "Card background & border (all cards)"))
+    Group {
+        GroupItem(
+            Pos.First, Icons.Rounded.Wallpaper, tr("Kiểu nền", "Background"), s.cardBg.title,
+            color = Tile.Orange, onClick = { bgDialog = true },
+        ) { Arrow() }
+        if (s.cardBg == CardBg.IMAGE) {
+            GroupItem(
+                Pos.Middle, Icons.Rounded.Image, tr("Chọn ảnh nền", "Pick an image"),
+                if (s.cardBgImage.isEmpty()) tr("Chưa chọn ảnh", "No image yet") else tr("Đã chọn — chạm để đổi ảnh khác", "Selected — tap to change"),
+                color = Tile.Pink,
+                onClick = { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+            ) { Arrow() }
+            GroupSlider(
+                Pos.Middle, Icons.Rounded.Contrast, tr("Làm tối ảnh để dễ đọc chữ", "Darken image for legibility"),
+                value = s.cardImageDim.toFloat(), range = 0f..80f, label = "${s.cardImageDim}%", color = Tile.Gray,
+            ) { v -> set { copy(cardImageDim = v.toInt()) } }
+        }
+        GroupSlider(
+            Pos.Last, Icons.Rounded.Opacity,
+            if (s.cardBg == CardBg.GLASS) tr("Độ đậm kính", "Glass density") else tr("Độ đậm nền", "Background opacity"),
+            value = s.cardBgOpacity.toFloat(), range = 20f..100f, label = "${s.cardBgOpacity}%", color = Tile.Teal,
+        ) { v -> set { copy(cardBgOpacity = v.toInt()) } }
+    }
+    if (s.cardBg == CardBg.COLOR || s.cardBg == CardBg.GLASS) {
+        Swatches(cardColors, s.cardBgColor) { c -> set { copy(cardBgColor = c) } }
+    }
+
+    Group {
+        GroupToggle(
+            if (s.cardBorder) Pos.First else Pos.Single, Icons.Rounded.BorderStyle, tr("Viền thẻ", "Card border"),
+            tr("Đường viền màu quanh thẻ thông báo", "A colored outline around notification cards"),
+            s.cardBorder, color = Tile.Yellow,
+        ) { v -> set { copy(cardBorder = v) } }
+        if (s.cardBorder) {
+            GroupSlider(
+                Pos.Last, Icons.Rounded.LineWeight, tr("Độ dày viền", "Border width"),
+                value = s.cardBorderWidth, range = 0.5f..4f, label = "%.1f dp".format(s.cardBorderWidth), color = Tile.Yellow,
+            ) { v -> set { copy(cardBorderWidth = (v * 2).roundToInt() / 2f) } }
+        }
+    }
+    if (s.cardBorder) {
+        Swatches(cardBorderColors, s.cardBorderColor) { c -> set { copy(cardBorderColor = c) } }
+    }
+
+    if (bgDialog) {
+        ChoiceDialog(tr("Kiểu nền thẻ", "Card background"), CardBg.entries, s.cardBg, { it.title }, { v ->
+            if (v == CardBg.IMAGE && s.cardBgImage.isEmpty()) {
+                picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+            } else {
+                set { copy(cardBg = v) }
+            }
+        }) { bgDialog = false }
+    }
+}
+
+/** Chép ảnh người dùng chọn vào bộ nhớ riêng của app (thu nhỏ tối đa 1080 px) để overlay đọc được lâu dài. */
+private fun saveCardImage(context: Context, uri: Uri): String? = runCatching {
+    val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+    context.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
+    var sample = 1
+    while (maxOf(bounds.outWidth, bounds.outHeight) / (sample * 2) >= 1080) sample *= 2
+    val bmp = context.contentResolver.openInputStream(uri)?.use {
+        BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = sample })
+    } ?: return@runCatching null
+    context.filesDir.listFiles { f -> f.name.startsWith("card_bg_") }?.forEach { it.delete() }
+    val file = File(context.filesDir, "card_bg_${System.currentTimeMillis()}.jpg")
+    file.outputStream().use { bmp.compress(Bitmap.CompressFormat.JPEG, 88, it) }
+    bmp.recycle()
+    file.absolutePath
+}.getOrNull()

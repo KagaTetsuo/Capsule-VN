@@ -136,7 +136,7 @@ object Messages {
             message = message,
             extraMs = if (actions.isEmpty()) 2_000 else 4_500,
         )
-        IslandBus.setUnread(brandColor, sbn.packageName, card)
+        IslandBus.setUnread(card)
 
         if (IslandBus.gamingActive.value && s.gameModeEnabled && s.gameSuppressPopups) {
             val shortBody = if (text.length > 22) text.take(22) + "…" else text
@@ -231,12 +231,13 @@ object Messages {
 
     fun onReplied(key: String) {
         repliedAt[key] = SystemClock.elapsedRealtime()
-        IslandBus.clearUnread()
+        IslandBus.removeUnread(key)
     }
 
     fun forget(key: String) {
         shown.remove(key)
         repliedAt.remove(key)
+        IslandBus.removeUnread(key)
         if (shown.isEmpty()) {
             IslandBus.clearUnread()
         }

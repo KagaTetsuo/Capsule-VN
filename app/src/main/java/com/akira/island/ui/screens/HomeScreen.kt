@@ -198,7 +198,7 @@ fun HomeScreen(open: (Screen) -> Unit) {
             KeepAliveItem(Pos.Middle, open)
             GroupItem(
                 Pos.Last, Icons.Rounded.Science, tr("Thử nghiệm tính năng", "Try features"),
-                tr("20 ví dụ: tin nhắn, cuộc gọi, nhạc, thanh toán… hiện ngay trên Viên thuốc", "20 examples: message, call, music, payment… shown right in the island"),
+                tr("Tin nhắn, cuộc gọi, nhạc, thanh toán… hiện ngay trên Viên thuốc", "Message, call, music, payment… shown right in the island"),
                 color = Tile.Purple, onClick = { open(Screen.TESTS) },
             ) { Arrow() }
         }
@@ -493,35 +493,13 @@ private fun demos(context: Context): List<Demo> {
         Demo(Icons.Rounded.LibraryMusic, tr("Trình phát nhạc", "Music Player"),
             tr("Đĩa bìa nhạc, sóng Equalizer động và điều khiển", "Rotating album art, dynamic equalizer & controls"), Tile.Pink) {
             IslandBus.media.value = MediaInfo(
-                key = "demo-media", pkg = context.packageName, title = "Tiến Quân Ca", artist = "Văn Cao · Quốc ca Việt Nam",
+                key = "demo-media", pkg = "capsulevn.demo.player", title = "Tiến Quân Ca", artist = "Văn Cao · Quốc ca Việt Nam",
                 album = "Việt Nam", art = null, accent = Tints.Lavender, durationMs = 180_000L, positionMs = 45_000L,
                 positionTime = SystemClock.elapsedRealtime(), speed = 1f, playing = true, canSeek = true,
             )
             IslandBus.scope.launch {
                 delay(8_000)
                 if (IslandBus.media.value?.key == "demo-media") IslandBus.media.value = null
-            }
-        },
-
-        // 6. Trứng phục sinh "Tuổi Trẻ Thế Hệ Bác Hồ"
-        Demo(Icons.Rounded.AutoAwesome, tr("Trứng phục sinh VN", "Vietnam Easter Egg"),
-            tr("Cờ Đỏ Sao Vàng hào hùng theo nhịp ca sĩ Tùng Dương", "Epic Red Flag & Gold Star pulsating with singer Tung Duong"), Tile.Red) {
-            IslandBus.egg.value = true
-            IslandBus.post(
-                Notice(
-                    title = "Tuổi Trẻ Thế Hệ Bác Hồ",
-                    caption = "Tùng Dương · Khát vọng cống hiến vì Tổ quốc!",
-                    state = "Tuổi Trẻ Thế Hệ Bác Hồ",
-                    icon = Ios.load(context, R.drawable.ic_star_vn),
-                    tint = Color(0xFFFF2D55),
-                    style = NoticeStyle.EGG,
-                    extraMs = 4_000,
-                    openPkg = context.packageName,
-                ),
-            )
-            IslandBus.scope.launch {
-                delay(4_500)
-                IslandBus.egg.value = false
             }
         },
 

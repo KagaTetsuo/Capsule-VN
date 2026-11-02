@@ -9,6 +9,10 @@
 - **Cập nhật OTA ổn định**: CI ký APK bằng khóa cố định (GitHub Secrets) để các bản sau cài đè được qua cập nhật trong app.
 - Thêm lối vào "Giới thiệu về Viên thuốc" trong tab Giới thiệu.
 - **Sao lưu / Khôi phục cài đặt** ra file JSON (Tính năng → Hệ thống): dùng khi gỡ cài đặt lại hoặc đổi máy.
+- **Nền & viền thẻ thông báo tuỳ chỉnh** (Giao diện → Khung thẻ thông báo): kiểu nền Như Viên thuốc / Màu tuỳ chọn / Ảnh nền (tự cắt vừa khung, làm tối để dễ đọc) / Liquid Glass (iOS), độ đậm nền, màu & độ dày viền — áp dụng cho thẻ tin nhắn, cuộc gọi đến, cập nhật và tin chưa đọc, xem trước trực tiếp.
+- **Nhiều tin nhắn chưa đọc**: mỗi cuộc trò chuyện là một trang riêng (tối đa 6), vuốt qua lại; cuộc trò chuyện nào đã xem / đã mở / đã trả lời thì tự bỏ khỏi danh sách, viền LED đổi theo màu tin mới nhất còn lại.
+- **Cuộc gọi Zalo / Messenger**: sau khi bấm Nghe trên Viên thuốc, tự mở màn hình cuộc gọi của ứng dụng để ứng dụng đó tắt chuông và rung.
+- **Thử nghiệm tính năng**: bỏ mục Trứng phục sinh; sửa Trình phát nhạc thử nghiệm không hiện (trước đây bị ẩn vì trùng với chính ứng dụng đang mở).
 - **Icon ứng dụng giữ khung vàng, tách nền ngoài khung**:
   - Giữ nguyên khung vàng và toàn bộ nền khói đỏ/đen bên trong khung; 4 góc đen bên ngoài được tách bỏ (trong suốt).
   - Icon trong mục Giới thiệu, icon tròn kiểu cũ và ảnh README dùng chung bản khung vàng tách nền.
