@@ -43,7 +43,10 @@ fun BannersScreen(onBack: () -> Unit) {
     val clocks = remember(seen) { SystemBanners.clockApps(context, seen) }
     val s by SettingsRepo.state.collectAsState()
     val popUp by SystemBanners.popUp.collectAsState()
-    val messengers = remember(s.msgChannels) { s.msgChannels.keys.sortedBy { SystemBanners.label(context, it).lowercase() } }
+    val messengers = remember(s.msgChannels) {
+        s.msgChannels.keys.filter { it != SystemBanners.SYSTEM_UI && it != SystemBanners.ANDROID }
+            .sortedBy { SystemBanners.label(context, it).lowercase() }
+    }
 
     Page(tr("Biểu ngữ hệ thống", "System banners"), onBack) {
         Box(
@@ -51,7 +54,7 @@ fun BannersScreen(onBack: () -> Unit) {
                 .padding(horizontal = 20.dp, vertical = 16.dp),
         ) {
             Text(
-                tr(if (SystemBanners.isSamsung) "Android tự hiện biểu ngữ thông báo đè lên Viên thuốc và không cho ứng dụng khác chặn. Trên Samsung (One UI): chạm vào ứng dụng bên dưới → trang Thông báo của ứng dụng → mục “Kiểu thông báo”, bỏ chọn “Cửa sổ bật lên” / “Biểu ngữ” (giữ “Màn hình khoá” và “Biểu tượng”). Nếu ứng dụng không có mục này, bật “Thu gọn khi app tự hiện pop-up” trong Tính năng → Tin nhắn & thông báo." else "Android tự hiện biểu ngữ thông báo đè lên Viên thuốc, và hệ thống không cho phép ứng dụng bên thứ ba tự chặn chúng. Hãy chạm vào ứng dụng và tắt “Bật lên trên màn hình” (hoặc “Hiển thị biểu ngữ”). Thông báo vẫn được giữ trong thanh trạng thái, và chỉ có Viên thuốc hiển thị sự kiện trên màn hình.", "Android shows its own pop-up banners on top of the island, and the system doesn't let a third-party app " +
+                tr("Android tự hiện biểu ngữ (pop-up) của ứng dụng đè lên Viên thuốc và không cho ứng dụng khác chặn. Chạm vào ứng dụng bên dưới để mở trang thông báo của nó:\n• Samsung: bỏ chọn ô “Pop-up thông báo” (giữ “M.hình khóa” và “Huy hiệu”).\n• Máy khác: tắt “Bật lên trên màn hình” / “Hiển thị biểu ngữ”.\nThông báo vẫn nằm trong thanh thông báo, chỉ Viên thuốc hiện trên màn hình.", "Android shows its own pop-up banners on top of the island, and the system doesn't let a third-party app " +
                         "block them. Tap an app and turn off “Pop on screen” (on some phones — “Show on top” or “Banners”). The " +
                         "notification stays in the shade, and only the island shows the event on screen."),
                 color = Ui.Sub, fontSize = 15.sp, lineHeight = 20.sp,
@@ -68,10 +71,11 @@ fun BannersScreen(onBack: () -> Unit) {
                     GroupItem(
                         posOf(i, messengers.size), Icons.Rounded.ChatBubble, SystemBanners.label(context, pkg),
                         when (popUp[pkg]) {
-                            true -> if (SystemBanners.isSamsung) tr("Bị hiện đè lên Viên thuốc — chạm vào, bỏ chọn “Cửa sổ bật lên” trong Kiểu thông báo", "Pops up over the island — tap and untick “Pop-up” in Notification types")
+                            true -> if (SystemBanners.isSamsung) tr("Bị hiện đè lên Viên thuốc — chạm vào, bỏ chọn “Pop-up thông báo”", "Pops up over the island — tap and untick “Pop-up notifications”")
                             else tr("Bị hiện đè lên Viên thuốc — chạm vào và tắt “Bật lên trên màn hình”", "Pops up over the island — tap and turn off “Pop on screen”")
                             false -> tr("Không bị hiện thông báo nổi trùng lặp ✓", "Its own banner doesn't pop up ✓")
-                            null -> tr("Chạm vào và tắt “Bật lên trên màn hình”", "Tap and turn off “Pop on screen”")
+                            null -> if (SystemBanners.isSamsung) tr("Chạm vào và bỏ chọn “Pop-up thông báo”", "Tap and untick “Pop-up notifications”")
+                            else tr("Chạm vào và tắt “Bật lên trên màn hình”", "Tap and turn off “Pop on screen”")
                         },
                         color = if (popUp[pkg] == false) Tile.Green else Tile.Blue,
                         onClick = { SystemBanners.openSettings(context, pkg) },
