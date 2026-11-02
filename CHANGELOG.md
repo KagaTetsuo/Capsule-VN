@@ -1,5 +1,10 @@
 # Lịch sử phiên bản Capsule VN
 
+## v1.4.2 (2026) — Icon trọn khung vàng trên Samsung, hướng dẫn tắt pop-up đúng One UI
+- **Icon**: launcher Samsung One UI dùng bộ icon kiểu cũ (vuông) rồi tự bo theo hình của máy, nên khung vàng bị cắt. Bộ icon này giờ được thu gọn vào giữa (khung 60/72) — khung vàng hiện trọn vẹn, không mất góc.
+- **Tin nhắn hiện 2 lần trên Samsung**: hướng dẫn theo đúng chữ trên One UI — trong trang thông báo của ứng dụng, **bỏ chọn ô “Pop-up thông báo”** (giữ “M.hình khóa” và “Huy hiệu”).
+- Thông báo của Giao diện hệ thống (pin yếu, USB…) không còn bị hiện như thẻ tin nhắn (đã có thẻ sự kiện riêng) và không còn nằm trong danh sách ứng dụng nhắn tin.
+
 ## v1.4.1 (2026) — Tab "Khác" chỉnh riêng từng loại thông báo
 - **Khung thẻ thông báo → Khác** giờ chia mục: **Tất cả** (chung) và từng loại **Sạc pin, Tai nghe & Bluetooth, Thanh toán, Điều hướng, Báo thức, Chế độ chuông, Sự kiện khác**.
   - Mỗi loại chỉnh riêng vị trí dọc / ngang, chiều rộng, chiều cao thêm, bo góc; chọn loại nào thì thẻ mẫu đúng loại đó hiện trực tiếp trên đỉnh màn hình.

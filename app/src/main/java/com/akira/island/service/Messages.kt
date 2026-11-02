@@ -55,6 +55,8 @@ object Messages {
     fun maybeShow(service: NotificationListenerService, sbn: StatusBarNotification, appName: String) {
         val s = SettingsRepo.current
         if (!s.cardMessages || !s.enabled) return
+        // Thông báo của hệ thống (pin yếu, USB…) không phải tin nhắn — đã có thẻ sự kiện riêng
+        if (sbn.packageName == SystemBanners.SYSTEM_UI || sbn.packageName == SystemBanners.ANDROID) return
         val n = sbn.notification ?: return
         if (sbn.isOngoing) return
         if (n.flags and Notification.FLAG_GROUP_SUMMARY != 0) return

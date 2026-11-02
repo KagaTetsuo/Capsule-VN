@@ -58,7 +58,7 @@ object SystemBanners {
         else -> NotificationParser.appLabel(context, pkg)
     }
 
-    /** Samsung One UI: tắt pop-up nằm ở trang thông báo của ứng dụng (Kiểu thông báo → Cửa sổ bật lên / Biểu ngữ). */
+    /** Samsung One UI: tắt pop-up nằm ở trang thông báo của ứng dụng (bỏ chọn ô “Pop-up thông báo”). */
     val isSamsung: Boolean get() = Build.MANUFACTURER.equals("samsung", ignoreCase = true)
 
     fun openSettings(context: Context, pkg: String) {
