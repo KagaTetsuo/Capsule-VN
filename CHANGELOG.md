@@ -14,7 +14,7 @@
   - Dùng ngay, không cần cài đặt gì: dùng xong chạm thông báo để bật lại.
   - Cấp "Truy cập dữ liệu sử dụng" (trong Cài đặt): rời app sẽ hiện nhắc 1 chạm mở thẳng trang bật Viên thuốc.
   - Nâng cao (tuỳ chọn): cấp 1 lần qua Shizuku hoặc ADB để tự bật lại hoàn toàn; sau đó có thể gỡ Shizuku và tắt Tuỳ chọn nhà phát triển.
-- **Nền & viền áp dụng cho mọi bảng thông báo** (sự kiện, sạc, thanh toán, tin nhắn, cuộc gọi, cập nhật…) **và cả bảng mở rộng** (bật / tắt được).
+- **Nền & viền áp dụng cho các bảng thông báo** (tin nhắn, cuộc gọi, cập nhật, điều hướng, báo thức…) **và cả bảng mở rộng**; thông báo dạng viên nhỏ (sạc, tai nghe, chế độ chuông, thanh toán…) mặc định giữ nền đen như cũ, bật được nền ảnh / Liquid Glass nếu muốn.
 - **Thẻ tin nhắn cân đối hơn**: dòng tên app / thời gian to, rõ và thụt vào khỏi góc bo; bớt khoảng trống phía trên; ảnh đại diện tròn 44 dp kèm biểu tượng app; nút Trả lời / Đã đọc dạng viên tròn chia đều bề ngang.
 - **Trình phát nhạc mở rộng hiện đại**: ảnh bìa 64 dp bo tròn, tên bài / ca sĩ rõ ràng, thanh tiến trình toàn chiều ngang với thời gian bên dưới, nút Phát / Tạm dừng tròn trắng nổi bật ở giữa.
 - **Nhiều tin nhắn chưa đọc**: mỗi cuộc trò chuyện là một trang riêng (tối đa 6), vuốt qua lại; cuộc trò chuyện nào đã xem / đã mở / đã trả lời thì tự bỏ khỏi danh sách, viền LED đổi theo màu tin mới nhất còn lại.

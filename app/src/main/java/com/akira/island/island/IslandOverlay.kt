@@ -575,8 +575,14 @@ private fun IslandBody(
 
     // Mọi bảng thông báo (tin nhắn, sự kiện, sạc, thanh toán, cuộc gọi đến, cập nhật, tin chưa đọc…)
     // và bảng mở rộng dùng nền & viền tuỳ chỉnh riêng
+    // Thông báo dạng viên nhỏ chỉ dùng nền tuỳ chỉnh khi người dùng bật (mặc định nền đen như cũ)
+    val smallPill = primary is Act.PayA || (
+        primary is Act.NoticeA && primary.n.style in setOf(NoticeStyle.WIDE, NoticeStyle.PILL, NoticeStyle.SENT, NoticeStyle.PAY_DONE)
+        )
     val isCard = !calibrating && (
-        primary is Act.UnreadA || primary is Act.NoticeA || primary is Act.PayA ||
+        primary is Act.UnreadA ||
+            (primary is Act.NoticeA && !smallPill) ||
+            (smallPill && s.cardStylePills) ||
             (expanded && s.cardStyleExpanded) ||
             (primary is Act.CallA && primary.c.incoming)
         )

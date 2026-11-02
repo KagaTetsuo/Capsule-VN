@@ -221,6 +221,8 @@ data class IslandSettings(
     val cardBorderWidth: Float = 1.5f,
     /** Áp dụng nền & viền thẻ cho cả bảng mở rộng (Giờ, Pin, nhạc, hẹn giờ…). */
     val cardStyleExpanded: Boolean = true,
+    /** Áp dụng cho cả thông báo dạng viên nhỏ (sạc, tai nghe, chế độ chuông, thanh toán…). Mặc định giữ nền đen như cũ. */
+    val cardStylePills: Boolean = false,
 
     val color: Long = 0xFF000000,
     val outline: Boolean = false,

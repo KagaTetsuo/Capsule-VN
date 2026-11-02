@@ -52,6 +52,7 @@ import androidx.compose.material.icons.rounded.Call
 import androidx.compose.material.icons.rounded.ChatBubble
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.DashboardCustomize
+import androidx.compose.material.icons.rounded.Circle
 import androidx.compose.material.icons.rounded.FormatLineSpacing
 import androidx.compose.material.icons.rounded.Height
 import androidx.compose.material.icons.rounded.Layers
@@ -690,6 +691,7 @@ private fun IslandSettings.withMsgCallPlacement(from: IslandSettings) = copy(
     cardBorderColor = from.cardBorderColor,
     cardBorderWidth = from.cardBorderWidth,
     cardStyleExpanded = from.cardStyleExpanded,
+    cardStylePills = from.cardStylePills,
 )
 
 @Composable
@@ -738,7 +740,7 @@ private fun CardStyleSection(s: IslandSettings, preview: () -> Unit) {
         }
     }
 
-    SectionHeader(tr("Nền & viền mọi bảng thông báo", "Background & border of all banners"))
+    SectionHeader(tr("Nền & viền bảng thông báo", "Banner background & border"))
     Group {
         GroupItem(
             Pos.First, Icons.Rounded.Wallpaper, tr("Kiểu nền", "Background"), s.cardBg.title,
@@ -761,6 +763,11 @@ private fun CardStyleSection(s: IslandSettings, preview: () -> Unit) {
             if (s.cardBg == CardBg.GLASS) tr("Độ đậm kính", "Glass density") else tr("Độ đậm nền", "Background opacity"),
             value = s.cardBgOpacity.toFloat(), range = 20f..100f, label = "${s.cardBgOpacity}%", color = Tile.Teal,
         ) { v -> set { copy(cardBgOpacity = v.toInt()) } }
+        GroupToggle(
+            Pos.Middle, Icons.Rounded.Circle, tr("Áp dụng cho thông báo dạng viên nhỏ", "Also for small pill alerts"),
+            tr("Sạc pin, tai nghe, chế độ chuông, thanh toán… Tắt: giữ nền đen như cũ", "Charging, headphones, ring mode, payments… Off: keep the classic black"),
+            s.cardStylePills, color = Tile.Gray,
+        ) { v -> set { copy(cardStylePills = v) } }
         GroupToggle(
             Pos.Last, Icons.Rounded.DashboardCustomize, tr("Áp dụng cho bảng mở rộng", "Also for the expanded island"),
             tr("Bảng Giờ – Pin, trình phát nhạc, hẹn giờ… dùng chung nền & viền này", "Clock, music player, timer… panels use the same background & border"),
