@@ -353,7 +353,7 @@ private fun DoubleBannerCard(app: String, onFix: () -> Unit, onHide: () -> Unit)
         Text(tr("Tin nhắn bị hiện 2 lần?", "Messages show up twice?"), color = Ui.Text, fontSize = 17.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(6.dp))
         Text(
-            tr("Cả Viên thuốc và chính $app đều hiện tin nhắn. Hãy tắt “Hiện trên màn hình” (pop-up) của ứng dụng đó — chỉ còn Viên thuốc hiển thị, thông báo vẫn nằm trong thanh thông báo.", "Both the island and $app itself show the message. Turn off its “Pop on screen” — only the island will " +
+            tr(if (SystemBanners.isSamsung) "Cả Viên thuốc và chính $app đều hiện tin nhắn. Trên Samsung: bấm Thiết lập → chọn $app → trong “Kiểu thông báo” bỏ chọn “Cửa sổ bật lên” / “Biểu ngữ”. Không có mục này thì bật “Thu gọn khi app tự hiện pop-up” trong Tin nhắn & thông báo." else "Cả Viên thuốc và chính $app đều hiện tin nhắn. Hãy tắt “Hiện trên màn hình” (pop-up) của ứng dụng đó — chỉ còn Viên thuốc hiển thị, thông báo vẫn nằm trong thanh thông báo.", "Both the island and $app itself show the message. Turn off its “Pop on screen” — only the island will " +
                     "remain, and the notification stays in the shade."),
             color = Ui.Sub, fontSize = 14.sp, lineHeight = 20.sp,
         )

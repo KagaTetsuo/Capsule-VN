@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 
-enum class CardPreviewMode { NONE, MESSAGE, CALL, UPDATE, EXPANDED }
+enum class CardPreviewMode { NONE, MESSAGE, CALL, UPDATE, EXPANDED, NOTICE }
 
 object IslandBus {
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)

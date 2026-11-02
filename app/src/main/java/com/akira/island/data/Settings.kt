@@ -56,16 +56,17 @@ enum class Elasticity(private val ru: String, private val en: String, val dampin
 }
 
 @Serializable
-enum class TapAction(private val ru: String, private val en: String) {
-    EXPAND("Mở rộng viên thuốc", "Expand the capsule"),
-    OPEN_APP("Mở ứng dụng", "Open the app"),
-    PLAY_PAUSE("Phát / Tạm dừng", "Play / pause"),
-    NEXT_TRACK("Bài tiếp theo", "Next track"),
-    SCREENSHOT("Chụp màn hình (ẩn Viên thuốc)", "Screenshot without the island"),
-    NOTHING("Không làm gì", "Nothing"),
+enum class TapAction(private val ru: String, private val en: String, private val hintRu: String, private val hintEn: String) {
+    EXPAND("Mở rộng viên thuốc", "Expand the capsule", "Xem chi tiết hoạt động; thông báo thì mở ứng dụng", "See details; for alerts opens the app"),
+    OPEN_APP("Mở ứng dụng", "Open the app", "Mở app của hoạt động / thông báo; Viên thuốc trống mở Capsule VN", "Opens the app of the activity / alert; empty island opens Capsule VN"),
+    PLAY_PAUSE("Phát / Tạm dừng", "Play / pause", "Điều khiển nhạc đang phát; không có nhạc thì mở rộng", "Controls music; without music it expands"),
+    NEXT_TRACK("Bài tiếp theo", "Next track", "Chuyển bài; không có nhạc thì mở rộng", "Skips the track; without music it expands"),
+    SCREENSHOT("Chụp màn hình (ẩn Viên thuốc)", "Screenshot without the island", "Viên thuốc tự ẩn để không dính vào ảnh", "The island hides so it's not in the shot"),
+    NOTHING("Không làm gì", "Nothing", "Bỏ qua cử chỉ này", "Ignore this gesture"),
     ;
 
     val title: String get() = tr(ru, en)
+    val hint: String get() = tr(hintRu, hintEn)
 }
 
 @Serializable
@@ -100,7 +101,21 @@ enum class LedStyle(private val ru: String, private val en: String) {
     AUTO_APP("Theo màu ứng dụng / sự kiện", "App / Event adaptive"),
     CYBER_NEON("Neon Cyber (Xanh - Tím - Đỏ)", "Cyber Neon"),
     BREATHE_GOLD("Nhịp thở Vàng Hoàng Gia", "Breathing Gold"),
-    CUSTOM("Màu tùy chọn", "Custom color"),
+    CUSTOM("Màu đơn tự chọn", "Single custom color"),
+    MULTI("2–3 màu tự chọn", "2–3 custom colors"),
+    ;
+
+    val title: String get() = tr(ru, en)
+}
+
+/** Kiểu chuyển động của viền sáng. */
+@Serializable
+enum class LedMotion(private val ru: String, private val en: String) {
+    ROTATE("Xoay 360°", "Rotate 360°"),
+    COMET("Sao chổi chạy quanh viền", "Comet chase"),
+    BREATHE("Nhịp thở", "Breathing"),
+    BLINK("Nhấp nháy", "Blink"),
+    STATIC("Đứng yên", "Static"),
     ;
 
     val title: String get() = tr(ru, en)
@@ -207,6 +222,15 @@ data class IslandSettings(
     val updateHeightExtra: Int = 0,
 
     val expandedOffsetY: Int = 0,
+    // Viên thuốc khi có hoạt động (nhạc, hẹn giờ…): dịch vị trí riêng
+    val activeOffsetX: Int = 0,
+    val activeOffsetY: Int = 0,
+    // Các thông báo khác (sạc, tai nghe, thanh toán, sự kiện…): vị trí, kích thước, bo góc riêng
+    val noticeOffsetX: Int = 0,
+    val noticeOffsetY: Int = 0,
+    val noticeWidth: Int = 0,
+    val noticeHeightExtra: Int = 0,
+    val noticeCornerRadius: Int = -1,
     val expandedWidth: Int = 0,
     val expandedHeightExtra: Int = 0,
 
@@ -229,6 +253,8 @@ data class IslandSettings(
     val cardStyleExpanded: Boolean = true,
     /** Áp dụng cho cả thông báo dạng viên nhỏ (sạc, tai nghe, chế độ chuông, thanh toán…). Mặc định giữ nền đen như cũ. */
     val cardStylePills: Boolean = false,
+    /** Áp dụng nền & viền cho cả Viên thuốc khi không có hoạt động. */
+    val cardStyleIdle: Boolean = false,
 
     val color: Long = 0xFF000000,
     val outline: Boolean = false,
@@ -279,8 +305,8 @@ data class IslandSettings(
     val batterySaver: Boolean = false,
 
     val tapAction: TapAction = TapAction.EXPAND,
-    val doubleTapAction: TapAction = TapAction.NOTHING,
-    val longPressAction: TapAction = TapAction.OPEN_APP,
+    val doubleTapAction: TapAction = TapAction.OPEN_APP,
+    val longPressAction: TapAction = TapAction.PLAY_PAUSE,
     val swipeTracks: Boolean = true,
     /** Chế độ ngân hàng: tự tắt Viên thuốc khi mở app ngân hàng / VNeID, tự bật lại khi rời app. */
     val bankMode: Boolean = false,
@@ -334,6 +360,13 @@ data class IslandSettings(
     val ledStyle: LedStyle = LedStyle.ROTATE_RGB,
     val ledWidth: Float = 2.5f,
     val ledColor: Long = 0xFF00E5FF,
+    val ledMotion: LedMotion = LedMotion.ROTATE,
+    /** Tốc độ chuyển động 0 (chậm) .. 100 (nhanh). */
+    val ledSpeed: Int = 50,
+    val ledColors: List<Long> = listOf(0xFFE6C068, 0xFFC8102E, 0xFF0A84FF),
+    val ledColorCount: Int = 2,
+    /** Viền thẻ thông báo dùng hiệu ứng như Vòng sáng LED thay cho màu đơn. */
+    val cardBorderLed: Boolean = false,
 
     val ecoSpPen: Boolean = true,
     val ecoBudsWatch: Boolean = true,
@@ -341,6 +374,8 @@ data class IslandSettings(
     val ecoBatteryProtectLevel: Int = 80,
     val ecoDexCast: Boolean = true,
 
+    /** Ứng dụng tự bật pop-up của nó: Viên thuốc chỉ báo dạng viên nhỏ để không hiện 2 lần. */
+    val msgCompactWhenPopup: Boolean = false,
     /** Tự động sao lưu cấu hình ra Download/CapsuleVN (còn lại sau khi gỡ app). */
     val autoBackup: Boolean = true,
     /** Đã hỏi khôi phục cài đặt cũ sau khi cài mới. */
@@ -373,6 +408,7 @@ data class IslandSettings(
     val windowBaseY: Int get() = minOf(
         minOf(topOffset, topOffset + msgOffsetY, topOffset + callOffsetY),
         minOf(topOffset + updateOffsetY, topOffset + expandedOffsetY),
+        minOf(topOffset + activeOffsetY, topOffset + noticeOffsetY),
     )
 
     val liveEqualizer: Boolean get() = fxEqualizer && !reduceEffects
