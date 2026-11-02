@@ -500,7 +500,9 @@ class IslandService : AccessibilityService() {
         if (n != null) {
             val s = SettingsRepo.current
             if (!s.enabled || !s.wakeOnMessage || IslandBus.screenOn.value) return
-            if (n.style != NoticeStyle.MESSAGE) return
+            // Mọi thông báo (trừ xác nhận "Đã gửi" của chính mình); bỏ qua trong giờ ngủ
+            if (n.style == NoticeStyle.SENT) return
+            if (s.inWakeQuiet(java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY))) return
             scope.launch {
                 if (Proximity.near(this@IslandService)) return@launch // đang trong túi / úp máy
                 if (IslandBus.notice.value?.id != n.id || IslandBus.screenOn.value) return@launch
