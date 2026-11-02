@@ -1,5 +1,9 @@
 # Lịch sử phiên bản Capsule VN
 
+## v1.4.3 (2026) — Sửa Viên thuốc bị lệch trái / phải so với camera
+- Cửa sổ Viên thuốc trước đây để hệ thống tự đo bề ngang; trên một số máy (Samsung) kích thước này bị sai sau khi khởi động lại hoặc khi đổi cấu hình (xoay ngang, mở app toàn màn hình…), làm Viên thuốc và thẻ thông báo lệch trái / phải.
+- Nay cửa sổ được ghim đúng mép trái và đúng bề ngang thật của màn hình, tự kiểm tra lại khi bật màn hình, khi xoay, khi chuyển ứng dụng — Viên thuốc luôn thẳng tâm camera.
+
 ## v1.4.2 (2026) — Icon trọn khung vàng trên Samsung, hướng dẫn tắt pop-up đúng One UI
 - **Icon**: launcher Samsung One UI dùng bộ icon kiểu cũ (vuông) rồi tự bo theo hình của máy, nên khung vàng bị cắt. Bộ icon này giờ được thu gọn vào giữa (khung 60/72) — khung vàng hiện trọn vẹn, không mất góc.
 - **Tin nhắn hiện 2 lần trên Samsung**: hướng dẫn theo đúng chữ trên One UI — trong trang thông báo của ứng dụng, **bỏ chọn ô “Pop-up thông báo”** (giữ “M.hình khóa” và “Huy hiệu”).

@@ -240,6 +240,8 @@ class IslandService : AccessibilityService() {
                 if (!it) {
                     keyguardShown = true
                     PayMonitor.clearReady()
+                } else {
+                    syncWidth()
                 }
             }
         }
@@ -353,6 +355,8 @@ class IslandService : AccessibilityService() {
         owner.create()
         owner.attach(drawRoot)
         displayParams.height = tallHeight()
+        displayParams.width = realScreenWidth()
+        displayParams.x = 0
         runCatching { wm?.addView(drawRoot, displayParams) }.onSuccess { display = drawRoot }
 
         val touchRoot = TouchRoot(this, { display }, ::onOutsideTouch)
@@ -435,6 +439,7 @@ class IslandService : AccessibilityService() {
 
     private fun updateDisplayHeight() {
         val view = display ?: return
+        syncWidth()
         val h = if (tall || fxTall || IslandBus.expanded.value || IslandBus.cardPreviewMode.value != CardPreviewMode.NONE) tallHeight() else islandBottom().coerceAtLeast(dp(ISLAND_PAD_DP * 2))
         if (displayParams.height == h) return
         displayParams.height = h
@@ -626,6 +631,7 @@ class IslandService : AccessibilityService() {
         
         val cls = event.className?.toString().orEmpty()
         if (pkg == "com.android.systemui" || isKeyboard(pkg, cls)) return
+        syncWidth()
         // Chế độ ngân hàng: app ngân hàng / VNeID lên màn hình -> Viên thuốc tạm nghỉ
         if (BankMode.shouldPause(this, pkg)) {
             BankMode.pause(this, pkg)
@@ -730,6 +736,37 @@ class IslandService : AccessibilityService() {
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
         IslandBus.landscape.value = newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE
+        syncWidth()
+        // Một số máy cập nhật kích thước màn hình trễ sau khi xoay / đổi độ phân giải: kiểm tra lại sau chốc lát
+        handler.postDelayed({ syncWidth() }, 600)
+    }
+
+    /** Chiều rộng thật của màn hình theo hướng hiện tại (px). */
+    private fun realScreenWidth(): Int {
+        val w = wm ?: return WindowManager.LayoutParams.MATCH_PARENT
+        return runCatching {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                w.maximumWindowMetrics.bounds.width()
+            } else {
+                val m = android.util.DisplayMetrics()
+                @Suppress("DEPRECATION")
+                w.defaultDisplay.getRealMetrics(m)
+                m.widthPixels
+            }
+        }.getOrDefault(WindowManager.LayoutParams.MATCH_PARENT)
+    }
+
+    /**
+     * Ghim cửa sổ Viên thuốc đúng từ mép trái và đúng bề ngang màn hình, để tâm Viên thuốc luôn trùng camera.
+     * (Trước đây dùng MATCH_PARENT, có máy đo sai lúc khởi động hoặc sau khi đổi cấu hình -> Viên thuốc lệch trái / phải.)
+     */
+    private fun syncWidth() {
+        val view = display ?: return
+        val width = realScreenWidth()
+        if (displayParams.width == width && displayParams.x == 0) return
+        displayParams.width = width
+        displayParams.x = 0
+        runCatching { wm?.updateViewLayout(view, displayParams) }
     }
 
     override fun onDestroy() {
