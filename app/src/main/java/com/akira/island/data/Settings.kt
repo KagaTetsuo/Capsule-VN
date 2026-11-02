@@ -143,8 +143,12 @@ data class IslandSettings(
     val timerFromAssistant: Boolean = true,
     
     val wakeForAlerts: Boolean = true,
-    /** Màn hình đang tắt mà có tin nhắn: sáng lên hiện tin trên Viên thuốc rồi tự tắt lại. */
+    /** Màn hình đang tắt mà có thông báo: sáng lên hiện trên Viên thuốc rồi tự tắt lại. */
     val wakeOnMessage: Boolean = true,
+    /** Giờ ngủ: không tự sáng màn hình vì thông báo trong khoảng này. */
+    val wakeQuietOn: Boolean = true,
+    val wakeQuietFrom: Int = 23,
+    val wakeQuietTo: Int = 6,
     
     val easterEggs: Boolean = true,
 
@@ -352,6 +356,11 @@ data class IslandSettings(
 ) {
     
     fun forPowerSave(on: Boolean): IslandSettings = if (on && batterySaver && !reduceEffects) copy(reduceEffects = true) else this
+
+    fun inWakeQuiet(hour: Int): Boolean = wakeQuietOn && wakeQuietFrom != wakeQuietTo && when {
+        wakeQuietFrom < wakeQuietTo -> hour in wakeQuietFrom until wakeQuietTo
+        else -> hour >= wakeQuietFrom || hour < wakeQuietTo
+    }
 
     fun inSchedule(hour: Int): Boolean = when {
         !scheduleOn || scheduleFrom == scheduleTo -> true

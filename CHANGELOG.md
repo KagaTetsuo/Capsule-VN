@@ -1,5 +1,9 @@
 # Lịch sử phiên bản Capsule VN
 
+## v1.3.2 (2026) — Sáng màn hình cho mọi thông báo & giờ ngủ
+- **Sáng màn hình khi có thông báo** giờ áp dụng cho mọi thông báo (tin nhắn, sạc pin, tai nghe, thanh toán, sự kiện hệ thống…), không chỉ tin nhắn. Vẫn tự tắt lại, không sáng khi máy trong túi / úp xuống.
+- **Không sáng trong giờ ngủ** (mặc định bật, 23:00–6:00, chỉnh được): trong khung giờ này thông báo vẫn hiện trên Viên thuốc nhưng không làm sáng màn hình.
+
 ## v1.3.1 (2026) — Sáng màn hình khi có tin nhắn
 - **Sáng màn hình khi có tin nhắn** (Tính năng → Hành vi hiển thị → Rung & màn hình, mặc định bật): khi màn hình đang tắt, tin nhắn tới sẽ làm màn hình sáng lên và hiện trên Viên thuốc ở màn hình khoá; hết thời gian hiển thị thì tự tắt lại.
   - Không sáng khi máy để trong túi hoặc úp xuống (dùng cảm biến tiệm cận).

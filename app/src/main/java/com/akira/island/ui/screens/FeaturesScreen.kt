@@ -297,9 +297,20 @@ fun BehaviorScreen(onBack: () -> Unit) {
             GroupToggle(Pos.First, Icons.Rounded.Vibration, tr("Rung phản hồi", "Haptics"),
                 tr("Khi mở, đóng và chạm vào viên thuốc", "When opening, closing and tapping the capsule"),
                 s.haptics, color = Tile.Pink) { v -> SettingsRepo.update { copy(haptics = v) } }
-            GroupToggle(Pos.Middle, Icons.Rounded.ChatBubble, tr("Sáng màn hình khi có tin nhắn", "Wake the screen for messages"),
-                tr("Màn hình đang tắt: sáng lên hiện tin nhắn trên Viên thuốc ở màn hình khoá rồi tự tắt lại. Không sáng khi máy để trong túi / úp xuống", "Screen off: lights up to show the message on the lock screen, then turns off again. Not while in a pocket / face down"),
+            GroupToggle(Pos.Middle, Icons.Rounded.ChatBubble, tr("Sáng màn hình khi có thông báo", "Wake the screen for alerts"),
+                tr("Màn hình đang tắt: tin nhắn, sạc pin, tai nghe, thanh toán… sáng lên trên Viên thuốc ở màn hình khoá rồi tự tắt lại. Không sáng khi máy để trong túi / úp xuống", "Screen off: messages, charging, headphones, payments… light up on the lock screen, then it turns off again. Not while in a pocket / face down"),
                 s.wakeOnMessage, color = Tile.Blue) { v -> SettingsRepo.update { copy(wakeOnMessage = v) } }
+            if (s.wakeOnMessage) {
+                GroupToggle(Pos.Middle, Icons.Rounded.Bedtime, tr("Không sáng trong giờ ngủ", "Not during sleep hours"),
+                    tr("Từ ${hourLabel(s.wakeQuietFrom)} đến ${hourLabel(s.wakeQuietTo)} thông báo vẫn hiện nhưng không làm sáng màn hình", "From ${hourLabel(s.wakeQuietFrom)} to ${hourLabel(s.wakeQuietTo)} alerts still arrive but don't wake the screen"),
+                    s.wakeQuietOn, color = Tile.Indigo) { v -> SettingsRepo.update { copy(wakeQuietOn = v) } }
+                if (s.wakeQuietOn) {
+                    GroupSlider(Pos.Middle, Icons.Rounded.Bedtime, tr("Bắt đầu giờ ngủ", "Sleep starts"), s.wakeQuietFrom.toFloat(), 0f..23f,
+                        hourLabel(s.wakeQuietFrom), steps = 22, color = Tile.Purple) { v -> SettingsRepo.update { copy(wakeQuietFrom = v.toInt()) } }
+                    GroupSlider(Pos.Middle, Icons.Rounded.WbSunny, tr("Kết thúc giờ ngủ", "Sleep ends"), s.wakeQuietTo.toFloat(), 0f..23f,
+                        hourLabel(s.wakeQuietTo), steps = 22, color = Tile.Orange) { v -> SettingsRepo.update { copy(wakeQuietTo = v.toInt()) } }
+                }
+            }
             GroupToggle(Pos.Last, Icons.Rounded.LightMode, tr("Sáng màn hình khi chuông reo", "Wake the screen while ringing"),
                 tr("Khi có hẹn giờ, báo thức hoặc cuộc gọi đến, màn hình sẽ bật sáng trong lúc chuông kêu", "When a timer, alarm or incoming call rings, the screen turns on and stays on while it rings"),
                 s.wakeForAlerts, color = Tile.Yellow) { v -> SettingsRepo.update { copy(wakeForAlerts = v) } }
