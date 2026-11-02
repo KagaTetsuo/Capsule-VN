@@ -21,6 +21,11 @@ import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.FormatLineSpacing
 import androidx.compose.material.icons.rounded.Gesture
 import androidx.compose.material.icons.rounded.Language
+import androidx.compose.material.icons.rounded.SettingsBackupRestore
+import androidx.compose.material.icons.rounded.Backup
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.compose.rememberLauncherForActivityResult
+import android.widget.Toast
 import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material.icons.rounded.LightMode
 import androidx.compose.material.icons.rounded.NotificationsActive
@@ -113,6 +118,20 @@ fun FeaturesScreen(open: (Screen) -> Unit) {
     val s by SettingsRepo.state.collectAsState()
     var confirmReset by remember { mutableStateOf(false) }
     var languageDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val backupLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        val ok = runCatching {
+            context.contentResolver.openOutputStream(uri)?.use { it.write(SettingsRepo.exportJson().toByteArray()) } != null
+        }.getOrDefault(false)
+        Toast.makeText(context, if (ok) tr("Đã sao lưu cài đặt", "Settings backed up") else tr("Không lưu được file sao lưu", "Couldn't save the backup"), Toast.LENGTH_SHORT).show()
+    }
+    val restoreLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        val raw = runCatching { context.contentResolver.openInputStream(uri)?.use { it.readBytes().decodeToString() } }.getOrNull()
+        val ok = raw != null && SettingsRepo.importJson(raw)
+        Toast.makeText(context, if (ok) tr("Đã khôi phục cài đặt", "Settings restored") else tr("File không hợp lệ", "Invalid backup file"), Toast.LENGTH_SHORT).show()
+    }
 
     Page(tr("Tính năng", "Features")) {        SectionHeader(tr("Nội dung hiển thị", "Display content"))
         Group {
@@ -171,6 +190,12 @@ fun FeaturesScreen(open: (Screen) -> Unit) {
             
             GroupItem(Pos.First, Icons.Rounded.Language, tr("Ngôn ngữ · Language", "Language"), s.language.title,
                 color = Tile.Blue, onClick = { languageDialog = true }) { Arrow() }
+            GroupItem(Pos.Middle, Icons.Rounded.Backup, tr("Sao lưu cài đặt", "Back up settings"),
+                tr("Lưu toàn bộ tuỳ chỉnh ra file — dùng khi gỡ / cài lại hoặc đổi máy", "Save all your settings to a file — for reinstalling or a new phone"),
+                onClick = { backupLauncher.launch("CapsuleVN-caidat.json") }, color = Tile.Green) { Arrow() }
+            GroupItem(Pos.Middle, Icons.Rounded.SettingsBackupRestore, tr("Khôi phục cài đặt", "Restore settings"),
+                tr("Chọn file sao lưu để áp dụng lại toàn bộ tuỳ chỉnh", "Pick a backup file to bring all settings back"),
+                onClick = { restoreLauncher.launch(arrayOf("application/json", "text/plain", "application/octet-stream")) }, color = Tile.Teal) { Arrow() }
             GroupItem(Pos.Last, Icons.Rounded.Restore, tr("Đặt lại toàn bộ cài đặt", "Reset all settings"),
                 tr("Khôi phục về trạng thái như khi mới cài đặt", "Back to how it was after installing"),
                 onClick = { confirmReset = true }, color = Tile.Gray)

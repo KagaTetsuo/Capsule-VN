@@ -8,6 +8,7 @@
 - **Icon phóng to vừa khung squircle** (HyperOS, One UI, ColorOS) — khung vàng chiếm 68/72 dp.
 - **Cập nhật OTA ổn định**: CI ký APK bằng khóa cố định (GitHub Secrets) để các bản sau cài đè được qua cập nhật trong app.
 - Thêm lối vào "Giới thiệu về Viên thuốc" trong tab Giới thiệu.
+- **Sao lưu / Khôi phục cài đặt** ra file JSON (Tính năng → Hệ thống): dùng khi gỡ cài đặt lại hoặc đổi máy.
 - **Icon ứng dụng giữ khung vàng, tách nền ngoài khung**:
   - Giữ nguyên khung vàng và toàn bộ nền khói đỏ/đen bên trong khung; 4 góc đen bên ngoài được tách bỏ (trong suốt).
   - Icon trong mục Giới thiệu, icon tròn kiểu cũ và ảnh README dùng chung bản khung vàng tách nền.

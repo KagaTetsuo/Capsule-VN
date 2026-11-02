@@ -397,6 +397,24 @@ object SettingsRepo {
 
     fun reset() = update { IslandSettings() }
 
+    /** Sao lưu toàn bộ cài đặt ra chuỗi JSON (để lưu thành file). */
+    fun exportJson(): String = json.encodeToString(current)
+
+    /** Khôi phục cài đặt từ file JSON đã sao lưu; giữ nguyên các thông tin cập nhật của bản đang cài. */
+    fun importJson(raw: String): Boolean = runCatching {
+        val restored = json.decodeFromString<IslandSettings>(raw)
+        val c = current
+        update {
+            restored.copy(
+                skippedVersion = c.skippedVersion,
+                lastSeenVersion = c.lastSeenVersion,
+                lastUpdateCheck = c.lastUpdateCheck,
+                islandVersion = c.islandVersion,
+            )
+        }
+        true
+    }.getOrDefault(false)
+
     fun resetAnimations() = update {
         val d = IslandSettings()
         copy(
