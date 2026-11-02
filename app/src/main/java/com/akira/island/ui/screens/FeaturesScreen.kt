@@ -21,6 +21,8 @@ import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.FormatLineSpacing
 import androidx.compose.material.icons.rounded.Gesture
 import androidx.compose.material.icons.rounded.Language
+import com.akira.island.data.SettingsBackup
+import androidx.compose.material.icons.rounded.CloudDone
 import androidx.compose.material.icons.rounded.SettingsBackupRestore
 import androidx.compose.material.icons.rounded.Backup
 import androidx.activity.result.contract.ActivityResultContracts
@@ -126,7 +128,7 @@ fun FeaturesScreen(open: (Screen) -> Unit) {
         }.getOrDefault(false)
         Toast.makeText(context, if (ok) tr("Đã sao lưu cài đặt", "Settings backed up") else tr("Không lưu được file sao lưu", "Couldn't save the backup"), Toast.LENGTH_SHORT).show()
     }
-    val restoreLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+    val restoreLauncher = rememberLauncherForActivityResult(OpenBackup) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
         val raw = runCatching { context.contentResolver.openInputStream(uri)?.use { it.readBytes().decodeToString() } }.getOrNull()
         val ok = raw != null && SettingsRepo.importJson(raw)
@@ -190,12 +192,17 @@ fun FeaturesScreen(open: (Screen) -> Unit) {
             
             GroupItem(Pos.First, Icons.Rounded.Language, tr("Ngôn ngữ · Language", "Language"), s.language.title,
                 color = Tile.Blue, onClick = { languageDialog = true }) { Arrow() }
+            if (SettingsBackup.supported) {
+                GroupToggle(Pos.Middle, Icons.Rounded.CloudDone, tr("Tự động sao lưu", "Automatic backup"),
+                    tr("Luôn lưu cấu hình mới nhất vào Download/CapsuleVN — gỡ app vẫn còn, cài lại chọn file để phục hồi", "Keeps your latest settings in Download/CapsuleVN — survives uninstall, pick it after reinstalling"),
+                    s.autoBackup, color = Tile.Blue) { v -> SettingsRepo.update { copy(autoBackup = v) } }
+            }
             GroupItem(Pos.Middle, Icons.Rounded.Backup, tr("Sao lưu cài đặt", "Back up settings"),
                 tr("Lưu toàn bộ tuỳ chỉnh ra file — dùng khi gỡ / cài lại hoặc đổi máy", "Save all your settings to a file — for reinstalling or a new phone"),
                 onClick = { backupLauncher.launch("CapsuleVN-caidat.json") }, color = Tile.Green) { Arrow() }
             GroupItem(Pos.Middle, Icons.Rounded.SettingsBackupRestore, tr("Khôi phục cài đặt", "Restore settings"),
                 tr("Chọn file sao lưu để áp dụng lại toàn bộ tuỳ chỉnh", "Pick a backup file to bring all settings back"),
-                onClick = { restoreLauncher.launch(arrayOf("application/json", "text/plain", "application/octet-stream")) }, color = Tile.Teal) { Arrow() }
+                onClick = { restoreLauncher.launch(BACKUP_TYPES) }, color = Tile.Teal) { Arrow() }
             GroupItem(Pos.Last, Icons.Rounded.Restore, tr("Đặt lại toàn bộ cài đặt", "Reset all settings"),
                 tr("Khôi phục về trạng thái như khi mới cài đặt", "Back to how it was after installing"),
                 onClick = { confirmReset = true }, color = Tile.Gray)
@@ -698,3 +705,13 @@ fun TtsSettingsScreen(onBack: () -> Unit) {
         }
     }
 }
+
+/** Chọn file sao lưu, mở sẵn thư mục Download/CapsuleVN. */
+internal object OpenBackup : ActivityResultContracts.OpenDocument() {
+    override fun createIntent(context: android.content.Context, input: Array<String>): android.content.Intent =
+        super.createIntent(context, input).apply {
+            SettingsBackup.initialFolder?.let { putExtra(android.provider.DocumentsContract.EXTRA_INITIAL_URI, it) }
+        }
+}
+
+internal val BACKUP_TYPES = arrayOf("application/json", "text/plain", "application/octet-stream")

@@ -104,6 +104,10 @@ class BankWatchService : Service() {
             NotificationChannel(REMIND_CHANNEL, tr("Nhắc bật lại Viên thuốc", "Turn the island back on"), NotificationManager.IMPORTANCE_HIGH).apply {
                 description = tr("Hiện khi bạn rời ứng dụng ngân hàng / VNeID", "Shown when you leave a bank / ID app")
                 setShowBadge(false)
+                // Rung nhẹ 2 nhịp ngắn để dễ để ý mà không gây phiền
+                enableVibration(true)
+                vibrationPattern = longArrayOf(0, 90, 70, 90)
+                setSound(null, null)
             },
         )
         val n = Notification.Builder(this, REMIND_CHANNEL)
@@ -169,7 +173,7 @@ class BankWatchService : Service() {
     companion object {
         private const val ID = 11
         private const val REMIND_ID = 12
-        private const val REMIND_CHANNEL = "bank_mode_remind"
+        private const val REMIND_CHANNEL = "bank_mode_remind_v2"
         private const val CHANNEL = "bank_mode"
         private const val ACTION_RESUME = "com.akira.island.BANK_RESUME"
         private const val EXTRA_PKG = "pkg"

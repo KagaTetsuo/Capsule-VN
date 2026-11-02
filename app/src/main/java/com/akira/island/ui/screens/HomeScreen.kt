@@ -12,6 +12,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import android.widget.Toast
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.ui.layout.ContentScale
@@ -160,6 +161,8 @@ fun HomeScreen(open: (Screen) -> Unit) {
 
     Page(tr("Trang chủ", "Home")) {
         BrandHero(on = s.enabled && running && perms.accessibility)
+        // Mới cài (lại): gợi ý phục hồi thiết lập cá nhân từ bản sao lưu
+        if (!SettingsRepo.hadSavedSettings && !s.restoreAsked) RestoreCard()
         UpdateSection()
 
         if (!perms.accessibility) {
@@ -201,6 +204,38 @@ fun HomeScreen(open: (Screen) -> Unit) {
                 tr("Tin nhắn, cuộc gọi, nhạc, thanh toán… hiện ngay trên Viên thuốc", "Message, call, music, payment… shown right in the island"),
                 color = Tile.Purple, onClick = { open(Screen.TESTS) },
             ) { Arrow() }
+        }
+    }
+}
+
+@Composable
+private fun RestoreCard() {
+    val context = LocalContext.current
+    val picker = rememberLauncherForActivityResult(OpenBackup) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        val raw = runCatching { context.contentResolver.openInputStream(uri)?.use { it.readBytes().decodeToString() } }.getOrNull()
+        val ok = raw != null && SettingsRepo.importJson(raw)
+        if (ok) SettingsRepo.update { copy(restoreAsked = true) }
+        Toast.makeText(context, if (ok) tr("Đã khôi phục cài đặt của bạn", "Your settings are back") else tr("File không hợp lệ", "Invalid backup file"), Toast.LENGTH_SHORT).show()
+    }
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(28.dp))
+            .background(Ui.Card)
+            .border(1.dp, Ui.Primary.copy(alpha = 0.35f), RoundedCornerShape(28.dp))
+            .padding(20.dp),
+    ) {
+        Text(tr("Khôi phục cài đặt cũ?", "Restore your settings?"), color = Ui.Text, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(6.dp))
+        Text(
+            tr("Nếu trước đây bạn đã dùng Capsule VN, chọn file CapsuleVN-caidat.json trong thư mục Download/CapsuleVN để lấy lại toàn bộ thiết lập.", "If you used Capsule VN before, pick CapsuleVN-caidat.json in Download/CapsuleVN to get all your settings back."),
+            color = Ui.Sub, fontSize = 14.sp, lineHeight = 20.sp,
+        )
+        Spacer(Modifier.height(14.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            PillAction(tr("Chọn file sao lưu", "Pick backup file")) { picker.launch(BACKUP_TYPES) }
+            PillAction(tr("Bỏ qua", "Skip")) { SettingsRepo.update { copy(restoreAsked = true) } }
         }
     }
 }

@@ -8,7 +8,11 @@
 - **Icon phóng to vừa khung squircle** (HyperOS, One UI, ColorOS) — khung vàng chiếm 68/72 dp.
 - **Cập nhật OTA ổn định**: CI ký APK bằng khóa cố định (GitHub Secrets) để các bản sau cài đè được qua cập nhật trong app.
 - Thêm lối vào "Giới thiệu về Viên thuốc" trong tab Giới thiệu.
-- **Sao lưu / Khôi phục cài đặt** ra file JSON (Tính năng → Hệ thống): dùng khi gỡ cài đặt lại hoặc đổi máy.
+- **Sao lưu cấu hình cá nhân**:
+  - Tự động sao lưu (mặc định bật, Android 10+): cấu hình mới nhất luôn được lưu vào `Download/CapsuleVN/CapsuleVN-caidat.json` — file vẫn còn sau khi gỡ ứng dụng.
+  - Cài lại: Trang chủ hiện thẻ "Khôi phục cài đặt cũ?" mở sẵn thư mục sao lưu, chọn file là phục hồi toàn bộ thiết lập. Nếu máy bật sao lưu Google, cài đặt cũng được Android tự khôi phục.
+  - Vẫn có Sao lưu / Khôi phục thủ công trong Tính năng → Hệ thống (dùng khi đổi máy).
+- **Nhắc bật lại Viên thuốc khi rời app ngân hàng** rung nhẹ 2 nhịp, không chuông.
 - **Nền & viền thẻ thông báo tuỳ chỉnh** (Giao diện → Khung thẻ thông báo): kiểu nền Như Viên thuốc / Màu tuỳ chọn / Ảnh nền (tự cắt vừa khung, làm tối để dễ đọc) / Liquid Glass (iOS), độ đậm nền, màu & độ dày viền — áp dụng cho thẻ tin nhắn, cuộc gọi đến, cập nhật và tin chưa đọc, xem trước trực tiếp.
 - **Chế độ ngân hàng & VNeID** (Trang chủ / Giới thiệu → Ngân hàng & VNeID): tự tắt Viên thuốc khi bạn chạm biểu tượng hoặc mở app ngân hàng, ví / thanh toán, VNeID, VssID (tự nhận diện theo tên gói, tên app và dịch vụ thanh toán NFC; chỉnh được danh sách).
   - Dùng ngay, không cần cài đặt gì: dùng xong chạm thông báo để bật lại.

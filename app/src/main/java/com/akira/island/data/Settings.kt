@@ -335,6 +335,10 @@ data class IslandSettings(
     val ecoBatteryProtectLevel: Int = 80,
     val ecoDexCast: Boolean = true,
 
+    /** Tự động sao lưu cấu hình ra Download/CapsuleVN (còn lại sau khi gỡ app). */
+    val autoBackup: Boolean = true,
+    /** Đã hỏi khôi phục cài đặt cũ sau khi cài mới. */
+    val restoreAsked: Boolean = false,
     val otpEnabled: Boolean = true,
     val otpAutoCopy: Boolean = false,
     val otpAutoFill: Boolean = true,
