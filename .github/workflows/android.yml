@@ -7,6 +7,11 @@ on:
   pull_request:
     branches: [ main ]
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Tag phát hành (vd: v1.3.0). Để trống nếu chỉ đóng gói thử"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -62,15 +67,23 @@ jobs:
           retention-days: 90
 
       - name: Cập nhật bản phát hành GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') || inputs.release_tag != ''
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
-          TAG="${GITHUB_REF#refs/tags/}"
+          TAG="$RELEASE_TAG"
+          [ -z "$TAG" ] && TAG="${GITHUB_REF#refs/tags/}"
+          case "$TAG" in v[0-9]*) ;; *) echo "Tag không hợp lệ: $TAG"; exit 1 ;; esac
+          # Ghi chú phát hành lấy từ đúng mục phiên bản trong CHANGELOG.md (hiện trong "Có gì mới" của app)
+          VER="${TAG#v}"
+          awk -v v="## v$VER" 'index($0, v) == 1 {on=1; next} /^## v/ && on {exit} on' CHANGELOG.md > notes.md
+          [ -s notes.md ] || echo "Capsule VN $TAG" > notes.md
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" out/Capsule_VN.apk --clobber
           else
             gh release create "$TAG" out/Capsule_VN.apk \
+              --target "$GITHUB_SHA" \
               --title "Capsule VN $TAG" \
-              --generate-notes
+              --notes-file notes.md
           fi
