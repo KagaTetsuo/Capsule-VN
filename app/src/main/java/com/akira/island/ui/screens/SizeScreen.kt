@@ -738,7 +738,7 @@ private fun CardStyleSection(s: IslandSettings, preview: () -> Unit) {
         }
     }
 
-    SectionHeader(tr("Nền & viền thẻ", "Card background & border"))
+    SectionHeader(tr("Nền & viền mọi bảng thông báo", "Background & border of all banners"))
     Group {
         GroupItem(
             Pos.First, Icons.Rounded.Wallpaper, tr("Kiểu nền", "Background"), s.cardBg.title,

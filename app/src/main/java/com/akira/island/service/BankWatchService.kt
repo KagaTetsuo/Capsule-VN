@@ -54,7 +54,7 @@ class BankWatchService : Service() {
             stopSelf()
             return START_NOT_STICKY
         }
-        if (watch?.isActive != true && BankMode.hasUsageAccess(this) && BankMode.canWriteSecure(this)) {
+        if (watch?.isActive != true && BankMode.hasUsageAccess(this)) {
             watch = scope.launch { watchForeground() }
         }
         return START_NOT_STICKY
@@ -90,13 +90,42 @@ class BankWatchService : Service() {
     }
 
     private fun resumeIsland() {
-        if (BankMode.resume(this)) {
-            stopForeground(STOP_FOREGROUND_REMOVE)
-            stopSelf()
-        } else {
-            // Không có quyền tự bật lại -> nhắc người dùng bật bằng tay
-            getSystemService(NotificationManager::class.java)?.notify(ID, notification(manual = true))
+        if (!BankMode.resume(this)) {
+            // Chưa có quyền tự bật lại -> hiện nhắc nhở nổi: chạm 1 lần là tới đúng chỗ bật Viên thuốc
+            remind()
         }
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        stopSelf()
+    }
+
+    private fun remind() {
+        val nm = getSystemService(NotificationManager::class.java) ?: return
+        nm.createNotificationChannel(
+            NotificationChannel(REMIND_CHANNEL, tr("Nhắc bật lại Viên thuốc", "Turn the island back on"), NotificationManager.IMPORTANCE_HIGH).apply {
+                description = tr("Hiện khi bạn rời ứng dụng ngân hàng / VNeID", "Shown when you leave a bank / ID app")
+                setShowBadge(false)
+            },
+        )
+        val n = Notification.Builder(this, REMIND_CHANNEL)
+            .setSmallIcon(R.drawable.ic_tab_island)
+            .setContentTitle(tr("Bật lại Viên thuốc?", "Turn the island back on?"))
+            .setContentText(tr("Bạn đã rời ứng dụng — chạm để bật lại trong Hỗ trợ tiếp cận", "You left the app — tap to turn it back on in Accessibility"))
+            .setContentIntent(accessibilityIntent())
+            .setAutoCancel(true)
+            .setCategory(Notification.CATEGORY_REMINDER)
+            .build()
+        runCatching { nm.notify(REMIND_ID, n) }
+    }
+
+    /** Mở thẳng trang Capsule VN trong Hỗ trợ tiếp cận (Android 11+), máy cũ mở danh sách chung. */
+    private fun accessibilityIntent(): PendingIntent {
+        val me = android.content.ComponentName(this, IslandService::class.java).flattenToString()
+        val detail = Intent("android.settings.ACCESSIBILITY_DETAILS_SETTINGS")
+            .putExtra(Intent.EXTRA_COMPONENT_NAME, me)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && detail.resolveActivity(packageManager) != null) detail
+        else Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        return PendingIntent.getActivity(this, 2, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
     }
 
     private fun notification(manual: Boolean = false): Notification {
@@ -110,18 +139,18 @@ class BankWatchService : Service() {
         val resume = PendingIntent.getService(
             this, 1, Intent(this, BankWatchService::class.java).setAction(ACTION_RESUME), PendingIntent.FLAG_IMMUTABLE,
         )
-        val openA11y = PendingIntent.getActivity(
-            this, 2, Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), PendingIntent.FLAG_IMMUTABLE,
-        )
+        val openA11y = accessibilityIntent()
         val auto = BankMode.canWriteSecure(this)
         return Notification.Builder(this, CHANNEL)
             .setSmallIcon(R.drawable.ic_tab_island)
             .setContentTitle(tr("Viên thuốc tạm nghỉ khi dùng $label", "The island is paused for $label"))
             .setContentText(
                 when {
-                    manual || !auto -> tr("Chạm để bật lại Viên thuốc trong Hỗ trợ tiếp cận", "Tap to turn the island back on in Accessibility")
-                    BankMode.hasUsageAccess(this) -> tr("Tự bật lại khi bạn rời ứng dụng", "Turns back on when you leave the app")
-                    else -> tr("Bấm “Bật lại” khi dùng xong", "Tap “Turn on” when you're done")
+                    manual -> tr("Chạm để bật lại Viên thuốc trong Hỗ trợ tiếp cận", "Tap to turn the island back on in Accessibility")
+                    auto && BankMode.hasUsageAccess(this) -> tr("Tự bật lại khi bạn rời ứng dụng", "Turns back on when you leave the app")
+                    auto -> tr("Bấm “Bật lại ngay” khi dùng xong", "Tap “Turn on now” when you're done")
+                    BankMode.hasUsageAccess(this) -> tr("Rời ứng dụng sẽ có nhắc bật lại — hoặc chạm vào đây", "You'll get a reminder when you leave — or tap here")
+                    else -> tr("Dùng xong, chạm vào đây để bật lại Viên thuốc", "When you're done, tap here to turn the island back on")
                 },
             )
             .setContentIntent(if (auto && !manual) resume else openA11y)
@@ -139,6 +168,8 @@ class BankWatchService : Service() {
 
     companion object {
         private const val ID = 11
+        private const val REMIND_ID = 12
+        private const val REMIND_CHANNEL = "bank_mode_remind"
         private const val CHANNEL = "bank_mode"
         private const val ACTION_RESUME = "com.akira.island.BANK_RESUME"
         private const val EXTRA_PKG = "pkg"

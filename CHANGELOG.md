@@ -10,9 +10,13 @@
 - Thêm lối vào "Giới thiệu về Viên thuốc" trong tab Giới thiệu.
 - **Sao lưu / Khôi phục cài đặt** ra file JSON (Tính năng → Hệ thống): dùng khi gỡ cài đặt lại hoặc đổi máy.
 - **Nền & viền thẻ thông báo tuỳ chỉnh** (Giao diện → Khung thẻ thông báo): kiểu nền Như Viên thuốc / Màu tuỳ chọn / Ảnh nền (tự cắt vừa khung, làm tối để dễ đọc) / Liquid Glass (iOS), độ đậm nền, màu & độ dày viền — áp dụng cho thẻ tin nhắn, cuộc gọi đến, cập nhật và tin chưa đọc, xem trước trực tiếp.
-- **Chế độ ngân hàng & VNeID tự động** (Trang chủ / Giới thiệu → Ngân hàng & VNeID): tự tắt Viên thuốc khi bạn chạm biểu tượng hoặc mở app ngân hàng, ví điện tử, VNeID (tự nhận diện, chỉnh được danh sách) và tự bật lại khi bạn rời app. Cấp quyền 1 lần qua Shizuku (không cần máy tính) hoặc ADB; thông báo có nút "Bật lại ngay".
-- **Nền & viền áp dụng cho cả bảng mở rộng** (bật / tắt được).
-- **Thẻ tin nhắn cân đối hơn**: ảnh đại diện tròn 44 dp kèm biểu tượng app, chữ tiêu đề / nội dung rõ hơn, nút Trả lời / Đã đọc dạng viên tròn chia đều bề ngang.
+- **Chế độ ngân hàng & VNeID** (Trang chủ / Giới thiệu → Ngân hàng & VNeID): tự tắt Viên thuốc khi bạn chạm biểu tượng hoặc mở app ngân hàng, ví / thanh toán, VNeID, VssID (tự nhận diện theo tên gói, tên app và dịch vụ thanh toán NFC; chỉnh được danh sách).
+  - Dùng ngay, không cần cài đặt gì: dùng xong chạm thông báo để bật lại.
+  - Cấp "Truy cập dữ liệu sử dụng" (trong Cài đặt): rời app sẽ hiện nhắc 1 chạm mở thẳng trang bật Viên thuốc.
+  - Nâng cao (tuỳ chọn): cấp 1 lần qua Shizuku hoặc ADB để tự bật lại hoàn toàn; sau đó có thể gỡ Shizuku và tắt Tuỳ chọn nhà phát triển.
+- **Nền & viền áp dụng cho mọi bảng thông báo** (sự kiện, sạc, thanh toán, tin nhắn, cuộc gọi, cập nhật…) **và cả bảng mở rộng** (bật / tắt được).
+- **Thẻ tin nhắn cân đối hơn**: dòng tên app / thời gian to, rõ và thụt vào khỏi góc bo; bớt khoảng trống phía trên; ảnh đại diện tròn 44 dp kèm biểu tượng app; nút Trả lời / Đã đọc dạng viên tròn chia đều bề ngang.
+- **Trình phát nhạc mở rộng hiện đại**: ảnh bìa 64 dp bo tròn, tên bài / ca sĩ rõ ràng, thanh tiến trình toàn chiều ngang với thời gian bên dưới, nút Phát / Tạm dừng tròn trắng nổi bật ở giữa.
 - **Nhiều tin nhắn chưa đọc**: mỗi cuộc trò chuyện là một trang riêng (tối đa 6), vuốt qua lại; cuộc trò chuyện nào đã xem / đã mở / đã trả lời thì tự bỏ khỏi danh sách, viền LED đổi theo màu tin mới nhất còn lại.
 - **Cuộc gọi Zalo / Messenger**: sau khi bấm Nghe trên Viên thuốc, tự mở màn hình cuộc gọi của ứng dụng để ứng dụng đó tắt chuông và rung.
 - **Thử nghiệm tính năng**: bỏ mục Trứng phục sinh; sửa Trình phát nhạc thử nghiệm không hiện (trước đây bị ẩn vì trùng với chính ứng dụng đang mở).

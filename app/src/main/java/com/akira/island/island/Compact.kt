@@ -444,8 +444,9 @@ internal fun MessageCard(n: Notice, m: AppMessage, s: IslandSettings, @Suppress(
         onDispose { if (IslandBus.reply.value?.noticeId == n.id) IslandBus.reply.value = null }
     }
 
-    val topGap = ((messageTop(s) - s.height.dp).coerceAtLeast(4.dp) + (s.msgHeightExtra * 0.45f).dp).coerceAtLeast(2.dp)
-    val bottomPad = (12.dp + (s.msgHeightExtra * 0.55f).dp).coerceAtLeast(4.dp)
+    // Khoảng cách từ dòng tên app / thời gian xuống nội dung: vừa đủ, không để trống quá nhiều
+    val topGap = (6.dp + (s.msgHeightExtra * 0.45f).dp).coerceAtLeast(2.dp)
+    val bottomPad = (16.dp + (s.msgHeightExtra * 0.55f).dp).coerceAtLeast(4.dp)
 
     Column(
         Modifier
@@ -454,26 +455,28 @@ internal fun MessageCard(n: Notice, m: AppMessage, s: IslandSettings, @Suppress(
             .padding(bottom = bottomPad),
     ) {
         
+        // Dòng tên app (trái) & thời gian (phải) hai bên camera: chữ rõ hơn, thụt vào khỏi góc bo để không bị cắt
+        val headerInset = (s.cardCornerRadius * 0.55f).dp.coerceIn(20.dp, 30.dp)
         Row(
-            Modifier.fillMaxWidth().height(s.height.dp).padding(horizontal = 18.dp),
+            Modifier.fillMaxWidth().height(s.height.dp + 4.dp).padding(start = headerInset, end = headerInset, top = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
                 if (m.appIcon != null) {
-                    Image(m.appIcon, null, Modifier.size(15.dp).clip(RoundedCornerShape(4.dp)))
-                    Spacer(Modifier.width(6.dp))
+                    Image(m.appIcon, null, Modifier.size(18.dp).clip(RoundedCornerShape(5.dp)))
+                    Spacer(Modifier.width(7.dp))
                 }
-                Text(m.appName, color = dim, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(m.appName, color = Color.White.copy(alpha = 0.72f), fontSize = 13.5.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             Spacer(Modifier.width(compactGap(s)))
             Row(Modifier.weight(1f), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
-                Text(tr("bây giờ", "now"), color = dim, fontSize = 12.sp, maxLines = 1, softWrap = false)
-                Spacer(Modifier.width(4.dp))
-                Icon(Ios.bell, null, tint = dim, modifier = Modifier.size(12.dp))
+                Text(tr("bây giờ", "now"), color = Color.White.copy(alpha = 0.72f), fontSize = 13.5.sp, fontWeight = FontWeight.Medium, maxLines = 1, softWrap = false)
+                Spacer(Modifier.width(5.dp))
+                Icon(Ios.bell, null, tint = Color.White.copy(alpha = 0.72f), modifier = Modifier.size(15.dp))
             }
         }
         Spacer(Modifier.height(topGap))
-        Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.Top) {
+        Row(Modifier.padding(horizontal = 18.dp), verticalAlignment = Alignment.Top) {
             NotifIcon(if (hidden) m.copy(avatar = null) else m, n, iconSize, Color(s.color))
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
@@ -512,7 +515,7 @@ internal fun MessageCard(n: Notice, m: AppMessage, s: IslandSettings, @Suppress(
             Row(
                 Modifier
                     .fillMaxWidth()
-                    .padding(start = 16.dp + iconSize + 12.dp, end = 16.dp, top = 8.dp),
+                    .padding(start = 18.dp + iconSize + 12.dp, end = 16.dp, top = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Row(
@@ -554,7 +557,7 @@ internal fun MessageCard(n: Notice, m: AppMessage, s: IslandSettings, @Suppress(
         }
         if (replyAction != null) {
             
-            Box(Modifier.padding(start = 16.dp + iconSize + 12.dp, end = 16.dp)) {
+            Box(Modifier.padding(start = 18.dp + iconSize + 12.dp, end = 16.dp)) {
                 ReplyField(replyAction, accent) { text ->
                     if (text.isBlank()) return@ReplyField
                     if (Controls.sendReply(context, replyAction, text)) {
@@ -582,7 +585,7 @@ internal fun MessageCard(n: Notice, m: AppMessage, s: IslandSettings, @Suppress(
             
             // Nút thao tác dạng viên tròn, chia đều bề ngang & thẳng hàng với ảnh đại diện
             Row(
-                Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 12.dp),
+                Modifier.fillMaxWidth().padding(start = 18.dp, end = 18.dp, top = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {

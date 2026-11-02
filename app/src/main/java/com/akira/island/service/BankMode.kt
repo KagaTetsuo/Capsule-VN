@@ -33,13 +33,34 @@ object BankMode {
         "com.namabank.mobilebanking", "com.cake.cakebank", "io.lifestyle.plus", "vn.timo.android", "com.vnid",
         "com.mservice.momotransfer", "vn.com.vng.zalopay", "com.vnpay.wallet", "vn.viettelpay.viettelmoney",
         "com.shopeepay.vn", "com.bplus.vtpay", "com.vnpt.vnptmoney", "com.vietbank.mobilebanking",
+        "com.vnpay.bidv", "com.vnpay.hdbank", "vn.com.ocb.awe", "vn.com.seabank.mb1", "vn.com.lpb.lienviet24h",
+        "com.vnpay.EximBankOmni", "com.vnpay.namabank", "xyz.be.cake", "com.pvcombank.retail", "vn.shb.saha.mbanking",
+        "com.vss.vssid", "vn.gov.gdt.etaxmobile", "vn.payoo.wallet",
     )
 
+    /** Mã ngân hàng / ví thường gặp trong tên gói (so khớp đúng từng đoạn, tránh nhầm "vib" trong "vibrate"…). */
+    private val tokens = setOf(
+        "vcb", "bidv", "agribank", "agribank3g", "tpb", "vib", "shb", "ocb", "msb", "lpb", "acb", "hdbank", "vpbank", "mbbank",
+        "mbmobile", "techcombank", "sacombank", "seabank", "eximbank", "namabank", "pvcombank", "abbank", "baovietbank",
+        "kienlongbank", "bacabank", "vietabank", "vietbank", "scb", "ncb", "saigonbank", "oceanbank", "gpbank", "pgbank",
+        "bvbank", "cake", "timo", "vnid", "vneid", "vssid", "momotransfer", "zalopay", "viettelpay", "viettelmoney", "vtpay",
+        "vnptmoney", "vnptpay", "shopeepay", "payoo", "vietqr", "napas",
+    )
+
+    /** Từ khoá trong tên gói hoặc tên hiển thị của ngân hàng, ví điện tử, thanh toán, định danh. */
     private val bankish = Regex(
-        "bank|banking|vcb|vietin|bidv|agri|techcom|mbmobile|acb|vpbank|tpb|sacom|hdbank|vib|shb|ocb|msb|seabank|" +
-            "lienviet|lpb|eximbank|namabank|vnid|vneid|momo|zalopay|vnpay|viettelpay|viettelmoney|shopeepay|vnptmoney|wallet",
+        "bank|banking|ewallet|wallet|vnpay|momo|zalopay|viettel ?money|vneid|vnid|vssid|ngân hàng|ví điện tử|smart ?banking|e-?banking|m-?banking",
         RegexOption.IGNORE_CASE,
     )
+
+    private fun isBankLike(context: Context, pkg: String, label: String): Boolean {
+        if (pkg in knownVn) return true
+        val parts = pkg.lowercase().split('.', '_')
+        if (parts.any { it in tokens }) return true
+        if (bankish.containsMatchIn(pkg) || bankish.containsMatchIn(label)) return true
+        // Ví / ngân hàng có thanh toán chạm NFC (khai báo dịch vụ HCE)
+        return PayMonitor.isPayApp(context, pkg)
+    }
 
     /** Danh sách app áp dụng: người dùng đã chỉnh thì theo người dùng, chưa thì tự nhận diện. */
     fun apps(context: Context): Set<String> {
@@ -50,9 +71,8 @@ object BankMode {
     @Volatile private var detectedCache: Set<String>? = null
 
     fun detected(context: Context): Set<String> = detectedCache ?: launchable(context)
+        .filter { (pkg, label) -> pkg != context.packageName && isBankLike(context, pkg, label) }
         .map { it.first }
-        .filter { it in knownVn || bankish.containsMatchIn(it) }
-        .filter { it != context.packageName }
         .toSet()
         .also { detectedCache = it }
 

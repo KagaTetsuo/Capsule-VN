@@ -116,9 +116,9 @@ fun BanksScreen(onBack: () -> Unit) {
             GroupToggle(
                 Pos.First, Icons.Rounded.AccountBalance, tr("Tự tắt khi mở ngân hàng / VNeID", "Pause for bank / ID apps"),
                 when {
-                    !canWrite -> tr("Cần cấp quyền bên dưới để tự bật lại", "Grant the permission below to turn back on automatically")
-                    !usage -> tr("Tự tắt; bật lại bằng nút trên thông báo (cấp thêm Truy cập dữ liệu sử dụng để tự bật lại)", "Pauses; turn back on from the notification (grant Usage access to resume automatically)")
-                    else -> tr("Hoàn toàn tự động: tắt khi mở, bật lại khi rời app", "Fully automatic: off when opened, back on when you leave")
+                    canWrite && usage -> tr("Hoàn toàn tự động: tắt khi mở, tự bật lại khi rời app", "Fully automatic: off when opened, back on when you leave")
+                    usage -> tr("Tự tắt khi mở; rời app sẽ có nhắc chạm để bật lại", "Pauses when opened; a reminder to turn back on when you leave")
+                    else -> tr("Tự tắt khi mở app — không cần cài đặt gì thêm. Dùng xong chạm thông báo để bật lại", "Pauses when opened — no setup needed. Tap the notification to turn back on")
                 },
                 s.bankMode, color = Tile.Indigo,
             ) { v -> SettingsRepo.update { copy(bankMode = v) } }
@@ -131,14 +131,21 @@ fun BanksScreen(onBack: () -> Unit) {
             ) { Arrow() }
         }
 
-        SectionHeader(tr("Quyền cần thiết (cấp 1 lần)", "Permissions (one-time)"))
+        SectionHeader(tr("Bật lại tiện hơn (tuỳ chọn)", "Easier resume (optional)"))
         Group {
             GroupItem(
-                Pos.First, Icons.Rounded.AdminPanelSettings, tr("Quyền tự bật lại Viên thuốc", "Permission to turn the island back on"),
-                if (canWrite) tr("Đã cấp", "Granted")
+                Pos.First, Icons.Rounded.QueryStats, tr("Nhắc bật lại khi rời app", "Remind when you leave"),
+                if (usage) tr("Đã bật — rời app ngân hàng sẽ hiện nhắc 1 chạm", "On — a one-tap reminder when you leave the bank app")
+                else tr("Cấp “Truy cập dữ liệu sử dụng” trong Cài đặt — không cần máy tính", "Grant Usage access in Settings — no computer needed"),
+                color = if (usage) Tile.Green else Tile.Blue,
+                onClick = { if (!usage) Perms.openUsageAccess(context) },
+            ) { Status(usage) }
+            GroupItem(
+                Pos.Middle, Icons.Rounded.AdminPanelSettings, tr("Tự bật lại hoàn toàn (nâng cao)", "Fully automatic resume (advanced)"),
+                if (canWrite) tr("Đã cấp — giữ vĩnh viễn, có thể gỡ Shizuku & tắt Tuỳ chọn nhà phát triển", "Granted — permanent; you can remove Shizuku & turn off Developer options")
                 else if (shizuku) tr("Chạm để cấp qua Shizuku — không cần máy tính", "Tap to grant via Shizuku — no computer needed")
                 else tr("Cài & khởi động Shizuku (Gỡ lỗi không dây), hoặc dùng máy tính (ADB)", "Install & start Shizuku (wireless debugging), or use a computer (ADB)"),
-                color = if (canWrite) Tile.Green else Tile.Orange,
+                color = if (canWrite) Tile.Green else Tile.Gray,
                 onClick = {
                     when {
                         canWrite -> Unit
@@ -149,13 +156,6 @@ fun BanksScreen(onBack: () -> Unit) {
                     }
                 },
             ) { Status(canWrite) }
-            GroupItem(
-                Pos.Middle, Icons.Rounded.QueryStats, tr("Truy cập dữ liệu sử dụng", "Usage access"),
-                if (usage) tr("Đã cấp — biết lúc bạn rời app ngân hàng", "Granted — knows when you leave the bank app")
-                else tr("Để tự bật lại khi rời app ngân hàng (Shizuku cấp luôn quyền này)", "To turn back on when you leave (Shizuku grants this too)"),
-                color = if (usage) Tile.Green else Tile.Orange,
-                onClick = { if (!usage) Perms.openUsageAccess(context) },
-            ) { Status(usage) }
             GroupItem(
                 Pos.Last, Icons.Rounded.Terminal, tr("Cấp bằng máy tính (ADB)", "Grant with a computer (ADB)"),
                 tr("Xem & sao chép 2 lệnh cần chạy", "See & copy the two commands"),
@@ -186,7 +186,7 @@ fun BanksScreen(onBack: () -> Unit) {
             ) { Arrow() }
         }
         InfoText(
-            tr("Cách cấp quyền bằng Shizuku (Android 11+, không cần máy tính):\n1. Cài Shizuku từ Google Play.\n2. Bật Tuỳ chọn nhà phát triển → Gỡ lỗi không dây.\n3. Mở Shizuku → Ghép nối bằng mã → Bắt đầu.\n4. Quay lại đây, chạm “Quyền tự bật lại Viên thuốc” → Cho phép.\nQuyền được giữ vĩnh viễn, kể cả khi khởi động lại máy hay tắt Shizuku.", "Grant with Shizuku (Android 11+, no computer):\n1. Install Shizuku from Google Play.\n2. Turn on Developer options → Wireless debugging.\n3. Open Shizuku → Pair → Start.\n4. Come back and tap “Permission to turn the island back on” → Allow.\nThe permission stays forever, even after a reboot or stopping Shizuku."),
+            tr("Tự bật lại hoàn toàn (nâng cao, tuỳ chọn) — Android không cho file APK tự cấp quyền này, nên mỗi máy cần làm 1 lần:\n1. Cài Shizuku từ Google Play.\n2. Bật Tuỳ chọn nhà phát triển → Gỡ lỗi không dây.\n3. Mở Shizuku → Ghép nối bằng mã → Bắt đầu.\n4. Quay lại đây, chạm “Tự bật lại hoàn toàn” → Cho phép.\n5. Xong — có thể gỡ Shizuku và TẮT Tuỳ chọn nhà phát triển (ngân hàng sẽ dùng bình thường). Quyền vẫn giữ qua khởi động lại & cập nhật OTA, chỉ mất khi gỡ cài đặt Capsule VN.", "Grant with Shizuku (Android 11+, no computer):\n1. Install Shizuku from Google Play.\n2. Turn on Developer options → Wireless debugging.\n3. Open Shizuku → Pair → Start.\n4. Come back and tap “Fully automatic resume” → Allow.\n5. Done — you can remove Shizuku and turn OFF Developer options. The permission survives reboots & updates; it is only lost if Capsule VN is uninstalled."),
         )
     }
 
