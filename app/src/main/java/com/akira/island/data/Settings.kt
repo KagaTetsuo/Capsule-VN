@@ -388,6 +388,8 @@ data class IslandSettings(
 
     val ledEnabled: Boolean = false,
     val ledOnUnread: Boolean = true,
+    /** Giữ tin nhắn chưa đọc trên Viên thuốc (chạm để xem lại) — độc lập với Vòng sáng LED, có chấm nhỏ báo hiệu. */
+    val unreadKeep: Boolean = true,
     val ledOnEvent: Boolean = true,
     val ledOnCharge: Boolean = true,
     val ledAlwaysOn: Boolean = false,

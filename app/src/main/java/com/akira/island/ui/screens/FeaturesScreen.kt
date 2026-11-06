@@ -17,6 +17,7 @@ import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material.icons.rounded.Bedtime
 import androidx.compose.material.icons.rounded.ChatBubble
 import androidx.compose.material.icons.rounded.Call
+import androidx.compose.material.icons.rounded.MarkChatUnread
 import androidx.compose.material.icons.rounded.Circle
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.FormatLineSpacing
@@ -358,6 +359,9 @@ fun NotificationsScreen(onBack: () -> Unit, open: (Screen) -> Unit = {}) {
                 s.msgInApp, color = Tile.Teal) { v ->
                 SettingsRepo.update { copy(msgInApp = v) }
             }
+            GroupToggle(Pos.Middle, Icons.Rounded.MarkChatUnread, tr("Giữ tin chưa đọc trên Viên thuốc", "Keep unread messages"),
+                tr("Hết thời gian hiển thị, tin vẫn được giữ lại: chấm nhỏ báo hiệu, chạm Viên thuốc để xem lại từng cuộc trò chuyện", "After the card hides, a small dot stays; tap the island to read each conversation again"),
+                s.unreadKeep, color = Tile.Indigo) { v -> SettingsRepo.update { copy(unreadKeep = v) } }
             GroupToggle(Pos.Middle, Icons.Rounded.Call, tr("Ẩn thẻ cuộc gọi khi đang ở màn hình gọi", "Hide call card on the call screen"),
                 tr("Đang mở sẵn màn hình cuộc gọi của máy / Zalo / Messenger… thì không hiện thêm thẻ cuộc gọi đến cho khỏi trùng", "When the phone / app call screen is already open, don't show a second incoming-call card"),
                 s.hideCallInCallApp, color = Tile.Green) { v -> SettingsRepo.update { copy(hideCallInCallApp = v) } }

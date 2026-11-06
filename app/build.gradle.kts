@@ -13,8 +13,8 @@ android {
         applicationId = "com.dynamicisland.vn"
         minSdk = 26
         targetSdk = 35
-        versionCode = 14
-        versionName = "1.5.1"
+        versionCode = 15
+        versionName = "1.5.2"
     }
 
     
@@ -37,7 +37,10 @@ android {
         debug {
             if (capsuleKeystore != null) signingConfig = signingConfigs.getByName("capsule")
         }
+        // Bản phát hành: R8 thu gọn & tối ưu mã, bỏ tài nguyên thừa, không gắn trình gỡ lỗi
+        // -> khởi động nhanh hơn, mượt hơn, ít RAM hơn bản debug trước đây
         release {
+            if (capsuleKeystore != null) signingConfig = signingConfigs.getByName("capsule")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
@@ -90,4 +93,6 @@ dependencies {
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+    // Nạp sẵn hồ sơ tối ưu (baseline profile) của Compose khi cài APK ngoài Play -> mở app & bung Viên thuốc mượt ngay lần đầu
+    implementation("androidx.profileinstaller:profileinstaller:1.4.1")
 }

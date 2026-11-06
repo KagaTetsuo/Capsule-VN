@@ -257,11 +257,36 @@ object LiveApps {
         "ru.beru.android",
     )
 
-    fun kind(pkg: String, category: String?): LiveKind? = when {
-        pkg in nav || category == Notification.CATEGORY_NAVIGATION -> LiveKind.NAV
-        pkg in ride -> LiveKind.RIDE
-        pkg in delivery -> LiveKind.DELIVERY
-        else -> null
+    /** Gọi xe & giao hàng tại Việt Nam: nhận theo đoạn trong tên gói (không phụ thuộc đúng tên gói từng phiên bản). */
+    private val rideTokens = listOf("xanhsm", "gsm.customer", "greensm", "grab", "xyz.be", "be.customer", "maxim", "taxsee", "mailinh", "vinasun", "gojek", "fastgo", "ifastgo")
+    private val deliveryTokens = listOf(
+        "shopeefood", "deliverynow", "foody", "shopee", "lazada", "tiki", "ahamove", "lalamove", "easyvan", "ghn", "ghtk",
+        "giaohang", "loship", "baemin", "viettelpost", "vnpost", "jtexpress", "jnt", "bestexpress", "ninjavan", "spx", "befood",
+    )
+    private val deliveryWords = listOf("đơn hàng", "giao hàng", "đang giao", "món", "đồ ăn", "nhà hàng", "shipper", "kiện hàng", "order", "delivery", "food", "parcel")
+    private val rideWords = listOf("tài xế", "chuyến", "điểm đón", "điểm đến", "đón bạn", "biển số", "driver", "pickup", "trip", "ride")
+
+    /** Android 16+ "Live Updates": thông báo được hệ thống đẩy lên dạng hoạt động trực tiếp. */
+    private const val FLAG_PROMOTED_ONGOING = 0x00040000
+
+    fun kind(pkg: String, category: String?, flags: Int = 0, text: String = ""): LiveKind? {
+        val p = pkg.lowercase()
+        val t = text.lowercase()
+        fun byWords(): LiveKind? = when {
+            deliveryWords.any { it in t } -> LiveKind.DELIVERY
+            rideWords.any { it in t } -> LiveKind.RIDE
+            else -> null
+        }
+        return when {
+            pkg in nav || category == Notification.CATEGORY_NAVIGATION -> LiveKind.NAV
+            pkg in ride -> LiveKind.RIDE
+            pkg in delivery -> LiveKind.DELIVERY
+            // Siêu ứng dụng (Grab, Be, Xanh SM…) vừa gọi xe vừa giao đồ ăn: xem nội dung để biết
+            rideTokens.any { it in p } -> byWords() ?: LiveKind.RIDE
+            deliveryTokens.any { it in p } -> LiveKind.DELIVERY
+            flags and FLAG_PROMOTED_ONGOING != 0 -> byWords()
+            else -> null
+        }
     }
 }
 
