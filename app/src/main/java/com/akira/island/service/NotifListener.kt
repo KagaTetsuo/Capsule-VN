@@ -80,6 +80,11 @@ object NotificationParser {
         }
         IslandBus.calls.value = IslandBus.calls.value.toMutableMap().apply {
             if (call != null) put(sbn.key, call) else remove(sbn.key)
+            // Đã nghe máy trong app (Zalo, Messenger…): app đăng thông báo "đang gọi" mới
+            // -> bỏ thông báo "cuộc gọi đến" cũ còn sót của chính app đó để Viên thuốc thôi đổ chuông
+            if (call != null && !call.incoming) {
+                entries.removeAll { (k, c) -> k != sbn.key && c.pkg == sbn.packageName && c.incoming }
+            }
         }
 
         val ticking = ex.getBoolean(Notification.EXTRA_SHOW_CHRONOMETER, false) && n.`when` > 0
@@ -138,7 +143,7 @@ object NotificationParser {
     private fun parseCall(context: Context, sbn: StatusBarNotification, title: String): CallInfo? {
         val n = sbn.notification
         val ex = n.extras
-        val ongoing = ex.getBoolean(Notification.EXTRA_SHOW_CHRONOMETER, false) && n.`when` > 0
+        val ticking = ex.getBoolean(Notification.EXTRA_SHOW_CHRONOMETER, false) && n.`when` > 0
         
         var answer = pending(ex, "android.answerIntent")
         var decline = pending(ex, "android.declineIntent")
@@ -151,7 +156,9 @@ object NotificationParser {
                 hangUp == null && HangUpWords.any { it in t } -> hangUp = a.actionIntent
             }
         }
-        val incoming = !ongoing && answer != null
+        // Đang trong cuộc gọi: có đồng hồ đếm giờ, hoặc chỉ còn nút Kết thúc (nhiều app không hiện đồng hồ)
+        val ongoing = ticking || (answer == null && hangUp != null)
+        val incoming = !ticking && answer != null
         if (!incoming && !ongoing) return null
 
         val person = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {

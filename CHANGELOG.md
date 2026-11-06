@@ -1,5 +1,16 @@
 # Lịch sử phiên bản Capsule VN
 
+## v1.5.1 (2026) — Hết đổ chuông sau khi đã nghe máy, thanh tiến trình giao hàng
+- **Cuộc gọi không còn hiện trùng / đổ chuông mãi**:
+  - Chạm thẻ cuộc gọi đến để mở app: thẻ trên Viên thuốc tự ẩn, app tự lo nghe / từ chối.
+  - Đã nghe máy trong app (Zalo, Messenger, Telegram…): Viên thuốc nhận ra ngay qua chế độ âm thanh đàm thoại của Android và chuyển sang "đang gọi", kể cả khi app quên gỡ thông báo cuộc gọi đến.
+  - Nhận đúng cuộc gọi đang diễn ra của các app không hiện đồng hồ đếm giờ (chỉ có nút Kết thúc); thông báo "cuộc gọi đến" cũ còn sót được bỏ đi.
+- **Tin nhắn không trùng với app**: mở app nhắn tin thì thẻ tin nhắn của chính app đó trên Viên thuốc tự ẩn; đọc / xoá tin trong app hoặc trên thanh thông báo thì thẻ cũng tự gỡ.
+- **Thanh tiến trình kiểu Live Activity** cho giao hàng, gọi xe, dẫn đường: vạch tiến trình có biểu tượng app chạy theo, kèm giai đoạn (Đã đặt → Đang chuẩn bị → Đang giao → Sắp đến → Đã giao; Tìm tài xế → Tài xế đang đến → Đang di chuyển…). Lấy từ tiến trình app báo, chữ trong thông báo hoặc thời gian còn lại. Thử ngay: Trang chủ → Thử nghiệm → Đơn giao hàng.
+- **Vòng sáng LED mặc định tắt** (giống đường viền); bật lại trong Giao diện → Vòng sáng LED.
+- **"Đã gửi / Đã sao chép" tách riêng** khỏi viên nhỏ chế độ chuông: kích thước, vị trí, thời gian hiển thị chỉnh riêng (Giao diện → Tùy chỉnh theo từng nơi → Thông báo viên nhỏ).
+- **Nhẹ pin hơn**: đo RAM chỉ khi đang mở rộng / chơi game (không còn thức dậy mỗi 4 giây); chế độ ngân hàng chỉ nghe cú chạm ở màn hình chính; đồng hồ hết hạn của hoạt động ngừng khi tắt màn hình.
+
 ## v1.5.0 (2026) — Đường viền theo từng nơi, thời gian hiển thị riêng, tìm kiếm tính năng
 - **Tùy chỉnh theo từng nơi** (Giao diện): Viên thuốc bình thường, Khi có hoạt động, Thông báo viên nhỏ, Khung thẻ thông báo, Bảng mở rộng — mỗi nơi có kích thước & vị trí, nền, đường viền và tính năng riêng, xem trước trực tiếp trên đỉnh màn hình.
 - **Đường viền chuyên sâu** (mặc định: không viền ở mọi nơi):

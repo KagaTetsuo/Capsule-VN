@@ -194,7 +194,8 @@ fun Notice.kind(): com.akira.island.data.NoticeKind = when {
     style == NoticeStyle.PAY_DONE -> com.akira.island.data.NoticeKind.PAYMENT
     style == NoticeStyle.LIVE -> com.akira.island.data.NoticeKind.NAV
     style == NoticeStyle.ALARM -> com.akira.island.data.NoticeKind.ALARM
-    style == NoticeStyle.PILL || style == NoticeStyle.SENT -> com.akira.island.data.NoticeKind.MODE
+    style == NoticeStyle.PILL -> com.akira.island.data.NoticeKind.MODE
+    style == NoticeStyle.SENT -> com.akira.island.data.NoticeKind.SENT
     battery != null -> com.akira.island.data.NoticeKind.CHARGING
     ring != null -> com.akira.island.data.NoticeKind.AUDIO
     else -> com.akira.island.data.NoticeKind.OTHER

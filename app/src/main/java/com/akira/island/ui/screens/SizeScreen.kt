@@ -906,10 +906,15 @@ private fun OtherNoticesTab(s: IslandSettings, previewOn: Boolean, set: (IslandS
         ) { v -> put(cur.copy(offsetX = v)) }
         // Viên nhỏ (chế độ chuông, đã gửi…) gọn hơn hẳn các thông báo khác: thang chỉnh riêng
         val pill = k == NoticeKind.MODE
+        val wr = when (k) {
+            NoticeKind.MODE -> 60..360
+            NoticeKind.SENT -> 120..460
+            else -> 200..460
+        }
         GroupStepSlider(
             Pos.Middle, Icons.Rounded.Straighten, tr("Chiều rộng", "Width"),
-            if (pill) (if (cur.width == 0) 120 else cur.width.coerceIn(60, 360)) else if (cur.width == 0) autoW.coerceIn(200, 460) else cur.width,
-            if (pill) 60..360 else 200..460,
+            if (pill) (if (cur.width == 0) 120 else cur.width.coerceIn(60, 360)) else if (cur.width == 0) autoW.coerceIn(wr.first, 460) else cur.width.coerceIn(wr.first, wr.last),
+            wr,
             action = (if (pill) tr("Tự động theo nội dung", "Auto (fits content)") else tr("Tự động theo màn hình", "Auto (screen width)")) to { put(cur.copy(width = 0)) },
             color = Tile.Blue,
             valueText = if (cur.width == 0) tr("Tự động", "Auto") else null,

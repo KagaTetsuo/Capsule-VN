@@ -137,6 +137,7 @@ import com.akira.island.service.NavScreen
 import com.akira.island.service.PayMonitor
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
 import kotlin.math.abs
 import kotlin.math.sqrt
 
@@ -205,6 +206,7 @@ private fun buildPreviewKind(context: Context, kind: NoticeKind): Notice = when 
     NoticeKind.NAV -> Notice(tr("Rẽ phải sau 300 m", "Turn right in 300 m"), "300 m", Ios.load(context, com.akira.island.R.drawable.ios_navigate), Tints.Blue)
     NoticeKind.ALARM -> Notice(tr("Báo thức", "Alarm"), "06:30", Ios.load(context, com.akira.island.R.drawable.ios_alarm), Tints.Orange)
     NoticeKind.MODE -> Notice("", tr("Im lặng", "Silent"), Ios.load(context, com.akira.island.R.drawable.ios_notifications_off), Tints.Red, style = NoticeStyle.PILL)
+    NoticeKind.SENT -> Notice(tr("Đã sao chép OTP", "OTP copied"), "482 913", Ios.load(context, com.akira.island.R.drawable.ios_checkmark_circle), Tints.Green, style = NoticeStyle.SENT)
     NoticeKind.OTHER -> Notice(tr("Wi-Fi", "Wi-Fi"), tr("Đã kết nối", "Connected"), Ios.load(context, com.akira.island.R.drawable.ios_wifi), Tints.Blue)
 }
 
@@ -297,6 +299,7 @@ fun IslandOverlay(
     var wallNow by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(hasExpiring) {
         while (hasExpiring) {
+            if (!IslandBus.screenOn.value) IslandBus.screenOn.first { it }
             wallNow = System.currentTimeMillis()
             delay(1000)
         }

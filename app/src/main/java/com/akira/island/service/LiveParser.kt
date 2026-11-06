@@ -82,7 +82,61 @@ object LiveParser {
             distance = findDistance(all),
             eta = findEta(all),
             turn = turn,
-        )
+        ).let { info ->
+            val (p, stage) = progressOf(sbn.key, kind, n, all)
+            info.copy(progress = p, stage = stage)
+        }
+    }
+
+    // ---------- Thanh tiến trình (giao hàng, gọi xe, dẫn đường) ----------
+
+    /** Số phút còn lại lớn nhất từng thấy của mỗi hoạt động: tiến trình = phần đã đi được. */
+    private val startMinutes = HashMap<String, Float>()
+    private val minutesRx = Regex("""(\d{1,3})\s?(phút|ph|min|mins|minutes|giờ|h|hr|hrs)\b""", RegexOption.IGNORE_CASE)
+
+    private class Stage(val at: Float, val vi: String, val en: String, val words: List<String>)
+
+    private val deliveryStages = listOf(
+        Stage(1f, "Đã giao", "Delivered", listOf("đã giao", "giao thành công", "giao hàng thành công", "hoàn thành", "delivered", "completed")),
+        Stage(0.85f, "Sắp đến", "Arriving", listOf("sắp đến", "sắp giao", "đã đến", "gần đến", "arriving", "nearby", "arrived")),
+        Stage(0.6f, "Đang giao", "On the way", listOf("đang giao", "đang trên đường", "đang đến", "đã lấy", "on the way", "out for delivery", "picked up")),
+        Stage(0.35f, "Đang chuẩn bị", "Preparing", listOf("đang chuẩn bị", "chuẩn bị", "tìm tài xế", "preparing", "finding a driver", "looking for")),
+        Stage(0.15f, "Đã đặt", "Ordered", listOf("đã đặt", "đã xác nhận", "xác nhận", "đặt hàng thành công", "confirmed", "order placed")),
+    )
+    private val rideStages = listOf(
+        Stage(1f, "Hoàn thành", "Completed", listOf("hoàn thành", "đã đến điểm đến", "completed", "arrived at destination")),
+        Stage(0.7f, "Đang di chuyển", "On trip", listOf("đang trong chuyến", "đang di chuyển", "đang đến điểm đến", "on trip", "on the way to")),
+        Stage(0.45f, "Tài xế đã đến", "Driver arrived", listOf("tài xế đã đến", "đã đến điểm đón", "driver has arrived", "driver arrived")),
+        Stage(0.25f, "Tài xế đang đến", "Driver on the way", listOf("tài xế đang đến", "đang đến đón", "driver is on the way", "driver is coming")),
+        Stage(0.1f, "Đang tìm tài xế", "Finding a driver", listOf("đang tìm", "tìm tài xế", "finding", "searching")),
+    )
+
+    private fun minutesLeft(texts: List<String>): Float? {
+        val m = minutesRx.find(texts.joinToString(" ")) ?: return null
+        val v = m.groupValues[1].toFloatOrNull() ?: return null
+        val unit = m.groupValues[2].lowercase()
+        return if (unit.startsWith("g") || unit.startsWith("h")) v * 60f else v
+    }
+
+    /** Ưu tiên: tiến trình app tự báo > giai đoạn (đã đặt / đang giao…) > thời gian còn lại so với lúc bắt đầu. */
+    private fun progressOf(key: String, kind: com.akira.island.core.LiveKind, n: Notification, texts: List<String>): Pair<Float?, String?> {
+        val ex = n.extras
+        val max = ex.getInt(Notification.EXTRA_PROGRESS_MAX, 0)
+        val explicit = if (max > 0) (ex.getInt(Notification.EXTRA_PROGRESS, 0).toFloat() / max).coerceIn(0f, 1f) else null
+        val joined = texts.joinToString(" ").lowercase()
+        val stages = when (kind) {
+            com.akira.island.core.LiveKind.DELIVERY -> deliveryStages
+            com.akira.island.core.LiveKind.RIDE -> rideStages
+            else -> emptyList()
+        }
+        val stage = stages.firstOrNull { st -> st.words.any { it in joined } }
+        val left = minutesLeft(texts)
+        val byTime = left?.let { cur ->
+            val start = maxOf(startMinutes[key] ?: cur, cur).also { startMinutes[key] = it }
+            if (start <= 0f) null else (1f - cur / start).coerceIn(0.03f, 1f)
+        }
+        val p = explicit ?: listOfNotNull(stage?.at, byTime).maxOrNull()
+        return p to stage?.let { tr(it.vi, it.en) }
     }
 
     private val lastBanner = HashMap<String, Long>()
@@ -181,6 +235,7 @@ object LiveParser {
 
     fun forget(key: String) {
         remoteCache.remove(key)
+        startMinutes.remove(key)
     }
 
     private fun remoteViews(context: Context, n: Notification): Remote {
