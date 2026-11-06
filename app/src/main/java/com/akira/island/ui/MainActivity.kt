@@ -68,6 +68,7 @@ import com.akira.island.core.tr
 import com.akira.island.data.SettingsRepo
 import com.akira.island.ui.screens.AnimScreen
 import com.akira.island.ui.screens.DurationsScreen
+import com.akira.island.ui.screens.SurfaceScreen
 import com.akira.island.ui.screens.AppInfoScreen
 import com.akira.island.ui.screens.BannersScreen
 import com.akira.island.ui.screens.BanksScreen
@@ -103,7 +104,7 @@ import com.akira.island.update.UpdateChecker
 enum class Screen {
     CARDS, EVENTS, GESTURES, LYRICS, SIZE, COLORS, INSTRUCTION, ABOUT, DIAG, LOOK, ANIM, EFFECTS, BANNERS,
     PERMISSIONS, TESTS, NOTIFICATIONS, BEHAVIOR, PAYDIAG, KEEPALIVE, BANKS, MSG_CALL_SIZE,
-    GAMING, LED_RING, ECOSYSTEM, OTP_SETTINGS, TTS_SETTINGS, DURATIONS,
+    GAMING, LED_RING, ECOSYSTEM, OTP_SETTINGS, TTS_SETTINGS, DURATIONS, SURFACES,
 }
 
 class MainActivity : ComponentActivity() {
@@ -197,6 +198,7 @@ private fun AppRoot() {
                     Screen.LOOK.name -> LookScreen(back)
                     Screen.ANIM.name -> AnimScreen(back, open)
                     Screen.DURATIONS.name -> DurationsScreen(back)
+                    Screen.SURFACES.name -> SurfaceScreen(back, open)
                     Screen.EFFECTS.name -> EffectsScreen(back)
                     Screen.BANNERS.name -> BannersScreen(back)
                     Screen.PERMISSIONS.name -> PermissionsScreen(back, open)

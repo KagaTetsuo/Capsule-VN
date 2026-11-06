@@ -34,6 +34,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.akira.island.core.tr
 import com.akira.island.data.SettingsRepo
+import com.akira.island.data.Surface
+import com.akira.island.data.border
 import com.akira.island.ui.Group
 import com.akira.island.ui.GroupSlider
 import com.akira.island.ui.GroupToggle
@@ -48,11 +50,6 @@ private val capsuleColors = listOf(
     0xFF2B1730, 0xFF3A1A1A, 0xFF2E2A1A, 0xFF3D3D45, 0xFFF2F2F7, 0xFFC6C3F7,
 )
 
-private val outlineColors = listOf(
-    0xFF3A3A40, 0xFF8E8E93, 0xFFFFFFFF, 0xFFC6C3F7, 0xFF0A84FF, 0xFF64D2FF,
-    0xFF34C759, 0xFFFFD60A, 0xFFFF9F0A, 0xFFFF453A, 0xFFFF2D92, 0xFFBF5AF2,
-)
-
 @Composable
 fun ColorsScreen(onBack: () -> Unit) {
     val s by SettingsRepo.state.collectAsState()
@@ -62,22 +59,17 @@ fun ColorsScreen(onBack: () -> Unit) {
         SectionHeader(tr("Màu sắc", "Color"))
         Swatches(capsuleColors, s.color) { c -> SettingsRepo.update { copy(color = c) } }
 
-        SectionHeader(tr("Đường viền", "Outline"))
-        Group {
-            GroupToggle(Pos.First, Icons.Rounded.BorderStyle, tr("Đường viền", "Outline"),
-                tr("Đường viền mỏng xung quanh viên thuốc", "A thin line around the capsule"),
-                s.outline, color = Tile.Gray) { v ->
-                SettingsRepo.update { copy(outline = v) }
-            }
-            GroupToggle(Pos.Middle, Icons.Rounded.Image, tr("Lấy màu từ ảnh bìa", "Color from artwork"),
-                tr("Khi phát nhạc, viền ngoài sẽ đổi màu theo ảnh bìa bài hát", "While music plays, the outline takes the artwork's color"),
-                s.outlineFromArt, color = Tile.Pink) { v -> SettingsRepo.update { copy(outlineFromArt = v, outline = outline || v) } }
-            GroupSlider(Pos.Last, Icons.Rounded.LineWeight, tr("Độ dày", "Thickness"), s.outlineWidth, 0.5f..4f,
-                "%.1f dp".format(s.outlineWidth), color = Tile.Gray) { v ->
-                SettingsRepo.update { copy(outlineWidth = (v * 2).toInt() / 2f) }
-            }
+        // Đường viền Viên thuốc bình thường (các nơi khác chỉnh ở Giao diện → Tùy chỉnh theo từng nơi)
+        SectionHeader(tr("Đường viền Viên thuốc bình thường", "Idle island border"))
+        val idle = s.border(Surface.IDLE)
+        BorderPreview(idle, null, tr("Viên thuốc", "Island"))
+        BorderEditor(idle, null, tr("Đường viền", "Border")) { b ->
+            SettingsRepo.update { copy(borders = borders + (Surface.IDLE to b)) }
         }
-        Swatches(outlineColors, s.outlineColor) { c -> SettingsRepo.update { copy(outlineColor = c, outline = true) } }
+        Text(
+            tr("Viền khi có hoạt động, thông báo viên nhỏ, khung thẻ và bảng mở rộng: Giao diện → Tùy chỉnh theo từng nơi.", "Borders for activities, pills, cards and the expanded board: Appearance → Customize each place."),
+            color = Ui.Sub, fontSize = 13.sp, lineHeight = 17.sp, modifier = Modifier.padding(horizontal = 8.dp),
+        )
 
         SectionHeader(tr("Bóng đổ", "Shadow"))
         GroupToggle(Pos.Single, Icons.Rounded.Layers, tr("Bóng đổ", "Shadow"),

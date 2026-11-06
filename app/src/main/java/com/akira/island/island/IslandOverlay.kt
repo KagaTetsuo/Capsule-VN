@@ -10,7 +10,6 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.runtime.produceState
 import android.graphics.BitmapFactory
 import androidx.compose.ui.graphics.lerp
-import com.akira.island.data.LedMotion
 import android.provider.AlarmClock
 import android.content.Intent
 import android.content.Context
@@ -35,7 +34,6 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
-import com.akira.island.data.LedStyle
 import kotlin.math.cos
 import kotlin.math.sin
 import androidx.compose.ui.unit.Constraints
@@ -130,6 +128,8 @@ import com.akira.island.data.ExpandStyle
 import com.akira.island.data.IslandSettings
 import com.akira.island.data.NoticeTweak
 import com.akira.island.data.NoticeKind
+import com.akira.island.data.Surface
+import com.akira.island.data.border
 import com.akira.island.data.SettingsRepo
 import com.akira.island.data.TapAction
 import com.akira.island.service.CallMonitor
@@ -369,7 +369,8 @@ fun IslandOverlay(
             delay(250)
         }
     }
-    val previewing = previewNow < previewUntil
+    // Rời app: bản xem trước "khi có hoạt động" tự ẩn ngay
+    val previewing = previewNow < previewUntil && IslandBus.appVisible.collectAsState().value
 
     val context = LocalContext.current
     val cardPreview = previewMode()
@@ -622,6 +623,10 @@ private fun IslandBody(
         primary is Act.PayA -> {
             if (s.capsuleCornerRadius >= 0) s.capsuleCornerRadius.dp else noticeHeight(s) / 2
         }
+        primary is Act.NoticeA && primary.n.style == NoticeStyle.PILL -> {
+            if (s.capsuleCornerRadius >= 0) s.capsuleCornerRadius.dp
+            else ((activeHeight(s) + (s.noticeTweaks[NoticeKind.MODE]?.heightExtra ?: 0).dp).coerceAtLeast(22.dp)) / 2
+        }
         primary is Act.Idle -> {
             if (s.capsuleCornerRadius >= 0) s.capsuleCornerRadius.dp else h / 2
         }
@@ -652,12 +657,7 @@ private fun IslandBody(
         } else null
     }
     val cardAlpha = s.cardBgOpacity.coerceIn(20, 100) / 100f
-    // Viền thẻ dạng hiệu ứng như Vòng sáng LED (cầu vồng, theo app, nhiều màu… kèm chuyển động)
-    val borderLed = isCard && s.cardBorder && s.cardBorderLed
-    val borderClock = rememberFxClock(borderLed && !s.reduceEffects)
     val shape = remember(corner, s.notch) { AnimatedIslandShape(corner, s.notch) }
-    val accent = (primary as? Act.MediaA)?.m?.accent
-    val outlineColor = if (s.outlineFromArt && accent != null) accent else Color(s.outlineColor)
 
     val playingArt = (primary as? Act.MediaA)?.m?.takeIf { it.playing }?.accent
     val lastArt = remember { arrayOf(Color.White) }
@@ -674,6 +674,25 @@ private fun IslandBody(
     val ledActive = (s.ledEnabled || previewLed) && !calibrating && (s.ledAlwaysOn || eventLed || unreadLed || chargeLed || previewLed)
     val ledAlpha by animateFloatAsState(if (ledActive) 1f else 0f, tween(320), label = "ledAlpha")
     val ledClock = rememberFxClock(ledActive && !s.reduceEffects)
+    // Đường viền riêng theo từng nơi: bình thường / hoạt động / viên nhỏ / thẻ / mở rộng
+    val surface = when {
+        expanded -> Surface.EXPANDED
+        primary is Act.Idle -> Surface.IDLE
+        smallPill -> Surface.PILL
+        primary is Act.UnreadA || primary is Act.NoticeA || (primary is Act.CallA && primary.c.incoming) -> Surface.CARD
+        else -> Surface.ACTIVE
+    }
+    val bSpec = s.border(surface)
+    val borderOn = bSpec.on && !calibrating
+    val borderClock = rememberFxClock(borderOn && bSpec.moving && !s.reduceEffects)
+    val borderAdaptive: Color? = when {
+        primary is Act.NoticeA -> primary.n.tint
+        primary is Act.MediaA -> primary.m.accent
+        primary is Act.CallA -> Tints.Green
+        unreadLedColor != null -> unreadLedColor
+        battery.charging -> Tints.Green
+        else -> null
+    }
     val adaptiveLedColor = when {
         previewLed -> Color(0xFF0068FF)
         primary is Act.NoticeA -> primary.n.tint
@@ -742,10 +761,11 @@ private fun IslandBody(
                 transformOrigin = TransformOrigin(0.5f, 0f)
             }
             .then(
-                if (glowAlpha > 0f || ledAlpha > 0f) {
+                if (glowAlpha > 0f || ledAlpha > 0f || (borderOn && bSpec.glow > 0)) {
                     Modifier.drawBehind {
                         if (glowAlpha > 0f) islandGlow(glowTint, glowAlpha, corner.value.toPx(), s.notch)
-                        if (ledAlpha > 0f) ledOuterGlow(s.ledStyle, adaptiveLedColor, Color(s.ledColor), ledAlpha, ledClock.value, corner.value.toPx(), s.notch, s.ledFx())
+                        if (borderOn && bSpec.glow > 0) drawBorderGlow(bSpec, borderAdaptive, borderClock.value, corner.value.toPx(), s.notch)
+                        if (ledAlpha > 0f) drawBorderGlow(s.ledBorder, adaptiveLedColor, ledClock.value, corner.value.toPx(), s.notch, ledAlpha)
                     }
                 } else Modifier
             )
@@ -778,41 +798,15 @@ private fun IslandBody(
             .then(
                 when {
                     calibrating -> Modifier.border(2.dp, Color.White, shape)
-                    isCard && s.cardBorder && !s.cardBorderLed -> Modifier.border(s.cardBorderWidth.dp, Color(s.cardBorderColor), shape)
-                    s.outline -> Modifier.border(s.outlineWidth.dp, outlineColor, shape)
                     else -> Modifier
                 },
             )
             .then(
-                if ((egg || ledAlpha > 0f || borderLed) && !calibrating) {
+                if ((egg || ledAlpha > 0f || borderOn) && !calibrating) {
                     Modifier.drawWithContent {
                         drawContent()
-                        if (borderLed) {
-                            drawLedRing(
-                                style = s.ledStyle,
-                                adaptive = adaptiveLedColor,
-                                custom = Color(s.ledColor),
-                                strokeDp = s.cardBorderWidth,
-                                alpha = 1f,
-                                timeMs = borderClock.value,
-                                corner = corner.value.toPx(),
-                                notch = s.notch,
-                                fx = s.ledFx(),
-                            )
-                        }
-                        if (ledAlpha > 0f) {
-                            drawLedRing(
-                                style = s.ledStyle,
-                                adaptive = adaptiveLedColor,
-                                custom = Color(s.ledColor),
-                                strokeDp = s.ledWidth,
-                                alpha = ledAlpha,
-                                timeMs = ledClock.value,
-                                corner = corner.value.toPx(),
-                                notch = s.notch,
-                                fx = s.ledFx(),
-                            )
-                        }
+                        if (borderOn) drawBorder(bSpec, borderAdaptive, borderClock.value, corner.value.toPx(), s.notch)
+                        if (ledAlpha > 0f) drawBorder(s.ledBorder, adaptiveLedColor, ledClock.value, corner.value.toPx(), s.notch, ledAlpha)
                         if (egg) eggRim(corner.value.toPx(), s.notch)
                     }
                 } else {
@@ -1195,7 +1189,11 @@ private fun Bubble(act: Act, s: IslandSettings) {
                 if (s.liquidGlass) Modifier.glassSurface(CircleShape, Color(s.color), s.glassOpacity / 100f, s.glassRefraction / 100f, s.glassSpecular / 100f, tilt = { tilt.value })
                 else Modifier.background(Color(s.color)),
             )
-            .then(if (s.outline) Modifier.border(s.outlineWidth.dp, Color(s.outlineColor), CircleShape) else Modifier)
+            .then(
+                s.border(Surface.ACTIVE).let { b ->
+                    if (b.on) Modifier.border(b.width.dp, paletteColors(b).first().copy(alpha = b.opacity / 100f), CircleShape) else Modifier
+                },
+            )
             .clickable {
                 haptic()
                 Controls.expand(act.id)
@@ -1270,105 +1268,6 @@ fun islandShape(corner: Dp, notch: Boolean): RoundedCornerShape =
 private class AnimatedIslandShape(private val corner: State<Dp>, private val notch: Boolean) : Shape {
     override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density): Outline =
         islandShape(corner.value, notch).createOutline(size, layoutDirection, density)
-}
-
-/** Tham số hiệu ứng viền sáng: kiểu chuyển động, tốc độ và bảng màu tự chọn. */
-data class LedFx(val motion: LedMotion = LedMotion.ROTATE, val speed: Int = 50, val multi: List<Color> = emptyList())
-
-fun IslandSettings.ledFx(): LedFx = LedFx(ledMotion, ledSpeed, ledColors.take(ledColorCount.coerceIn(2, 3)).map { Color(it) })
-
-private fun ledPeriod(fx: LedFx): Long = (3600 - fx.speed.coerceIn(0, 100) * 30).toLong().coerceIn(600L, 3600L)
-
-private fun ledBase(style: LedStyle, adaptive: Color, custom: Color, fx: LedFx): List<Color> = when (style) {
-    LedStyle.ROTATE_RGB -> List(8) { i -> Color.hsv(i * 45f, 0.88f, 1f) }
-    LedStyle.AUTO_APP -> listOf(adaptive, lerp(adaptive, Color.White, 0.55f), adaptive, adaptive.copy(alpha = 0.45f))
-    LedStyle.CYBER_NEON -> listOf(Color(0xFF00F2FE), Color(0xFF7F00FF), Color(0xFFFF0844))
-    LedStyle.BREATHE_GOLD -> listOf(Color(0xFFFF8C00), Color(0xFFFFD700), Color(0xFFFFF8DC), Color(0xFFFFD700))
-    LedStyle.CUSTOM -> listOf(custom, lerp(custom, Color.White, 0.6f), custom, custom.copy(alpha = 0.5f))
-    LedStyle.MULTI -> fx.multi.ifEmpty { listOf(custom, lerp(custom, Color.White, 0.6f)) }
-}
-
-/** Nội suy vòng tròn qua danh sách màu (t trong [0,1)). */
-private fun cyc(colors: List<Color>, t: Float): Color {
-    val n = colors.size
-    if (n == 1) return colors[0]
-    val x = t.mod(1f) * n
-    val i = x.toInt() % n
-    return lerp(colors[i], colors[(i + 1) % n], x - x.toInt())
-}
-
-private fun motionAlpha(fx: LedFx, phase: Float): Float = when (fx.motion) {
-    LedMotion.BREATHE -> 0.22f + 0.78f * (0.5f + 0.5f * sin(phase * 2f * Math.PI.toFloat()))
-    LedMotion.BLINK -> if (phase < 0.55f) 1f else 0.06f
-    else -> 0.95f
-}
-
-internal fun DrawScope.ledOuterGlow(
-    style: LedStyle,
-    adaptive: Color,
-    custom: Color,
-    alpha: Float,
-    timeMs: Long,
-    corner: Float,
-    notch: Boolean,
-    fx: LedFx = LedFx(),
-) {
-    val period = ledPeriod(fx)
-    val phase = (timeMs % period).toFloat() / period
-    val base = ledBase(style, adaptive, custom, fx)
-    val glowColor = if (fx.motion == LedMotion.ROTATE || fx.motion == LedMotion.COMET) cyc(base, phase) else base.first()
-    val pulse = motionAlpha(fx, phase) * 0.85f
-    val maxSpread = 7.dp.toPx()
-    for (i in 1..5) {
-        val d = maxSpread * i / 5f
-        drawIslandRect(
-            color = glowColor,
-            topLeft = Offset(-d, -d),
-            size = Size(size.width + 2 * d, size.height + 2 * d),
-            corner = corner + d,
-            notch = notch,
-            alpha = (0.075f * alpha * pulse * (1f - i / 6f)).coerceIn(0f, 1f),
-        )
-    }
-}
-
-internal fun DrawScope.drawLedRing(
-    style: LedStyle,
-    adaptive: Color,
-    custom: Color,
-    strokeDp: Float,
-    alpha: Float,
-    timeMs: Long,
-    corner: Float,
-    notch: Boolean,
-    fx: LedFx = LedFx(),
-) {
-    val w = strokeDp.coerceIn(0.5f, 6f).dp.toPx()
-    val period = ledPeriod(fx)
-    val phase = (timeMs % period).toFloat() / period
-    val base = ledBase(style, adaptive, custom, fx)
-    val samples = 48
-    val rotate = fx.motion == LedMotion.ROTATE || fx.motion == LedMotion.COMET
-    val colors = List(samples + 1) { k ->
-        val pos = k.toFloat() / samples
-        var c = cyc(base, if (rotate) pos - phase else pos)
-        if (fx.motion == LedMotion.COMET) {
-            // Đầu sao chổi sáng rực, đuôi mờ dần theo chiều chạy
-            val d = (phase - pos).mod(1f)
-            val tail = (1f - d / 0.35f).coerceIn(0f, 1f)
-            c = c.copy(alpha = c.alpha * (0.1f + 0.9f * tail * tail))
-        }
-        c
-    }
-    drawIslandRect(
-        brush = Brush.sweepGradient(colors, center),
-        topLeft = Offset(w / 2f, w / 2f),
-        size = Size(size.width - w, size.height - w),
-        corner = (corner - w / 2f).coerceAtLeast(0f),
-        notch = notch,
-        style = Stroke(w),
-        alpha = (alpha * motionAlpha(fx, phase)).coerceIn(0f, 1f),
-    )
 }
 
 internal fun shiftRing(base: List<Color>, phase: Float): List<Color> {

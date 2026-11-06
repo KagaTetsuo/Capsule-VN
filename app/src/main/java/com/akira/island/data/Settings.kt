@@ -396,6 +396,10 @@ data class IslandSettings(
     val ledColorCount: Int = 2,
     /** Viền thẻ thông báo dùng hiệu ứng như Vòng sáng LED thay cho màu đơn. */
     val cardBorderLed: Boolean = false,
+    /** Đường viền riêng của từng nơi (bình thường, hoạt động, viên nhỏ, thẻ, mở rộng). Mặc định: không viền. */
+    val borders: Map<Surface, BorderSpec> = emptyMap(),
+    /** Màu & hiệu ứng của Vòng sáng LED báo sự kiện / tin chưa đọc / sạc. */
+    val ledBorder: BorderSpec = BorderSpec(on = true, width = 2.5f, glow = 60),
 
     val ecoSpPen: Boolean = true,
     val ecoBudsWatch: Boolean = true,
@@ -518,6 +522,8 @@ object SettingsRepo {
                 )
             }
         }
+        // v1.5: hệ thống đường viền mới theo từng nơi — chuyển thiết lập viền cũ sang, không mất gì
+        if (current.layoutVersion < 6) update { migrateBorders().copy(layoutVersion = 6) }
     }
 
     fun update(block: IslandSettings.() -> IslandSettings) {

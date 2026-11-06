@@ -107,6 +107,7 @@ import com.akira.island.core.formatDuration
 import com.akira.island.data.IslandSettings
 import com.akira.island.core.CardPreviewMode
 import com.akira.island.data.NoticeKind
+import com.akira.island.data.NoticeTweak
 import com.akira.island.data.SettingsRepo
 import com.akira.island.service.Messages
 import com.akira.island.service.OtpHelper
@@ -283,12 +284,14 @@ fun CompactRow(
     left: @Composable BoxScope.() -> Unit,
     right: @Composable BoxScope.() -> Unit,
     shrink: Boolean = true,
+    /** Chiều rộng cố định riêng (vd. thông báo viên nhỏ); null = theo "Khi có hoạt động". */
+    widthOverride: Dp? = null,
 ) {
     
     val st = SettingsRepo.state.collectAsState().value
     // activeWidth = 0: tự động theo nội dung; > 0: đúng chiều rộng người dùng chọn (nội dung tự thu nhỏ cho vừa)
-    val auto = st.activeWidth == 0
-    val baseWidth = st.width.dp + st.activeWidth.dp
+    val auto = widthOverride == null && st.activeWidth == 0
+    val baseWidth = widthOverride ?: (st.width.dp + st.activeWidth.dp)
     val density = LocalDensity.current
     SubcomposeLayout { _ ->
         val hPx = h.roundToPx()
@@ -354,7 +357,7 @@ private fun NoticeCompact(n: Notice, base: IslandSettings, cardWidth: Dp) {
         n.style == NoticeStyle.EGG -> EggBanner(n, s)
         n.style == NoticeStyle.SENT -> SentBanner(n, s, wideWidth)
         n.style == NoticeStyle.UPDATE -> UpdateCard(n, s, cardWidth)
-        n.style == NoticeStyle.PILL || n.title.isBlank() && n.state == null -> PillNotice(n, s)
+        n.style == NoticeStyle.PILL || n.title.isBlank() && n.state == null -> PillNotice(n, base, base.noticeTweaks[NoticeKind.MODE])
         else -> WideNotice(n, s, wideWidth)
     }
 }
@@ -404,8 +407,10 @@ private fun WideNotice(n: Notice, s: IslandSettings, wideWidth: Dp) {
 }
 
 @Composable
-private fun PillNotice(n: Notice, s: IslandSettings) {
-    val h = activeHeight(s)
+private fun PillNotice(n: Notice, s: IslandSettings, own: NoticeTweak?) {
+    // Kích thước riêng của thông báo viên nhỏ (Giao diện → Thông báo viên nhỏ); chưa chỉnh thì như cũ
+    val h = (activeHeight(s) + (own?.heightExtra ?: 0).dp).coerceAtLeast(22.dp)
+    val fixedW = own?.width?.takeIf { it > 0 }?.dp
     val swing = remember(n.id) { Animatable(0f) }
     LaunchedEffect(n.id) {
         if (s.reduceEffects || !s.fxShake) return@LaunchedEffect
@@ -433,7 +438,8 @@ private fun PillNotice(n: Notice, s: IslandSettings) {
             }
         },
         
-        shrink = false,
+        shrink = fixedW != null,
+        widthOverride = fixedW,
     )
 }
 

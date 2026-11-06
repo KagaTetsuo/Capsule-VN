@@ -96,6 +96,7 @@ import com.akira.island.core.PayReady
 import com.akira.island.core.Tints
 import com.akira.island.core.tr
 import com.akira.island.data.SettingsRepo
+import com.akira.island.data.border
 import com.akira.island.island.Act
 import com.akira.island.island.CompactContent
 import com.akira.island.island.Ios
@@ -798,7 +799,11 @@ fun IslandPreview(expanded: Boolean = false) {
                         Modifier.background(Color(s.color))
                     },
                 )
-                .then(if (s.outline) Modifier.border(s.outlineWidth.dp, if (s.outlineFromArt) Ui.Primary else Color(s.outlineColor), shape) else Modifier)
+                .then(
+                    s.border(com.akira.island.data.Surface.IDLE).let { b ->
+                        if (b.on) Modifier.border(b.width.dp, com.akira.island.island.paletteColors(b, Ui.Primary).first().copy(alpha = b.opacity / 100f), shape) else Modifier
+                    },
+                )
                 .animateContentSize(),
         ) {
             CompactContent(act, s, 400.dp)
