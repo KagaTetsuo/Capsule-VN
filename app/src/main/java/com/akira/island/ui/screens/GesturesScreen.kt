@@ -38,17 +38,18 @@ fun GesturesScreen(onBack: () -> Unit) {
         Group {
             GroupItem(Pos.First, Icons.Rounded.TouchApp, tr("Chạm một lần", "Single tap"), "${s.tapAction.title} — ${s.tapAction.hint}",
                 onClick = { dialog = Which.TAP }, color = Tile.Blue) { Arrow() }
-            GroupItem(Pos.Middle, Icons.Rounded.TouchApp, tr("Chạm đúp", "Double tap"), "${s.doubleTapAction.title} — ${s.doubleTapAction.hint}",
+            GroupItem(Pos.Middle, Icons.Rounded.TouchApp, tr("Chạm đúp", "Double tap"),
+                "${s.doubleTapAction.title} — ${s.doubleTapAction.hint}" + if (s.doubleTapAction != TapAction.NOTHING) tr(". Lưu ý: bật chạm đúp làm chạm một lần chậm ~0,3 giây", ". Note: double tap makes a single tap ~0.3 s slower") else "",
                 onClick = { dialog = Which.DOUBLE }, color = Tile.Indigo) { Arrow() }
             GroupItem(Pos.Middle, Icons.Rounded.PanTool, tr("Nhấn giữ", "Long press"), "${s.longPressAction.title} — ${s.longPressAction.hint}",
                 onClick = { dialog = Which.LONG }, color = Tile.Orange) { Arrow() }
-            val recommended = s.tapAction == TapAction.EXPAND && s.doubleTapAction == TapAction.OPEN_APP && s.longPressAction == TapAction.PLAY_PAUSE
+            val recommended = s.tapAction == TapAction.EXPAND && s.doubleTapAction == TapAction.NOTHING && s.longPressAction == TapAction.OPEN_APP
             GroupItem(Pos.Last, Icons.Rounded.AutoFixHigh, tr("Dùng cài đặt khuyên dùng", "Use recommended"),
-                if (recommended) tr("Đang dùng: Chạm = Mở rộng · Chạm đúp = Mở ứng dụng · Giữ = Phát / Tạm dừng", "In use: Tap = Expand · Double tap = Open app · Hold = Play / pause")
-                else tr("Chạm = Mở rộng · Chạm đúp = Mở ứng dụng · Giữ = Phát / Tạm dừng", "Tap = Expand · Double tap = Open app · Hold = Play / pause"),
+                if (recommended) tr("Đang dùng: Chạm = Mở rộng (tức thì) · Giữ = Mở ứng dụng · Chạm đúp = Tắt", "In use: Tap = Expand (instant) · Hold = Open app · Double tap = Off")
+                else tr("Chạm = Mở rộng (tức thì) · Giữ = Mở ứng dụng · Chạm đúp = Tắt", "Tap = Expand (instant) · Hold = Open app · Double tap = Off"),
                 color = if (recommended) Tile.Green else Tile.Gray,
                 onClick = {
-                    SettingsRepo.update { copy(tapAction = TapAction.EXPAND, doubleTapAction = TapAction.OPEN_APP, longPressAction = TapAction.PLAY_PAUSE) }
+                    SettingsRepo.update { copy(tapAction = TapAction.EXPAND, doubleTapAction = TapAction.NOTHING, longPressAction = TapAction.OPEN_APP) }
                 },
             )
         }

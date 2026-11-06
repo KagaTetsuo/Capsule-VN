@@ -298,7 +298,7 @@ fun BehaviorScreen(onBack: () -> Unit) {
                 tr("Khi mở, đóng và chạm vào viên thuốc", "When opening, closing and tapping the capsule"),
                 s.haptics, color = Tile.Pink) { v -> SettingsRepo.update { copy(haptics = v) } }
             GroupToggle(Pos.Middle, Icons.Rounded.ChatBubble, tr("Sáng màn hình khi có thông báo", "Wake the screen for alerts"),
-                tr("Màn hình đang tắt: tin nhắn, sạc pin, tai nghe, thanh toán… sáng lên trên Viên thuốc ở màn hình khoá rồi tự tắt lại. Không sáng khi máy để trong túi / úp xuống", "Screen off: messages, charging, headphones, payments… light up on the lock screen, then it turns off again. Not while in a pocket / face down"),
+                tr("Mặc định tắt: màn hình tắt thì thông báo chỉ hiện trên Màn hình chờ (AOD) của máy, không làm sáng màn hình. Bật nếu muốn màn hình sáng lên hiện trên Viên thuốc rồi tự tắt lại", "Screen off: messages, charging, headphones, payments… light up on the lock screen, then it turns off again. Not while in a pocket / face down"),
                 s.wakeOnMessage, color = Tile.Blue) { v -> SettingsRepo.update { copy(wakeOnMessage = v) } }
             if (s.wakeOnMessage) {
                 GroupToggle(Pos.Middle, Icons.Rounded.Bedtime, tr("Không sáng trong giờ ngủ", "Not during sleep hours"),

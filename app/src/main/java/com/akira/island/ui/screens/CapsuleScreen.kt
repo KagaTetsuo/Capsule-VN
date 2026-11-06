@@ -130,7 +130,7 @@ fun CapsuleScreen(open: (Screen) -> Unit) {
                 Pos.Middle,
                 Icons.Rounded.SwapHoriz,
                 tr("Khi có hoạt động", "With activity"),
-                if (s.activeWidth == 0) tr("Độ dày +${s.activeExtra} dp, chiều rộng giữ nguyên", "Thickness +${s.activeExtra} dp, width as without it")
+                if (s.activeWidth == 0) tr("Độ dày +${s.activeExtra} dp, chiều rộng tự động theo nội dung", "Thickness +${s.activeExtra} dp, width fits content")
                 else tr("Độ dày +${s.activeExtra}, chiều rộng +${s.activeWidth} dp", "Thickness +${s.activeExtra}, width +${s.activeWidth} dp"),
                 color = Tile.Purple,
                 onClick = { open(Screen.LOOK) },
@@ -225,7 +225,7 @@ fun LookScreen(onBack: () -> Unit) {
             GroupSlider(
                 Pos.Last, Icons.Rounded.SwapHoriz, tr("Chiều rộng", "Width"),
                 value = s.activeWidth.toFloat(), range = 0f..120f, steps = 23,
-                label = if (s.activeWidth == 0) tr("Như khi không có", "As without it") else "+${s.activeWidth} dp", color = Tile.Blue,
+                label = if (s.activeWidth == 0) tr("Tự động theo nội dung", "Auto (fits content)") else "+${s.activeWidth} dp", color = Tile.Blue,
             ) { v ->
                 previewActivity()
                 SettingsRepo.update { copy(activeWidth = (v / 5).toInt() * 5) }
@@ -253,7 +253,7 @@ fun LookScreen(onBack: () -> Unit) {
 }
 
 @Composable
-fun AnimScreen(onBack: () -> Unit) {
+fun AnimScreen(onBack: () -> Unit, open: (Screen) -> Unit = {}) {
     val s by SettingsRepo.state.collectAsState()
     val context = LocalContext.current
     val haptic = rememberHaptic()
@@ -361,14 +361,13 @@ fun AnimScreen(onBack: () -> Unit) {
                 SettingsRepo.update { copy(durationPercent = v.toInt()) }
                 IslandBus.previewMotion(450)
             }
-            GroupSlider(
-                Pos.Last, Icons.Rounded.Schedule, tr("Thời gian hiển thị sự kiện", "Event display time"),
-                value = s.noticeDurationMs / 1000f, range = 1.5f..6f, steps = 8,
-                label = tr("%.1f giây", "%.1f s").format(s.noticeDurationMs / 1000f), color = Tile.Orange,
-            ) { v ->
-                SettingsRepo.update { copy(noticeDurationMs = (v * 1000).toInt()) }
-                previewNotice()
-            }
+            GroupItem(
+                Pos.Last, Icons.Rounded.Schedule, tr("Thời gian hiển thị thông báo", "Alert display time"),
+                tr("Mặc định %.1f giây · chỉnh riêng nhanh / chậm cho từng loại", "Default %.1f s · set fast / slow per kind").format(s.noticeDurationMs / 1000f) +
+                    if (s.noticeDurations.isNotEmpty()) tr(" · %d loại riêng", " · %d custom").format(s.noticeDurations.size) else "",
+                color = Tile.Orange,
+                onClick = { open(Screen.DURATIONS) },
+            ) { Arrow() }
         }
 
         SectionHeader(tr("Hiệu năng", "Performance"))

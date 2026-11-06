@@ -54,7 +54,17 @@ android {
     buildFeatures {
         compose = true
     }
+
+    // "Có gì mới" trong app đọc trực tiếp CHANGELOG.md -> luôn đúng nội dung phiên bản đang cài
+    sourceSets.getByName("main").assets.srcDir(layout.buildDirectory.dir("generated/changelog").get().asFile)
 }
+
+val copyChangelog = tasks.register<Copy>("copyChangelog") {
+    from(rootProject.file("CHANGELOG.md"))
+    into(layout.buildDirectory.dir("generated/changelog"))
+    rename { "changelog.md" }
+}
+tasks.named("preBuild") { dependsOn(copyChangelog) }
 
 dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2024.12.01")

@@ -33,6 +33,11 @@
     
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
+    <!-- Android 13+: bắt buộc để hiện thông báo của app (nhắc chế độ ngân hàng, giữ chạy nền, cập nhật) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Tuỳ chọn: tự mở lại app ngân hàng nếu nó tự đóng lần đầu khi Viên thuốc đang tạm nghỉ -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
     <!-- Chế độ ngân hàng: tự bật lại Dịch vụ hỗ trợ tiếp cận (cấp qua Shizuku / ADB) và biết app đang mở -->
     <uses-permission
         android:name="android.permission.WRITE_SECURE_SETTINGS"

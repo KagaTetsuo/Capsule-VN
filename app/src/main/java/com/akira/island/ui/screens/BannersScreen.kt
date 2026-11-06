@@ -28,6 +28,7 @@ import com.akira.island.data.SettingsRepo
 import com.akira.island.service.SystemBanners
 import com.akira.island.ui.Group
 import com.akira.island.ui.GroupItem
+import com.akira.island.ui.IslandSwitch
 import com.akira.island.ui.Page
 import com.akira.island.ui.Pos
 import com.akira.island.ui.SectionHeader
@@ -68,18 +69,28 @@ fun BannersScreen(onBack: () -> Unit) {
         } else {
             Group {
                 messengers.forEachIndexed { i, pkg ->
+                    // One UI không cho app khác đọc ô "Pop-up thông báo" -> người dùng tự xác nhận "Đã tắt"
+                    val confirmed = pkg in s.popupOffApps
+                    val ok = popUp[pkg] == false || confirmed
                     GroupItem(
                         posOf(i, messengers.size), Icons.Rounded.ChatBubble, SystemBanners.label(context, pkg),
-                        when (popUp[pkg]) {
-                            true -> if (SystemBanners.isSamsung) tr("Bị hiện đè lên Viên thuốc — chạm vào, bỏ chọn “Pop-up thông báo”", "Pops up over the island — tap and untick “Pop-up notifications”")
-                            else tr("Bị hiện đè lên Viên thuốc — chạm vào và tắt “Bật lên trên màn hình”", "Pops up over the island — tap and turn off “Pop on screen”")
-                            false -> tr("Không bị hiện thông báo nổi trùng lặp ✓", "Its own banner doesn't pop up ✓")
-                            null -> if (SystemBanners.isSamsung) tr("Chạm vào và bỏ chọn “Pop-up thông báo”", "Tap and untick “Pop-up notifications”")
-                            else tr("Chạm vào và tắt “Bật lên trên màn hình”", "Tap and turn off “Pop on screen”")
+                        when {
+                            ok -> tr("Không bị hiện thông báo nổi trùng lặp ✓", "Its own banner doesn't pop up ✓")
+                            SystemBanners.isSamsung -> tr("Chạm để mở, bỏ chọn “Pop-up thông báo”, rồi gạt “Đã tắt” bên phải", "Tap, untick “Pop-up notifications”, then flip “Done” on the right")
+                            popUp[pkg] == true -> tr("Bị hiện đè lên Viên thuốc — chạm vào và tắt “Bật lên trên màn hình”", "Pops up over the island — tap and turn off “Pop on screen”")
+                            else -> tr("Chạm vào và tắt “Bật lên trên màn hình”", "Tap and turn off “Pop on screen”")
                         },
-                        color = if (popUp[pkg] == false) Tile.Green else Tile.Blue,
+                        color = if (ok) Tile.Green else Tile.Blue,
                         onClick = { SystemBanners.openSettings(context, pkg) },
-                    ) { Arrow() }
+                    ) {
+                        if (SystemBanners.isSamsung) {
+                            IslandSwitch(confirmed, { v ->
+                                SettingsRepo.update { copy(popupOffApps = if (v) popupOffApps + pkg else popupOffApps - pkg) }
+                            })
+                        } else {
+                            Arrow()
+                        }
+                    }
                 }
             }
         }

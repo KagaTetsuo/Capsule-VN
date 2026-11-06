@@ -42,6 +42,24 @@ object Perms {
 
     fun openAccessibility(context: Context) = start(context, Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
 
+    /** Quyền hiện thông báo của chính Capsule VN (Android 13+ phải xin). */
+    fun postNotifications(context: Context): Boolean =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        } else {
+            context.getSystemService(android.app.NotificationManager::class.java)?.areNotificationsEnabled() != false
+        }
+
+    fun openAppNotifications(context: Context) {
+        start(context, Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName))
+    }
+
+    fun overlay(context: Context): Boolean = Settings.canDrawOverlays(context)
+
+    fun openOverlay(context: Context) {
+        start(context, Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, android.net.Uri.parse("package:${context.packageName}")))
+    }
+
     fun openUsageAccess(context: Context) {
         val detail = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).setData(android.net.Uri.parse("package:${context.packageName}"))
         if (runCatching { context.startActivity(detail.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }.isFailure) {

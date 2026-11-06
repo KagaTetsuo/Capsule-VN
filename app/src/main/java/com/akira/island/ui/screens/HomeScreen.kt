@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.NotificationsActive
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.BatteryChargingFull
@@ -122,7 +123,7 @@ import com.akira.island.update.UpdateChecker
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-private class PermState(val accessibility: Boolean, val notifications: Boolean, val calls: Boolean, val bluetooth: Boolean) {
+private class PermState(val accessibility: Boolean, val notifications: Boolean, val calls: Boolean, val bluetooth: Boolean, val post: Boolean = true) {
     
     val missing: List<String>
         get() = listOfNotNull(
@@ -130,6 +131,7 @@ private class PermState(val accessibility: Boolean, val notifications: Boolean, 
             tr("thông báo", "notifications").takeIf { !notifications },
             tr("cuộc gọi", "calls").takeIf { !calls },
             "Bluetooth".takeIf { !bluetooth },
+            tr("hiện thông báo", "show notifications").takeIf { !post },
         )
 }
 
@@ -147,7 +149,7 @@ internal fun <T> rememberOnResume(read: () -> T): Pair<T, () -> Unit> {
 private fun rememberPermState(): Pair<PermState, () -> Unit> {
     val context = LocalContext.current
     return rememberOnResume {
-        PermState(Perms.accessibility(context), Perms.notifications(context), Perms.calls(context), Perms.bluetooth(context))
+        PermState(Perms.accessibility(context), Perms.notifications(context), Perms.calls(context), Perms.bluetooth(context), Perms.postNotifications(context))
     }
 }
 
@@ -170,7 +172,7 @@ fun HomeScreen(open: (Screen) -> Unit) {
         }
 
         val popUp by SystemBanners.popUp.collectAsState()
-        val doubled = popUp.filterValues { it }.keys.firstOrNull()
+        val doubled = popUp.filterValues { it }.keys.firstOrNull { it !in s.popupOffApps }
         if (doubled != null && !s.bannerHintHidden) {
             DoubleBannerCard(
                 NotificationParser.appLabel(context, doubled),
@@ -370,6 +372,10 @@ fun PermissionsScreen(onBack: () -> Unit, open: (Screen) -> Unit) {
     val context = LocalContext.current
     val (perms, refresh) = rememberPermState()
     val btLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { refresh() }
+    val postLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
+        refresh()
+        if (!ok) Perms.openAppNotifications(context)
+    }
     val callLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
         refresh()
         
@@ -398,6 +404,16 @@ fun PermissionsScreen(onBack: () -> Unit, open: (Screen) -> Unit) {
                 onClick = { if (perms.calls) Perms.openAppDetails(context) else callLauncher.launch(Perms.CALL_PERMISSIONS) },
                 color = Tile.Green,
             ) { Status(perms.calls) }
+            GroupItem(
+                Pos.Middle, Icons.Rounded.NotificationsActive, tr("Hiện thông báo của Capsule VN", "Capsule VN notifications"),
+                if (perms.post) tr("Bật — nhắc chế độ ngân hàng, giữ chạy nền, cập nhật", "On — banking mode reminders, keep-alive, updates")
+                else tr("Cần cho nhắc bật lại Viên thuốc khi rời app ngân hàng và báo cập nhật", "Needed for banking-mode reminders and update alerts"),
+                onClick = {
+                    if (!perms.post && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) postLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    else Perms.openAppNotifications(context)
+                },
+                color = Tile.Orange,
+            ) { Status(perms.post) }
             GroupItem(
                 Pos.Last, Icons.Rounded.Bluetooth, "Bluetooth",
                 if (perms.bluetooth) tr("Tên tai nghe khi kết nối", "Headphone names when they connect")

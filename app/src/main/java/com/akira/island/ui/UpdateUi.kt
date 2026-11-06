@@ -154,7 +154,7 @@ fun WhatsNewDialog() {
     val context = LocalContext.current
     val current = remember { UpdateChecker.currentVersion(context) }
     val notes = remember {
-        runCatching { context.assets.open(whatsNewFile()).bufferedReader().use { it.readText() } }.getOrNull()
+        loadNotes(context, UpdateChecker.currentVersion(context))
     }
     val seen = SettingsRepo.current.lastSeenVersion
     var show by remember {
@@ -177,7 +177,7 @@ fun NotesDialog(onDismiss: () -> Unit) {
     val context = LocalContext.current
     val current = remember { UpdateChecker.currentVersion(context) }
     val notes = remember {
-        runCatching { context.assets.open(whatsNewFile()).bufferedReader().use { it.readText() } }.getOrNull()
+        loadNotes(context, UpdateChecker.currentVersion(context))
     }
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -209,6 +209,11 @@ fun ReleaseNotes(markdown: String, modifier: Modifier = Modifier) {
                     line.removePrefix("### "), color = Ui.Primary, fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(top = 8.dp),
                 )
+                (line.startsWith("  - ") || line.startsWith("    - ")) -> Row(Modifier.padding(start = 18.dp)) {
+                    Text("–", color = Ui.Sub, fontSize = 13.sp)
+                    Spacer(Modifier.width(8.dp))
+                    Text(inline(line.trimStart().drop(2)), color = Ui.Sub, fontSize = 13.5.sp, lineHeight = 19.sp)
+                }
                 line.startsWith("- ") || line.startsWith("* ") -> Row {
                     Text("•", color = Ui.Sub, fontSize = 14.sp)
                     Spacer(Modifier.width(8.dp))
@@ -230,3 +235,23 @@ private fun inline(text: String): AnnotatedString = buildAnnotatedString {
 }
 
 private fun whatsNewFile() = if (Lang.en) "whatsnew.en.md" else "whatsnew.md"
+
+/**
+ * "Có gì mới": lấy đúng mục của phiên bản đang cài trong CHANGELOG.md (được chép vào app lúc đóng gói),
+ * nên luôn khớp với bản cập nhật. Không tìm thấy thì dùng ghi chú dự phòng.
+ */
+private fun loadNotes(context: android.content.Context, version: String): String? {
+    val log = runCatching { context.assets.open("changelog.md").bufferedReader().use { it.readText() } }.getOrNull()
+    if (log != null) {
+        val lines = log.lines()
+        val v = version.trim().removePrefix("v")
+        val start = lines.indexOfFirst { it.startsWith("## v$v ") || it == "## v$v" }
+        if (start >= 0) {
+            val end = (start + 1 until lines.size).firstOrNull { lines[it].startsWith("## v") } ?: lines.size
+            val title = lines[start].substringAfter("—", "").trim()
+            val head = "### " + tr("Phiên bản $v", "Version $v") + if (title.isNotEmpty()) " — $title" else ""
+            return (listOf(head) + lines.subList(start + 1, end)).joinToString("\n")
+        }
+    }
+    return runCatching { context.assets.open(whatsNewFile()).bufferedReader().use { it.readText() } }.getOrNull()
+}

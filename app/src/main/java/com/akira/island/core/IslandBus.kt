@@ -55,6 +55,13 @@ object IslandBus {
     val widthPreviewUntil = MutableStateFlow(0L)
     
     val cardPreviewMode = MutableStateFlow(CardPreviewMode.NONE)
+    /** Màn hình cài đặt của app đang hiển thị — xem trước chỉ hiện khi app đang mở, rời app là tự ẩn. */
+    val appVisible = MutableStateFlow(false)
+
+    /** Ngón tay vừa chạm Viên thuốc: phóng sẵn cửa sổ để bung mở rộng không bị khựng. */
+    val touchDown = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
+    fun previewing(): Boolean = appVisible.value && cardPreviewMode.value != CardPreviewMode.NONE
     /** Loại thông báo đang xem trước trong tab "Khác" (null = mẫu chung). */
     val previewNoticeKind = MutableStateFlow<com.akira.island.data.NoticeKind?>(null)
 
@@ -160,7 +167,7 @@ object IslandBus {
         scope.launch {
             for (n in queue) {
                 notice.value = n
-                val duration = SettingsRepo.current.noticeDurationMs + n.extraMs
+                val duration = SettingsRepo.current.durationFor(n.durationKey()) + n.extraMs
                 
                 withTimeoutOrNull(duration) { notice.first { it?.id != n.id } }
                 
@@ -181,3 +188,21 @@ object IslandBus {
 }
 
 enum class ServiceCommand { SCREENSHOT, LOCK, TURN_OFF }
+
+/** Phân loại thông báo để áp dụng vị trí / kích thước / thời gian hiển thị riêng. */
+fun Notice.kind(): com.akira.island.data.NoticeKind = when {
+    style == NoticeStyle.PAY_DONE -> com.akira.island.data.NoticeKind.PAYMENT
+    style == NoticeStyle.LIVE -> com.akira.island.data.NoticeKind.NAV
+    style == NoticeStyle.ALARM -> com.akira.island.data.NoticeKind.ALARM
+    style == NoticeStyle.PILL || style == NoticeStyle.SENT -> com.akira.island.data.NoticeKind.MODE
+    battery != null -> com.akira.island.data.NoticeKind.CHARGING
+    ring != null -> com.akira.island.data.NoticeKind.AUDIO
+    else -> com.akira.island.data.NoticeKind.OTHER
+}
+
+/** Khoá thời gian hiển thị: tin nhắn, cập nhật hoặc theo loại. */
+fun Notice.durationKey(): String = when (style) {
+    NoticeStyle.MESSAGE -> "MESSAGE"
+    NoticeStyle.UPDATE -> "UPDATE"
+    else -> kind().name
+}

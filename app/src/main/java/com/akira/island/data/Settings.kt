@@ -116,7 +116,7 @@ enum class NoticeKind(private val ru: String, private val en: String) {
     PAYMENT("Thanh toán", "Payments"),
     NAV("Điều hướng", "Navigation"),
     ALARM("Báo thức", "Alarm"),
-    MODE("Chế độ chuông", "Ring mode"),
+    MODE("Viên nhỏ (chế độ chuông, đã gửi…)", "Small pills (ring mode, sent…)"),
     OTHER("Sự kiện khác", "Other events"),
     ;
 
@@ -184,7 +184,7 @@ data class IslandSettings(
     
     val wakeForAlerts: Boolean = true,
     /** Màn hình đang tắt mà có thông báo: sáng lên hiện trên Viên thuốc rồi tự tắt lại. */
-    val wakeOnMessage: Boolean = true,
+    val wakeOnMessage: Boolean = false,
     /** Giờ ngủ: không tự sáng màn hình vì thông báo trong khoảng này. */
     val wakeQuietOn: Boolean = true,
     val wakeQuietFrom: Int = 23,
@@ -332,8 +332,8 @@ data class IslandSettings(
     val batterySaver: Boolean = false,
 
     val tapAction: TapAction = TapAction.EXPAND,
-    val doubleTapAction: TapAction = TapAction.OPEN_APP,
-    val longPressAction: TapAction = TapAction.PLAY_PAUSE,
+    val doubleTapAction: TapAction = TapAction.NOTHING,
+    val longPressAction: TapAction = TapAction.OPEN_APP,
     val swipeTracks: Boolean = true,
     /** Chế độ ngân hàng: tự tắt Viên thuốc khi mở app ngân hàng / VNeID, tự bật lại khi rời app. */
     val bankMode: Boolean = false,
@@ -353,6 +353,8 @@ data class IslandSettings(
     val scheduleFrom: Int = 10,
     val scheduleTo: Int = 23,
     val noticeDurationMs: Int = 2500,
+    /** Thời gian hiển thị riêng từng loại (khoá: MESSAGE, UPDATE hoặc tên NoticeKind); chưa đặt thì dùng noticeDurationMs. */
+    val noticeDurations: Map<String, Int> = emptyMap(),
     val timerMinutes: Int = 5,
     
     val autoCollapseSec: Int = 0,
@@ -403,6 +405,8 @@ data class IslandSettings(
 
     /** Ứng dụng tự bật pop-up của nó: Viên thuốc chỉ báo dạng viên nhỏ để không hiện 2 lần. */
     val msgCompactWhenPopup: Boolean = false,
+    /** Samsung: những app người dùng xác nhận đã bỏ chọn "Pop-up thông báo" (One UI không cho app khác đọc ô này). */
+    val popupOffApps: Set<String> = emptySet(),
     /** Tự động sao lưu cấu hình ra Download/CapsuleVN (còn lại sau khi gỡ app). */
     val autoBackup: Boolean = true,
     /** Đã hỏi khôi phục cài đặt cũ sau khi cài mới. */
@@ -443,6 +447,8 @@ data class IslandSettings(
     val noticeGeneral: NoticeTweak get() = NoticeTweak(noticeOffsetX, noticeOffsetY, noticeWidth, noticeHeightExtra, noticeCornerRadius)
 
     fun tweakFor(kind: NoticeKind?): NoticeTweak = kind?.let { noticeTweaks[it] } ?: noticeGeneral
+
+    fun durationFor(key: String): Int = noticeDurations[key] ?: noticeDurationMs
 
     val liveEqualizer: Boolean get() = fxEqualizer && !reduceEffects
 }
@@ -497,6 +503,18 @@ object SettingsRepo {
                     
                     elasticity = if (elasticity == Elasticity.HIGH) d.elasticity else elasticity,
                     layoutVersion = 4,
+                )
+            }
+        }
+        // v1.5: màn hình tắt chỉ để AOD của máy hiển thị (không tự bật sáng); bỏ chờ chạm đúp làm chạm chậm
+        if (current.layoutVersion < 5) {
+            update {
+                val oldPreset = tapAction == TapAction.EXPAND && doubleTapAction == TapAction.OPEN_APP && longPressAction == TapAction.PLAY_PAUSE
+                copy(
+                    wakeOnMessage = false,
+                    doubleTapAction = if (oldPreset) TapAction.NOTHING else doubleTapAction,
+                    longPressAction = if (oldPreset) TapAction.OPEN_APP else longPressAction,
+                    layoutVersion = 5,
                 )
             }
         }

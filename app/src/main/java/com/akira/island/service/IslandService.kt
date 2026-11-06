@@ -202,6 +202,17 @@ class IslandService : AccessibilityService() {
                 .collect { ringing -> if (!ringing) IslandBus.callHidden.value = false }
         }
 
+        // Chạm vào Viên thuốc: phóng sẵn cửa sổ trước khi bung -> mở rộng mượt, không khựng
+        scope.launch { IslandBus.touchDown.collect { onTransition() } }
+
+        // Rời app cài đặt -> bỏ xem trước trên Viên thuốc, trả lại vùng chạm
+        scope.launch {
+            IslandBus.appVisible.collect {
+                onTransition()
+                updateTouchWindow()
+            }
+        }
+
         // Tin nhắn tới lúc màn hình tắt: sáng màn hình để hiện trên Viên thuốc, xong thì tự tắt lại
         scope.launch { IslandBus.notice.collect { onNoticeForWake(it) } }
 
@@ -440,7 +451,7 @@ class IslandService : AccessibilityService() {
     private fun updateDisplayHeight() {
         val view = display ?: return
         syncWidth()
-        val h = if (tall || fxTall || IslandBus.expanded.value || IslandBus.cardPreviewMode.value != CardPreviewMode.NONE) tallHeight() else islandBottom().coerceAtLeast(dp(ISLAND_PAD_DP * 2))
+        val h = if (tall || fxTall || IslandBus.expanded.value || IslandBus.previewing()) tallHeight() else islandBottom().coerceAtLeast(dp(ISLAND_PAD_DP * 2))
         if (displayParams.height == h) return
         displayParams.height = h
         runCatching { wm?.updateViewLayout(view, displayParams) }
@@ -456,7 +467,7 @@ class IslandService : AccessibilityService() {
                 maxOf(body.right, bubble.right), maxOf(body.bottom, bubble.bottom),
             )
         }
-        val usable = visible && !area.isEmpty && IslandBus.cardPreviewMode.value == CardPreviewMode.NONE
+        val usable = visible && !area.isEmpty && !IslandBus.previewing()
         val origin = IntArray(2)
         display?.getLocationOnScreen(origin)
         val x = if (usable) origin[0] + floor(area.left).toInt() else -10

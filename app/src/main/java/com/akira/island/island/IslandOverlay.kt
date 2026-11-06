@@ -100,6 +100,7 @@ import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -257,7 +258,7 @@ fun IslandOverlay(
     val foreground by IslandBus.foregroundPackage.collectAsState()
     val expanded by IslandBus.expanded.collectAsState()
     val focus by IslandBus.focus.collectAsState()
-    val calibrating by IslandBus.calibrating.collectAsState()
+    val calibrating = calibratingNow()
     val nextAlarm by IslandBus.nextAlarm.collectAsState()
     val egg by IslandBus.egg.collectAsState()
     val payReady by IslandBus.payReady.collectAsState()
@@ -371,7 +372,7 @@ fun IslandOverlay(
     val previewing = previewNow < previewUntil
 
     val context = LocalContext.current
-    val cardPreview by IslandBus.cardPreviewMode.collectAsState()
+    val cardPreview = previewMode()
     val previewMsgNotice = remember(context) { buildPreviewMessage(context) }
     val previewCallInfo = remember { buildPreviewCall() }
     val previewUpdateNotice = remember(context) { buildPreviewUpdate(context) }
@@ -496,7 +497,7 @@ private fun IslandRow(
     onBodyBounds: (Rect) -> Unit,
     onBubbleBounds: (Rect) -> Unit,
 ) {
-    val cardPreview by IslandBus.cardPreviewMode.collectAsState()
+    val cardPreview = previewMode()
     val otherNotice = primary is Act.PayA || (
         primary is Act.NoticeA && primary.n.style != NoticeStyle.MESSAGE && primary.n.style != NoticeStyle.UPDATE
         )
@@ -601,7 +602,7 @@ private fun IslandBody(
     val expandedWidth = if (s.expandedWidth > 0) s.expandedWidth.dp.coerceAtMost(conf.screenWidthDp.dp) else (conf.screenWidthDp.dp - 22.dp).coerceAtMost(460.dp)
     val h = s.height.dp
 
-    val cardPreviewNow by IslandBus.cardPreviewMode.collectAsState()
+    val cardPreviewNow = previewMode()
     val previewKindNow by IslandBus.previewNoticeKind.collectAsState()
     val noticeCorner = otherTweak(s, primary, cardPreviewNow, previewKindNow).corner
     val cornerTarget = when {
@@ -666,7 +667,7 @@ private fun IslandBody(
     val glowTint by animateColorAsState(lastArt[0], tween(500), label = "glowTint")
 
     val unreadLedColor by IslandBus.unreadLedColor.collectAsState()
-    val previewLed by IslandBus.previewLed.collectAsState()
+    val previewLed = previewLedNow()
     val eventLed = s.ledOnEvent && primary is Act.NoticeA
     val unreadLed = s.ledOnUnread && unreadLedColor != null
     val chargeLed = s.ledOnCharge && battery.charging
@@ -822,8 +823,9 @@ private fun IslandBody(
             .pointerInput(Unit) {
                 awaitPointerEventScope {
                     while (true) {
-                        awaitPointerEvent(PointerEventPass.Initial)
+                        val e = awaitPointerEvent(PointerEventPass.Initial)
                         IslandBus.lastTouch = SystemClock.elapsedRealtime()
+                        if (e.type == PointerEventType.Press) IslandBus.touchDown.tryEmit(Unit)
                     }
                 }
             }

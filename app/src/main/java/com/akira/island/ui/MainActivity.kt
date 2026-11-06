@@ -1,5 +1,7 @@
 package com.akira.island.ui
 
+import com.akira.island.core.IslandBus
+
 import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -65,6 +67,7 @@ import com.akira.island.core.LangScope
 import com.akira.island.core.tr
 import com.akira.island.data.SettingsRepo
 import com.akira.island.ui.screens.AnimScreen
+import com.akira.island.ui.screens.DurationsScreen
 import com.akira.island.ui.screens.AppInfoScreen
 import com.akira.island.ui.screens.BannersScreen
 import com.akira.island.ui.screens.BanksScreen
@@ -100,7 +103,7 @@ import com.akira.island.update.UpdateChecker
 enum class Screen {
     CARDS, EVENTS, GESTURES, LYRICS, SIZE, COLORS, INSTRUCTION, ABOUT, DIAG, LOOK, ANIM, EFFECTS, BANNERS,
     PERMISSIONS, TESTS, NOTIFICATIONS, BEHAVIOR, PAYDIAG, KEEPALIVE, BANKS, MSG_CALL_SIZE,
-    GAMING, LED_RING, ECOSYSTEM, OTP_SETTINGS, TTS_SETTINGS,
+    GAMING, LED_RING, ECOSYSTEM, OTP_SETTINGS, TTS_SETTINGS, DURATIONS,
 }
 
 class MainActivity : ComponentActivity() {
@@ -112,6 +115,17 @@ class MainActivity : ComponentActivity() {
             navigationBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
         )
         setContent { IslandTheme { AppRoot() } }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        IslandBus.appVisible.value = true
+    }
+
+    override fun onStop() {
+        // Rời app (về màn hình chính / mở app khác): xem trước & căn chỉnh trên Viên thuốc tự ẩn
+        IslandBus.appVisible.value = false
+        super.onStop()
     }
 
     override fun onResume() {
@@ -181,7 +195,8 @@ private fun AppRoot() {
                     Screen.KEEPALIVE.name -> KeepAliveScreen(back)
                     Screen.BANKS.name -> BanksScreen(back)
                     Screen.LOOK.name -> LookScreen(back)
-                    Screen.ANIM.name -> AnimScreen(back)
+                    Screen.ANIM.name -> AnimScreen(back, open)
+                    Screen.DURATIONS.name -> DurationsScreen(back)
                     Screen.EFFECTS.name -> EffectsScreen(back)
                     Screen.BANNERS.name -> BannersScreen(back)
                     Screen.PERMISSIONS.name -> PermissionsScreen(back, open)
