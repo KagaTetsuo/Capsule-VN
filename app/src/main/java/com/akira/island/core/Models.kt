@@ -141,6 +141,10 @@ data class LiveInfo(
     val turn: Turn? = null,
     
     val expiresAt: Long = 0,
+    /** Tiến trình 0..1 của đơn hàng / chuyến xe / lộ trình (null = chưa biết). */
+    val progress: Float? = null,
+    /** Giai đoạn hiện tại, vd. "Đang giao", "Tài xế đã đến". */
+    val stage: String? = null,
 )
 
 data class TorchState(

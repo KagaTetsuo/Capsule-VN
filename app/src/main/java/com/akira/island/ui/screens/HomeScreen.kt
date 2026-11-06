@@ -56,6 +56,7 @@ import androidx.compose.material.icons.rounded.ChatBubble
 import androidx.compose.material.icons.rounded.HourglassBottom
 import androidx.compose.material.icons.rounded.Lightbulb
 import androidx.compose.material.icons.rounded.Navigation
+import androidx.compose.material.icons.rounded.LocalShipping
 import androidx.compose.material.icons.rounded.Nfc
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.NotificationsOff
@@ -700,6 +701,12 @@ private fun demos(context: Context): List<Demo> {
         Demo(Icons.Rounded.Navigation, tr("Điều hướng & Bản đồ", "Navigation"),
             tr("Mũi tên chỉ hướng rẽ và khoảng cách còn lại", "The turn arrow and meters to destination"), Tile.Purple) {
             Controls.showTestLive(context)
+        },
+
+        // Giao hàng: thanh tiến trình kiểu Live Activity
+        Demo(Icons.Rounded.LocalShipping, tr("Đơn giao hàng", "Delivery"),
+            tr("Thanh tiến trình: Đã đặt → Đang chuẩn bị → Đang giao → Đã giao (mở rộng để xem)", "Progress bar: Ordered → Preparing → On the way → Delivered (expand to see)"), Tile.Orange) {
+            Controls.showTestDelivery(context)
         },
 
         // 18. Cập nhật phần mềm

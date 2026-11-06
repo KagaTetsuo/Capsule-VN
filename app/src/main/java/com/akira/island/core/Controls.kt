@@ -204,6 +204,8 @@ object Controls {
     @Suppress("MissingPermission")
     fun openCall(context: Context, call: CallInfo) {
         if (call.key == TEST_CALL) return
+        // Mở màn hình cuộc gọi của app: app tự lo nghe / từ chối, Viên thuốc thôi hiện thẻ cuộc gọi đến cho khỏi trùng
+        if (call.incoming) hideIncomingCall()
         if (send(context, call.open)) return
         val telecom = context.getSystemService(TelecomManager::class.java)
         if (runCatching { telecom?.showInCallScreen(false) }.isSuccess && telecom != null) return
@@ -239,6 +241,31 @@ object Controls {
             IslandBus.live.value = IslandBus.live.value - TEST_LIVE
         }
     }
+
+    /** Đơn giao hàng mẫu: tiến trình chạy dần qua các giai đoạn trong ~16 giây. */
+    fun showTestDelivery(context: Context) {
+        val steps = listOf(
+            0.15f to tr("Đã đặt", "Ordered"), 0.35f to tr("Đang chuẩn bị", "Preparing"),
+            0.6f to tr("Đang giao", "On the way"), 0.85f to tr("Sắp đến", "Arriving"), 1f to tr("Đã giao", "Delivered"),
+        )
+        val base = LiveInfo(
+            key = TEST_DELIVERY, pkg = context.packageName, kind = LiveKind.DELIVERY,
+            title = tr("Trà sữa trân châu", "Bubble tea"), text = tr("Tài xế Minh · 59X1-234.56", "Driver Minh · 59X1-234.56"), sub = "",
+            icon = com.akira.island.service.NotificationParser.icon(context, context.packageName), art = null,
+            postTime = System.currentTimeMillis(), open = null, eta = tr("12 phút", "12 min"),
+            expiresAt = System.currentTimeMillis() + 18_000L,
+        )
+        IslandBus.scope.launch {
+            for ((p, stage) in steps) {
+                IslandBus.live.value = IslandBus.live.value + (TEST_DELIVERY to base.copy(progress = p, stage = stage, postTime = System.currentTimeMillis()))
+                delay(3_200)
+            }
+            delay(1_500)
+            IslandBus.live.value = IslandBus.live.value - TEST_DELIVERY
+        }
+    }
+
+    const val TEST_DELIVERY = "test-delivery"
 
     private const val TEST_LIVE_MS = 10_000L
     const val TEST_LIVE = "test-live"

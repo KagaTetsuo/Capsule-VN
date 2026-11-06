@@ -282,15 +282,17 @@ fun BorderEditor(
     }
 }
 
-/** Kích thước & vị trí của thông báo viên nhỏ (chế độ chuông, đã gửi…). */
+/** Kích thước & vị trí riêng của một loại viên nhỏ: chế độ chuông (MODE) hoặc Đã gửi / Đã sao chép (SENT). */
 @Composable
-private fun PillSizeGroup() {
+private fun PillSizeGroup(kind: NoticeKind) {
     val s by SettingsRepo.state.collectAsState()
-    val own = s.noticeTweaks[NoticeKind.MODE]
+    val own = s.noticeTweaks[kind]
     val cur = own ?: s.noticeGeneral.copy(width = 0, heightExtra = 0, corner = -1)
+    val widths = if (kind == NoticeKind.SENT) 120..460 else 60..360
     fun put(tw: NoticeTweak) {
         IslandBus.cardPreviewMode.value = CardPreviewMode.NOTICE
-        SettingsRepo.update { copy(noticeTweaks = noticeTweaks + (NoticeKind.MODE to tw)) }
+        IslandBus.previewNoticeKind.value = kind
+        SettingsRepo.update { copy(noticeTweaks = noticeTweaks + (kind to tw)) }
     }
     Group {
         GroupStepSlider(
@@ -303,8 +305,9 @@ private fun PillSizeGroup() {
         ) { v -> put(cur.copy(offsetX = v)) }
         GroupStepSlider(
             Pos.Middle, Icons.Rounded.Straighten, tr("Chiều rộng", "Width"),
-            if (cur.width == 0) 120 else cur.width.coerceIn(60, 360), 60..360,
-            action = tr("Tự động theo nội dung", "Auto (fits content)") to { put(cur.copy(width = 0)) }, color = Tile.Blue,
+            if (cur.width == 0) widths.first + 60 else cur.width.coerceIn(widths.first, widths.last), widths,
+            action = (if (kind == NoticeKind.SENT) tr("Tự động theo màn hình", "Auto (screen width)") else tr("Tự động theo nội dung", "Auto (fits content)")) to { put(cur.copy(width = 0)) },
+            color = Tile.Blue,
             valueText = if (cur.width == 0) tr("Tự động", "Auto") else null,
         ) { v -> put(cur.copy(width = v)) }
         GroupStepSlider(
@@ -319,9 +322,9 @@ private fun PillSizeGroup() {
         ) { v -> put(cur.copy(corner = v)) }
         if (own != null) {
             GroupItem(
-                Pos.Last, Icons.Rounded.Restore, tr("Đặt lại kích thước viên nhỏ", "Reset pill size"),
+                Pos.Last, Icons.Rounded.Restore, tr("Đặt lại kích thước", "Reset size"),
                 tr("Dùng lại kích thước tự động như ban đầu", "Back to the automatic size"),
-                color = Tile.Gray, onClick = { SettingsRepo.update { copy(noticeTweaks = noticeTweaks - NoticeKind.MODE) } },
+                color = Tile.Gray, onClick = { SettingsRepo.update { copy(noticeTweaks = noticeTweaks - kind) } },
             )
         }
     }
@@ -335,10 +338,12 @@ private fun PillSizeGroup() {
 fun SurfaceScreen(onBack: () -> Unit, open: (Screen) -> Unit) {
     val s by SettingsRepo.state.collectAsState()
     var surface by remember { mutableStateOf(SurfaceNav.initial) }
+    // Thông báo viên nhỏ chia 2 loại chỉnh riêng: chế độ chuông / im lặng / rung và Đã gửi / Đã sao chép
+    var pillKind by remember { mutableStateOf(NoticeKind.MODE) }
 
     // Xem trước trực tiếp đúng nơi đang chỉnh trên Viên thuốc thật (tự ẩn khi rời màn hình / rời app)
-    DisposableEffect(surface) {
-        IslandBus.previewNoticeKind.value = if (surface == Surface.PILL) NoticeKind.MODE else null
+    DisposableEffect(surface, pillKind) {
+        IslandBus.previewNoticeKind.value = if (surface == Surface.PILL) pillKind else null
         IslandBus.cardPreviewMode.value = when (surface) {
             Surface.PILL -> CardPreviewMode.NOTICE
             Surface.CARD -> CardPreviewMode.MESSAGE
@@ -389,7 +394,14 @@ fun SurfaceScreen(onBack: () -> Unit, open: (Screen) -> Unit) {
                     color = Tile.Purple, onClick = { open(Screen.LOOK) },
                 ) { Arrow() }
             }
-            Surface.PILL -> PillSizeGroup()
+            Surface.PILL -> {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(NoticeKind.MODE to tr("Chế độ chuông, im lặng…", "Ring mode, silent…"), NoticeKind.SENT to tr("Đã gửi / Đã sao chép", "Sent / Copied")).forEach { (k, label) ->
+                        Chip(pillKind == k, label, { pillKind = k })
+                    }
+                }
+                PillSizeGroup(pillKind)
+            }
             Surface.CARD -> Group {
                 GroupItem(
                     Pos.Single, Icons.Rounded.OpenWith, tr("Tin nhắn, cuộc gọi, cập nhật, thông báo khác", "Messages, calls, updates, other alerts"),
@@ -436,7 +448,7 @@ fun SurfaceScreen(onBack: () -> Unit, open: (Screen) -> Unit) {
                     ) { v -> SettingsRepo.update { copy(cardStylePills = v) } }
                     GroupItem(
                         Pos.Last, Icons.Rounded.Schedule, tr("Thời gian hiển thị", "Display time"),
-                        tr("%.1f giây · chỉnh nhanh / chậm từng loại", "%.1f s · set per kind").format(s.durationFor(NoticeKind.MODE.name) / 1000f),
+                        tr("%.1f giây · chỉnh nhanh / chậm từng loại", "%.1f s · set per kind").format(s.durationFor(pillKind.name) / 1000f),
                         color = Tile.Orange, onClick = { open(Screen.DURATIONS) },
                     ) { Arrow() }
                 }

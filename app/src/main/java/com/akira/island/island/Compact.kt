@@ -2,6 +2,9 @@
 
 package com.akira.island.island
 
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.offset
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -861,6 +864,45 @@ fun LiveGlyph(l: LiveInfo, size: Dp, tint: Color) {
     }
 }
 
+/**
+ * Thanh tiến trình kiểu Live Activity: vạch đã đi được + biểu tượng app chạy theo đầu vạch,
+ * kèm chữ giai đoạn (Đã đặt → Đang giao → Đã giao…). Chỉ vẽ lại khi tiến trình đổi (không tốn pin).
+ */
+@Composable
+fun LiveProgressBar(l: LiveInfo, tint: Color, modifier: Modifier = Modifier, showLabel: Boolean = true) {
+    val p = l.progress ?: return
+    val anim by animateFloatAsState(p.coerceIn(0f, 1f), tween(700, easing = FastOutSlowInEasing), label = "liveProgress")
+    Column(modifier) {
+        if (showLabel && l.stage != null) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(l.stage, color = tint, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, modifier = Modifier.weight(1f))
+                Text("${(p * 100).toInt()}%", color = Color.White.copy(alpha = 0.6f), fontSize = 12.sp, style = Digits)
+            }
+            Spacer(Modifier.height(5.dp))
+        }
+        BoxWithConstraints(Modifier.fillMaxWidth().height(18.dp), contentAlignment = Alignment.CenterStart) {
+            val dot = 18.dp
+            Box(Modifier.fillMaxWidth().height(6.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.14f)))
+            Box(
+                Modifier.fillMaxWidth(anim.coerceAtLeast(0.02f)).height(6.dp).clip(CircleShape)
+                    .background(Brush.horizontalGradient(listOf(tint.copy(alpha = 0.55f), tint))),
+            )
+            Box(
+                Modifier
+                    .offset(x = (maxWidth - dot) * anim)
+                    .size(dot)
+                    .clip(CircleShape)
+                    .background(Color.Black)
+                    .border(2.dp, tint, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (l.icon != null) Image(l.icon, null, Modifier.size(12.dp).clip(CircleShape))
+                else Box(Modifier.size(6.dp).clip(CircleShape).background(tint))
+            }
+        }
+    }
+}
+
 @Composable
 private fun LiveCompact(l: LiveInfo, s: IslandSettings) {
     val h = activeHeight(s)
@@ -869,7 +911,10 @@ private fun LiveCompact(l: LiveInfo, s: IslandSettings) {
         left = { LiveGlyph(l, if (l.turn != null) h * 0.51f else h * 0.56f, tint) },
         right = {
             val short = liveShort(l)
-            if (short != null) {
+            if (short == null && l.progress != null) {
+                // Không có chữ ngắn: vòng tiến trình đơn hàng / chuyến xe
+                ProgressRing(l.progress, tint, Modifier.size(h * 0.5f), stroke = 3.dp)
+            } else if (short != null) {
                 Text(short, color = tint, fontSize = 17.sp, style = Digits.copy(fontWeight = FontWeight.Bold), maxLines = 1,
                     overflow = TextOverflow.Ellipsis)
             } else {

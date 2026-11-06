@@ -116,7 +116,8 @@ enum class NoticeKind(private val ru: String, private val en: String) {
     PAYMENT("Thanh toán", "Payments"),
     NAV("Điều hướng", "Navigation"),
     ALARM("Báo thức", "Alarm"),
-    MODE("Viên nhỏ (chế độ chuông, đã gửi…)", "Small pills (ring mode, sent…)"),
+    MODE("Viên nhỏ (chế độ chuông, im lặng, rung…)", "Small pills (ring mode, silent, vibrate…)"),
+    SENT("Đã gửi / Đã sao chép", "Sent / Copied"),
     OTHER("Sự kiện khác", "Other events"),
     ;
 
@@ -385,7 +386,7 @@ data class IslandSettings(
     val gameShowHud: Boolean = true,
     val gameBypassLandscapeHide: Boolean = true,
 
-    val ledEnabled: Boolean = true,
+    val ledEnabled: Boolean = false,
     val ledOnUnread: Boolean = true,
     val ledOnEvent: Boolean = true,
     val ledOnCharge: Boolean = true,
@@ -528,6 +529,8 @@ object SettingsRepo {
         }
         // v1.5: hệ thống đường viền mới theo từng nơi — chuyển thiết lập viền cũ sang, không mất gì
         if (current.layoutVersion < 6) update { migrateBorders().copy(layoutVersion = 6) }
+        // v1.5.1: Vòng sáng LED mặc định tắt (giống đường viền) — bật lại được trong Giao diện → Vòng sáng LED
+        if (current.layoutVersion < 7) update { copy(ledEnabled = false, layoutVersion = 7) }
     }
 
     fun update(block: IslandSettings.() -> IslandSettings) {

@@ -57,9 +57,14 @@ fun DurationsScreen(onBack: () -> Unit) {
                 NoticeKind.NAV.name -> R.drawable.ios_navigate
                 NoticeKind.ALARM.name -> R.drawable.ios_alarm
                 NoticeKind.MODE.name -> R.drawable.ios_notifications_off
+                NoticeKind.SENT.name -> R.drawable.ios_checkmark_circle
                 else -> R.drawable.ios_wifi
             }
-            val style = if (key == NoticeKind.MODE.name) NoticeStyle.PILL else NoticeStyle.WIDE
+            val style = when (key) {
+                NoticeKind.MODE.name -> NoticeStyle.PILL
+                NoticeKind.SENT.name -> NoticeStyle.SENT
+                else -> NoticeStyle.WIDE
+            }
             val base = Notice(title, "%.1f s".format(ms / 1000f), Ios.load(context, icon), Tints.Orange, style = style)
             // Thông báo mẫu kéo dài đúng thời gian vừa chọn của loại đó
             val n = base.copy(extraMs = (ms - SettingsRepo.current.durationFor(base.durationKey())).toLong())

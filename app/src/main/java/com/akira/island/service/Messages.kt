@@ -241,6 +241,9 @@ object Messages {
     }
 
     fun forget(key: String) {
+        // Tin đã đọc / đã xoá trong app hoặc trên thanh thông báo: gỡ luôn thẻ đang hiện trên Viên thuốc
+        val current = IslandBus.notice.value
+        if (current?.message?.key == key && !IslandBus.noticeHold.value) IslandBus.notice.value = null
         shown.remove(key)
         repliedAt.remove(key)
         IslandBus.removeUnread(key)

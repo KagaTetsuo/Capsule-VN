@@ -608,6 +608,8 @@ private fun LiveExpanded(l: LiveInfo) {
             if (line != null) {
                 Text(line, color = tint, fontSize = 14.sp, style = Digits, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
+            // Thanh tiến trình: giao hàng / gọi xe / lộ trình còn lại
+            LiveProgressBar(l, tint, Modifier.fillMaxWidth().padding(top = 6.dp))
             Row(
                 Modifier
                     .padding(top = 6.dp)

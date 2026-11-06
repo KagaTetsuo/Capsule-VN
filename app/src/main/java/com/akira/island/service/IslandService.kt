@@ -176,6 +176,7 @@ class IslandService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         SettingsRepo.init(this)
+        watchCallAudio()
         wm = getSystemService(WINDOW_SERVICE) as WindowManager
         IslandBus.landscape.value = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
@@ -279,13 +280,16 @@ class IslandService : AccessibilityService() {
                     applySettings(s, land)
                 }
         }
+        // Đo RAM chỉ khi thật sự cần (đang mở rộng hoặc đang chơi game, màn hình sáng); còn lại ngủ hẳn, không thức dậy định kỳ
         scope.launch {
-            while (isActive) {
-                if (IslandBus.screenOn.value && (IslandBus.gamingActive.value || IslandBus.expanded.value)) {
-                    sampleRam()
+            combine(IslandBus.screenOn, IslandBus.gamingActive, IslandBus.expanded) { on, game, exp -> on && (game || exp) }
+                .distinctUntilChanged()
+                .collectLatest { need ->
+                    while (need) {
+                        sampleRam()
+                        delay(4_000L)
+                    }
                 }
-                delay(4_000L)
-            }
         }
 
         scope.launch {
@@ -487,6 +491,36 @@ class IslandService : AccessibilityService() {
         runCatching { wm?.updateViewLayout(view, touchParams) }
     }
 
+    private var modeListener: Any? = null
+
+    /**
+     * Nghe máy trong app gọi qua mạng (Zalo, Messenger, Telegram…): Android chuyển sang chế độ âm thanh đàm thoại.
+     * Nếu thẻ "cuộc gọi đến" của app đã đổ chuông một lúc mà âm thanh chuyển sang đàm thoại -> coi như đã nghe,
+     * Viên thuốc đổi sang "đang gọi" thay vì tiếp tục đổ chuông (kể cả khi app quên gỡ thông báo cuộc gọi đến).
+     * Chỉ là một sự kiện hệ thống, không tốn pin (không thăm dò liên tục).
+     */
+    private fun watchCallAudio() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S || modeListener != null) return
+        val am = getSystemService(android.media.AudioManager::class.java) ?: return
+        val l = android.media.AudioManager.OnModeChangedListener { mode ->
+            if (mode != android.media.AudioManager.MODE_IN_COMMUNICATION && mode != android.media.AudioManager.MODE_IN_CALL) return@OnModeChangedListener
+            val now = System.currentTimeMillis()
+            fun stale(c: com.akira.island.core.CallInfo) =
+                c.incoming && c.key != CallMonitor.KEY && c.key != Controls.TEST_CALL && now - c.postTime > 1_500
+            val calls = IslandBus.calls.value
+            if (calls.values.none(::stale)) return@OnModeChangedListener
+            IslandBus.calls.value = calls.mapValues { (_, c) -> if (stale(c)) c.copy(incoming = false, base = now) else c }
+        }
+        runCatching { am.addOnModeChangedListener(mainExecutor, l) }.onSuccess { modeListener = l }
+    }
+
+    private fun unwatchCallAudio() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
+        val l = modeListener as? android.media.AudioManager.OnModeChangedListener ?: return
+        runCatching { getSystemService(android.media.AudioManager::class.java)?.removeOnModeChangedListener(l) }
+        modeListener = null
+    }
+
     private fun setTiltEnabled(on: Boolean) {
         if (on == tiltOn) return
         tiltOn = on
@@ -600,7 +634,10 @@ class IslandService : AccessibilityService() {
         var types = info.eventTypes and extra.inv()
         if (screenEvents) types = types or extra
         // Chế độ ngân hàng: nghe cú chạm biểu tượng ở màn hình chính để tắt Viên thuốc trước khi app ngân hàng mở
-        if (SettingsRepo.current.bankMode) types = types or AccessibilityEvent.TYPE_VIEW_CLICKED
+        // Chỉ nghe khi đang ở màn hình chính (bớt xử lý mỗi lần chạm trong các app khác)
+        if (SettingsRepo.current.bankMode && IslandBus.foregroundPackage.value.let { it == null || it == BankMode.homePackage(this) }) {
+            types = types or AccessibilityEvent.TYPE_VIEW_CLICKED
+        }
         if (types == info.eventTypes) return
         info.eventTypes = types
         runCatching { serviceInfo = info }
@@ -667,7 +704,11 @@ class IslandService : AccessibilityService() {
         payReader?.onForeground(pkg, cls)
         setScreenEvents(clockReader?.active == true || payReader?.active == true)
         IslandBus.foregroundPackage.value = pkg
+        applyEventTypes()
         IslandBus.removeUnreadPkg(pkg)
+        // Đã mở app nhắn tin: thẻ tin nhắn của chính app đó trên Viên thuốc tự ẩn (không hiện trùng với app)
+        val shown = IslandBus.notice.value
+        if (shown?.message?.pkg == pkg && !SettingsRepo.current.msgInApp && !IslandBus.noticeHold.value) IslandBus.notice.value = null
         updateRamAndGame(pkg)
     }
 
@@ -781,7 +822,7 @@ class IslandService : AccessibilityService() {
     }
 
     override fun onDestroy() {
-        
+        unwatchCallAudio()
         stopService(Intent(this, KeepAliveService::class.java))
         handler.removeCallbacks(shoot)
         handler.removeCallbacks(showAgain)
