@@ -45,11 +45,13 @@ run() { # $1 = apk, $2 = nhãn
   adb exec-out screencap -p > "$OUT/$label-3-message.png"
   sleep 6
 
+  # Cửa sổ Viên thuốc có thật sự hiện trên màn hình không
+  adb shell dumpsys window windows | grep -A12 "Window{.*$PKG" | grep -E "Window\{|mFrame=|mHasSurface|isVisible|mViewVisibility" | head -12
   # Chạm vào Viên thuốc (giữa đỉnh màn hình) để mở rộng
-  adb shell input tap $((W / 2)) 60
+  adb shell input tap $((W / 2)) 25
   sleep 2
   adb exec-out screencap -p > "$OUT/$label-4-expanded.png"
-  adb shell input tap $((W / 2)) 60
+  adb shell input tap $((W / 2)) 25
   sleep 3
 
   local pid
