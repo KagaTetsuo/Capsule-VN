@@ -143,7 +143,7 @@ object Messages {
         val appPopsUp = !ranked || ranking.importance >= NotificationManager.IMPORTANCE_HIGH
         val compact = (IslandBus.gamingActive.value && s.gameModeEnabled && s.gameSuppressPopups) ||
             // Ứng dụng tự hiện pop-up (không tắt được trên một số máy): Viên thuốc chỉ báo gọn để không bị 2 lần
-            (s.msgCompactWhenPopup && appPopsUp && ranked)
+            (s.msgCompactWhenPopup && appPopsUp && ranked && sbn.packageName !in s.popupOffApps)
         if (compact) {
             val shortBody = if (text.length > 22) text.take(22) + "…" else text
             IslandBus.post(

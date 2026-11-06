@@ -13,8 +13,8 @@ android {
         applicationId = "com.dynamicisland.vn"
         minSdk = 26
         targetSdk = 35
-        versionCode = 12
-        versionName = "1.4.3"
+        versionCode = 13
+        versionName = "1.5.0"
     }
 
     
@@ -54,7 +54,17 @@ android {
     buildFeatures {
         compose = true
     }
+
+    // "Có gì mới" trong app đọc trực tiếp CHANGELOG.md -> luôn đúng nội dung phiên bản đang cài
+    sourceSets.getByName("main").assets.srcDir(layout.buildDirectory.dir("generated/changelog").get().asFile)
 }
+
+val copyChangelog = tasks.register<Copy>("copyChangelog") {
+    from(rootProject.file("CHANGELOG.md"))
+    into(layout.buildDirectory.dir("generated/changelog"))
+    rename { "changelog.md" }
+}
+tasks.named("preBuild") { dependsOn(copyChangelog) }
 
 dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2024.12.01")

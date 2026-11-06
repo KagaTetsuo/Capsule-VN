@@ -34,6 +34,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
@@ -617,4 +618,26 @@ fun TurnArrow(turn: Turn, color: Color, modifier: Modifier = Modifier) {
         drawPath(body, color, style = stroke)
         drawPath(head, color, style = stroke)
     }
+}
+
+/** Chế độ xem trước đang yêu cầu, chỉ có hiệu lực khi app Capsule VN đang mở (rời app là tự tắt). */
+@Composable
+fun previewMode(): com.akira.island.core.CardPreviewMode {
+    val mode by IslandBus.cardPreviewMode.collectAsState()
+    val visible by IslandBus.appVisible.collectAsState()
+    return if (visible) mode else com.akira.island.core.CardPreviewMode.NONE
+}
+
+@Composable
+fun calibratingNow(): Boolean {
+    val on by IslandBus.calibrating.collectAsState()
+    val visible by IslandBus.appVisible.collectAsState()
+    return on && visible
+}
+
+@Composable
+fun previewLedNow(): Boolean {
+    val on by IslandBus.previewLed.collectAsState()
+    val visible by IslandBus.appVisible.collectAsState()
+    return on && visible
 }

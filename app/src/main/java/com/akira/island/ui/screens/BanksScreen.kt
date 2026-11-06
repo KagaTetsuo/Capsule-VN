@@ -50,6 +50,10 @@ import android.graphics.drawable.Icon
 import android.os.Build
 import android.widget.Toast
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.OpenInNew
+import androidx.compose.material.icons.rounded.NotificationsActive
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material.icons.rounded.AddBox
 import androidx.compose.material.icons.rounded.Lock
@@ -82,6 +86,10 @@ fun BanksScreen(onBack: () -> Unit) {
         Triple(BankMode.canWriteSecure(context), BankMode.hasUsageAccess(context), BankMode.shizukuRunning())
     }
     val (canWrite, usage, shizuku) = perm
+    val postLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
+        refresh()
+        if (!ok) Perms.openAppNotifications(context)
+    }
     var appsDialog by remember { mutableStateOf(false) }
     var adbDialog by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
@@ -121,7 +129,13 @@ fun BanksScreen(onBack: () -> Unit) {
                     else -> tr("Tự tắt khi mở app — không cần cài đặt gì thêm. Dùng xong chạm thông báo để bật lại", "Pauses when opened — no setup needed. Tap the notification to turn back on")
                 },
                 s.bankMode, color = Tile.Indigo,
-            ) { v -> SettingsRepo.update { copy(bankMode = v) } }
+            ) { v ->
+                SettingsRepo.update { copy(bankMode = v) }
+                // Bật chế độ ngân hàng: xin luôn quyền hiện thông báo để nhắc bật lại hoạt động
+                if (v && !Perms.postNotifications(context) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    postLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                }
+            }
             val list = remember(s.bankApps, s.bankAppsEdited) { BankMode.apps(context) }
             GroupItem(
                 Pos.Last, Icons.Rounded.Apps, tr("Ứng dụng áp dụng", "Apps"),
@@ -131,10 +145,29 @@ fun BanksScreen(onBack: () -> Unit) {
             ) { Arrow() }
         }
 
+        val post = Perms.postNotifications(context)
+        val overlay = Perms.overlay(context)
         SectionHeader(tr("Bật lại tiện hơn (tuỳ chọn)", "Easier resume (optional)"))
         Group {
             GroupItem(
-                Pos.First, Icons.Rounded.QueryStats, tr("Nhắc bật lại khi rời app", "Remind when you leave"),
+                Pos.First, Icons.Rounded.NotificationsActive, tr("Cho phép Capsule VN hiện thông báo", "Allow Capsule VN notifications"),
+                if (post) tr("Đã bật — nhắc bật lại và nút “Bật lại ngay” sẽ hiện", "On — reminders and the “Turn on now” button will show")
+                else tr("Bắt buộc để thấy nhắc bật lại Viên thuốc (Android 13+)", "Required to see the turn-back-on reminder (Android 13+)"),
+                color = if (post) Tile.Green else Tile.Orange,
+                onClick = {
+                    if (!post && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) postLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                    else Perms.openAppNotifications(context)
+                },
+            ) { Status(post) }
+            GroupItem(
+                Pos.Middle, Icons.Rounded.OpenInNew, tr("Tự mở lại app ngân hàng nếu bị đóng", "Reopen the bank app if it closes"),
+                if (overlay) tr("Đã bật — app ngân hàng tự đóng lần đầu sẽ được mở lại ngay", "On — a bank app that closes itself is reopened right away")
+                else tr("Cấp “Hiển thị trên ứng dụng khác” để không phải mở app ngân hàng 2 lần", "Grant “Display over other apps” so you don't have to open the bank app twice"),
+                color = if (overlay) Tile.Green else Tile.Blue,
+                onClick = { Perms.openOverlay(context) },
+            ) { Status(overlay) }
+            GroupItem(
+                Pos.Middle, Icons.Rounded.QueryStats, tr("Nhắc bật lại khi rời app", "Remind when you leave"),
                 if (usage) tr("Đã bật — rời app ngân hàng sẽ hiện nhắc 1 chạm", "On — a one-tap reminder when you leave the bank app")
                 else tr("Cấp “Truy cập dữ liệu sử dụng” trong Cài đặt — không cần máy tính", "Grant Usage access in Settings — no computer needed"),
                 color = if (usage) Tile.Green else Tile.Blue,

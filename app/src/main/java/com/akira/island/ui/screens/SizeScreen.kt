@@ -108,13 +108,16 @@ import com.akira.island.ui.Screen
 import com.akira.island.ui.SectionHeader
 import com.akira.island.ui.Tile
 import com.akira.island.ui.Ui
+import com.akira.island.data.Surface
+import com.akira.island.data.border
 
 @Composable
 fun SizeScreen(onBack: () -> Unit, open: (Screen) -> Unit = {}) {
     val s by SettingsRepo.state.collectAsState()
     val original = remember { SettingsRepo.current }
     val haptic = rememberHaptic()
-    var selectedMode by remember { mutableIntStateOf(0) } // 0 = Viên thuốc thu gọn, 1 = Bảng mở rộng trạng thái
+    // 0 = Viên thuốc thu gọn, 1 = Bảng mở rộng trạng thái (mở sẵn theo nơi được chọn ở "Tùy chỉnh theo từng nơi")
+    var selectedMode by remember { mutableIntStateOf(SurfaceNav.sizeTab.also { SurfaceNav.sizeTab = 0 }) }
 
     DisposableEffect(selectedMode) {
         if (selectedMode == 0) {
@@ -727,11 +730,6 @@ private val cardColors = listOf(
     0xFF0F1E3A, 0xFF0E2A24, 0xFF2A1240, 0xFF3A3A40, 0xFFF5F0E6,
 )
 
-private val cardBorderColors = listOf(
-    0xFFE6C068, 0xFFFFD700, 0xFFC8102E, 0xFFFF453A, 0xFFFFFFFF, 0xFF8E8E93,
-    0xFF0A84FF, 0xFF34C759, 0xFFBF5AF2, 0xFF30B0C7,
-)
-
 /** Nền & viền dùng chung cho mọi thẻ thông báo: màu, ảnh nền, độ trong suốt, Liquid Glass, màu & độ dày viền. */
 @Composable
 private fun CardStyleSection(s: IslandSettings, preview: () -> Unit) {
@@ -794,26 +792,12 @@ private fun CardStyleSection(s: IslandSettings, preview: () -> Unit) {
         Swatches(cardColors, s.cardBgColor) { c -> set { copy(cardBgColor = c) } }
     }
 
-    Group {
-        GroupToggle(
-            if (s.cardBorder) Pos.First else Pos.Single, Icons.Rounded.BorderStyle, tr("Viền thẻ", "Card border"),
-            tr("Đường viền màu quanh thẻ thông báo", "A colored outline around notification cards"),
-            s.cardBorder, color = Tile.Yellow,
-        ) { v -> set { copy(cardBorder = v) } }
-        if (s.cardBorder) {
-            GroupToggle(
-                Pos.Middle, Icons.Rounded.Animation, tr("Viền hiệu ứng (như Vòng sáng LED)", "Animated border (like the LED ring)"),
-                tr("Cầu vồng xoay 360°, theo màu app, 1–3 màu tự chọn, sao chổi, nhịp thở… — chọn màu & chuyển động ở Giao diện → Vòng sáng LED", "Rainbow 360°, app color, 1–3 custom colors, comet, breathing… — pick colors & motion in Appearance → LED ring"),
-                s.cardBorderLed, color = Tile.Purple,
-            ) { v -> set { copy(cardBorderLed = v) } }
-            GroupSlider(
-                Pos.Last, Icons.Rounded.LineWeight, tr("Độ dày viền", "Border width"),
-                value = s.cardBorderWidth, range = 0.5f..4f, label = "%.1f dp".format(s.cardBorderWidth), color = Tile.Yellow,
-            ) { v -> set { copy(cardBorderWidth = (v * 2).roundToInt() / 2f) } }
-        }
-    }
-    if (s.cardBorder && !s.cardBorderLed) {
-        Swatches(cardBorderColors, s.cardBorderColor) { c -> set { copy(cardBorderColor = c) } }
+    // Viền khung thẻ: cùng bộ chỉnh viền với mọi nơi khác (bảng màu, hiệu ứng, độ dày, quầng sáng…)
+    SectionHeader(tr("Viền khung thẻ", "Card border"))
+    val cardSpec = s.border(Surface.CARD)
+    BorderPreview(cardSpec, null, tr("Khung thẻ", "Card"))
+    BorderEditor(cardSpec, null, tr("Viền khung thẻ thông báo", "Notification card border")) { b ->
+        set { copy(borders = borders + (Surface.CARD to b)) }
     }
 
     if (bgDialog) {
@@ -920,14 +904,18 @@ private fun OtherNoticesTab(s: IslandSettings, previewOn: Boolean, set: (IslandS
             Pos.Middle, Icons.Rounded.SwapHoriz, tr("Vị trí ngang (trái / phải)", "Horizontal position"), cur.offsetX, -120..120,
             action = tr("Chính giữa", "Center") to { put(cur.copy(offsetX = 0)) }, color = Tile.Teal,
         ) { v -> put(cur.copy(offsetX = v)) }
+        // Viên nhỏ (chế độ chuông, đã gửi…) gọn hơn hẳn các thông báo khác: thang chỉnh riêng
+        val pill = k == NoticeKind.MODE
         GroupStepSlider(
             Pos.Middle, Icons.Rounded.Straighten, tr("Chiều rộng", "Width"),
-            if (cur.width == 0) autoW.coerceIn(200, 460) else cur.width, 200..460,
-            action = tr("Tự động theo màn hình", "Auto (screen width)") to { put(cur.copy(width = 0)) }, color = Tile.Blue,
+            if (pill) (if (cur.width == 0) 120 else cur.width.coerceIn(60, 360)) else if (cur.width == 0) autoW.coerceIn(200, 460) else cur.width,
+            if (pill) 60..360 else 200..460,
+            action = (if (pill) tr("Tự động theo nội dung", "Auto (fits content)") else tr("Tự động theo màn hình", "Auto (screen width)")) to { put(cur.copy(width = 0)) },
+            color = Tile.Blue,
             valueText = if (cur.width == 0) tr("Tự động", "Auto") else null,
         ) { v -> put(cur.copy(width = v)) }
         GroupStepSlider(
-            Pos.Middle, Icons.Rounded.Height, tr("Chiều cao thêm", "Extra height"), cur.heightExtra, -16..40,
+            Pos.Middle, Icons.Rounded.Height, tr("Chiều cao thêm", "Extra height"), cur.heightExtra, if (pill) -12..30 else -16..40,
             action = tr("Mặc định 0 dp", "Default 0 dp") to { put(cur.copy(heightExtra = 0)) }, color = Tile.Purple,
         ) { v -> put(cur.copy(heightExtra = v)) }
         GroupStepSlider(

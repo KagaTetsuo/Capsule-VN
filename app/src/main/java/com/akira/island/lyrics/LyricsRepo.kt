@@ -44,7 +44,7 @@ object LyricsRepo {
             var failed = false
             var plain: String? = null
             val found = attempt({ failed = true }) { lrclib(t, mainArtist, album, durationMs) { plain = plain ?: it } }
-                ?: attempt({ failed = true }) { netease(t, mainArtist, durationMs) }
+                ?: (if (com.akira.island.data.SettingsRepo.current.lyricsNetease) attempt({ failed = true }) { netease(t, mainArtist, durationMs) } else null)
                 ?: plain?.let { spread(it, durationMs) }
             
             if (found != null || !failed) synchronized(cache) { cache[key] = found }

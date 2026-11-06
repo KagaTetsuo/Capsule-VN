@@ -1,5 +1,27 @@
 # Lịch sử phiên bản Capsule VN
 
+## v1.5.0 (2026) — Đường viền theo từng nơi, thời gian hiển thị riêng, tìm kiếm tính năng
+- **Tùy chỉnh theo từng nơi** (Giao diện): Viên thuốc bình thường, Khi có hoạt động, Thông báo viên nhỏ, Khung thẻ thông báo, Bảng mở rộng — mỗi nơi có kích thước & vị trí, nền, đường viền và tính năng riêng, xem trước trực tiếp trên đỉnh màn hình.
+- **Đường viền chuyên sâu** (mặc định: không viền ở mọi nơi):
+  - 16 bảng màu: LED RGB cầu vồng, Theo màu ứng dụng / ảnh bìa, Đơn sắc, Đa sắc 2–4 màu tự chọn, Đen – Đỏ – Vàng, Vàng hoàng gia, Neon, Lửa, Đại dương, Cực quang, Hoàng hôn, Hoa anh đào, Pastel, Băng tuyết, Dạ quang, Cờ đỏ sao vàng.
+  - 14 hiệu ứng: Xoay 360°, Xoay đảo chiều, Xoay qua lại, Sao chổi, Hai sao chổi, Loang màu từ đỉnh, Đổi màu toàn viền, Gợn sóng, Nhịp thở, Nhịp tim, Nhấp nháy, Neon chập chờn, Lấp lánh, Đứng yên.
+  - Chỉnh độ dày, tốc độ, quầng sáng toả ra, độ đậm; "Dùng viền này cho mọi nơi" chỉ với 1 chạm. Vòng sáng LED dùng chung bộ màu & hiệu ứng mới. Thiết lập viền cũ được giữ nguyên khi cập nhật.
+- **Thông báo viên nhỏ** (chế độ chuông, đã gửi…) có kích thước & vị trí riêng: chiều rộng, chiều cao, vị trí dọc / ngang, bo góc.
+- **Thời gian hiển thị riêng từng loại**: tin nhắn, cập nhật, sạc, tai nghe, thanh toán, điều hướng, báo thức, viên nhỏ, sự kiện khác — loại nào nhanh, loại nào chậm tuỳ ý (Giao diện → Mở rộng & độ đàn hồi → Thời gian hiển thị).
+- **Tìm kiếm tính năng** ở tab Tính năng và Giao diện, gõ không dấu cũng được (vd. "vien", "otp", "trung lap").
+- **Sửa lỗi**:
+  - Chiều rộng khi có hoạt động: kéo nhỏ giờ thu nhỏ thật (trước bị kẹt ở 100 rồi nhảy về tối đa); về 0 = tự động theo nội dung.
+  - Đang chỉnh mà thoát app: bản xem trước không còn treo trên Viên thuốc khi dùng app khác.
+  - Chạm mở bảng mở rộng phản hồi ngay (bỏ chờ chạm đúp mặc định); đồng hồ bảng mở rộng có thêm giây.
+  - Màn hình tắt: thông báo chỉ hiện trên AOD, không tự bật sáng màn hình (vẫn bật lại được trong Hành vi hiển thị).
+  - Android 13+: xin quyền "Hiện thông báo" để nhắc nhở & thông báo của Capsule VN hiện ra.
+  - Chế độ ngân hàng: app ngân hàng bị tự thoát lần đầu sẽ được mở lại; nhắc bật lại Viên thuốc khi rời app hoạt động cả khi chưa dùng Shizuku.
+  - Biểu ngữ hệ thống (Samsung): đánh dấu "Đã tắt" sau khi bỏ chọn Pop-up thông báo của từng app.
+  - "Có gì mới" hiện đúng nội dung phiên bản mới.
+- **Chống trùng thông báo**: tự ẩn thẻ cuộc gọi đến khi đang mở sẵn màn hình cuộc gọi của máy / Zalo / Messenger…
+- **Quyền riêng tư**: thêm công tắc tắt nguồn lời bài hát dự phòng NetEase (máy chủ ở Trung Quốc) để chỉ dùng LRCLIB.
+- **Nhẹ hơn**: cảm biến nghiêng của Liquid Glass tắt khi bật "Giảm hiệu ứng"; viền chỉ chạy hiệu ứng khi đang bật và màn hình đang sáng.
+
 ## v1.4.3 (2026) — Sửa Viên thuốc bị lệch trái / phải so với camera
 - Cửa sổ Viên thuốc trước đây để hệ thống tự đo bề ngang; trên một số máy (Samsung) kích thước này bị sai sau khi khởi động lại hoặc khi đổi cấu hình (xoay ngang, mở app toàn màn hình…), làm Viên thuốc và thẻ thông báo lệch trái / phải.
 - Nay cửa sổ được ghim đúng mép trái và đúng bề ngang thật của màn hình, tự kiểm tra lại khi bật màn hình, khi xoay, khi chuyển ứng dụng — Viên thuốc luôn thẳng tâm camera.

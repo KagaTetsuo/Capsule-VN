@@ -54,8 +54,14 @@ class BankWatchService : Service() {
             stopSelf()
             return START_NOT_STICKY
         }
-        if (watch?.isActive != true && BankMode.hasUsageAccess(this)) {
-            watch = scope.launch { watchForeground() }
+        if (watch?.isActive != true) {
+            watch = scope.launch {
+                // App ngân hàng có thể kịp tự đóng lần đầu (phát hiện Hỗ trợ tiếp cận trước khi Viên thuốc tắt):
+                // lúc này dịch vụ đã tắt -> mở lại app ngân hàng cho người dùng
+                delay(1_600)
+                relaunchIfClosed()
+                if (BankMode.hasUsageAccess(this@BankWatchService)) watchForeground()
+            }
         }
         return START_NOT_STICKY
     }
@@ -65,8 +71,8 @@ class BankWatchService : Service() {
         val power = getSystemService(PowerManager::class.java)
         val apps = BankMode.apps(this)
         // Chờ app ngân hàng thật sự lên màn hình rồi mới bắt đầu canh
-        delay(2_500)
-        var since = System.currentTimeMillis() - 5_000
+        delay(2_200)
+        var since = System.currentTimeMillis() - 1_500
         var lastPkg: String? = bankPkg
         while (scope.isActive) {
             if (power?.isInteractive != false) {
@@ -87,6 +93,63 @@ class BankWatchService : Service() {
             }
             delay(1_200)
         }
+    }
+
+    /** Ứng dụng đang ở trên cùng (theo Truy cập dữ liệu sử dụng), null nếu không đọc được. */
+    private fun foregroundPkg(): String? {
+        if (!BankMode.hasUsageAccess(this)) return null
+        val usage = getSystemService(UsageStatsManager::class.java) ?: return null
+        val now = System.currentTimeMillis()
+        val events = usage.queryEvents(now - 10_000, now)
+        val e = UsageEvents.Event()
+        var last: String? = null
+        while (events.hasNextEvent()) {
+            events.getNextEvent(e)
+            @Suppress("DEPRECATION")
+            if (e.eventType == UsageEvents.Event.MOVE_TO_FOREGROUND) last = e.packageName
+        }
+        return last
+    }
+
+    private fun relaunchIfClosed() {
+        val pkg = bankPkg ?: return
+        val fg = foregroundPkg()
+        val closed = fg != null && fg != pkg && fg !in TRANSIENT
+        val unknown = fg == null
+        if (!closed && !unknown) return
+        val launch = packageManager.getLaunchIntentForPackage(pkg)
+            ?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED) ?: return
+        if (android.provider.Settings.canDrawOverlays(this)) {
+            // Có quyền "Hiển thị trên ứng dụng khác": tự mở lại ngay
+            runCatching { startActivity(launch) }
+        } else if (closed) {
+            // Không tự mở được -> nhắc 1 chạm để mở lại
+            val nm = getSystemService(NotificationManager::class.java) ?: return
+            ensureRemindChannel(nm)
+            val label = NotificationParser.appLabel(this, pkg)
+            val pi = PendingIntent.getActivity(this, 3, launch, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+            val n = Notification.Builder(this, REMIND_CHANNEL)
+                .setSmallIcon(R.drawable.ic_tab_island)
+                .setContentTitle(tr("Mở lại $label", "Open $label again"))
+                .setContentText(tr("Viên thuốc đã tạm nghỉ — chạm để mở lại $label", "The island is paused — tap to open $label again"))
+                .setContentIntent(pi)
+                .setAutoCancel(true)
+                .setCategory(Notification.CATEGORY_REMINDER)
+                .build()
+            runCatching { nm.notify(RELAUNCH_ID, n) }
+        }
+    }
+
+    private fun ensureRemindChannel(nm: NotificationManager) {
+        nm.createNotificationChannel(
+            NotificationChannel(REMIND_CHANNEL, tr("Nhắc bật lại Viên thuốc", "Turn the island back on"), NotificationManager.IMPORTANCE_HIGH).apply {
+                description = tr("Hiện khi bạn rời ứng dụng ngân hàng / VNeID", "Shown when you leave a bank / ID app")
+                setShowBadge(false)
+                enableVibration(true)
+                vibrationPattern = longArrayOf(0, 90, 70, 90)
+                setSound(null, null)
+            },
+        )
     }
 
     private fun resumeIsland() {
@@ -173,6 +236,7 @@ class BankWatchService : Service() {
     companion object {
         private const val ID = 11
         private const val REMIND_ID = 12
+        private const val RELAUNCH_ID = 13
         private const val REMIND_CHANNEL = "bank_mode_remind_v2"
         private const val CHANNEL = "bank_mode"
         private const val ACTION_RESUME = "com.akira.island.BANK_RESUME"

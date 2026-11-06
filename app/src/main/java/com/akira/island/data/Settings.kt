@@ -116,7 +116,7 @@ enum class NoticeKind(private val ru: String, private val en: String) {
     PAYMENT("Thanh toán", "Payments"),
     NAV("Điều hướng", "Navigation"),
     ALARM("Báo thức", "Alarm"),
-    MODE("Chế độ chuông", "Ring mode"),
+    MODE("Viên nhỏ (chế độ chuông, đã gửi…)", "Small pills (ring mode, sent…)"),
     OTHER("Sự kiện khác", "Other events"),
     ;
 
@@ -184,7 +184,7 @@ data class IslandSettings(
     
     val wakeForAlerts: Boolean = true,
     /** Màn hình đang tắt mà có thông báo: sáng lên hiện trên Viên thuốc rồi tự tắt lại. */
-    val wakeOnMessage: Boolean = true,
+    val wakeOnMessage: Boolean = false,
     /** Giờ ngủ: không tự sáng màn hình vì thông báo trong khoảng này. */
     val wakeQuietOn: Boolean = true,
     val wakeQuietFrom: Int = 23,
@@ -332,8 +332,8 @@ data class IslandSettings(
     val batterySaver: Boolean = false,
 
     val tapAction: TapAction = TapAction.EXPAND,
-    val doubleTapAction: TapAction = TapAction.OPEN_APP,
-    val longPressAction: TapAction = TapAction.PLAY_PAUSE,
+    val doubleTapAction: TapAction = TapAction.NOTHING,
+    val longPressAction: TapAction = TapAction.OPEN_APP,
     val swipeTracks: Boolean = true,
     /** Chế độ ngân hàng: tự tắt Viên thuốc khi mở app ngân hàng / VNeID, tự bật lại khi rời app. */
     val bankMode: Boolean = false,
@@ -344,6 +344,8 @@ data class IslandSettings(
     val swipeExpand: Boolean = true,
 
     val lyricsEnabled: Boolean = true,
+    /** Nguồn lời dự phòng NetEase (máy chủ ở Trung Quốc) — người dùng có thể tắt để chỉ dùng LRCLIB. */
+    val lyricsNetease: Boolean = true,
 
     val hideIdle: Boolean = false,
     val hideInLandscape: Boolean = true,
@@ -353,6 +355,8 @@ data class IslandSettings(
     val scheduleFrom: Int = 10,
     val scheduleTo: Int = 23,
     val noticeDurationMs: Int = 2500,
+    /** Thời gian hiển thị riêng từng loại (khoá: MESSAGE, UPDATE hoặc tên NoticeKind); chưa đặt thì dùng noticeDurationMs. */
+    val noticeDurations: Map<String, Int> = emptyMap(),
     val timerMinutes: Int = 5,
     
     val autoCollapseSec: Int = 0,
@@ -368,6 +372,8 @@ data class IslandSettings(
     val msgLines: Int = 3,
     
     val msgInApp: Boolean = false,
+    /** Không hiện thẻ cuộc gọi đến khi đang mở sẵn màn hình cuộc gọi của chính app đó (tránh trùng). */
+    val hideCallInCallApp: Boolean = true,
     
     val msgChannels: Map<String, String> = emptyMap(),
     
@@ -394,6 +400,10 @@ data class IslandSettings(
     val ledColorCount: Int = 2,
     /** Viền thẻ thông báo dùng hiệu ứng như Vòng sáng LED thay cho màu đơn. */
     val cardBorderLed: Boolean = false,
+    /** Đường viền riêng của từng nơi (bình thường, hoạt động, viên nhỏ, thẻ, mở rộng). Mặc định: không viền. */
+    val borders: Map<Surface, BorderSpec> = emptyMap(),
+    /** Màu & hiệu ứng của Vòng sáng LED báo sự kiện / tin chưa đọc / sạc. */
+    val ledBorder: BorderSpec = BorderSpec(on = true, width = 2.5f, glow = 60),
 
     val ecoSpPen: Boolean = true,
     val ecoBudsWatch: Boolean = true,
@@ -403,6 +413,8 @@ data class IslandSettings(
 
     /** Ứng dụng tự bật pop-up của nó: Viên thuốc chỉ báo dạng viên nhỏ để không hiện 2 lần. */
     val msgCompactWhenPopup: Boolean = false,
+    /** Samsung: những app người dùng xác nhận đã bỏ chọn "Pop-up thông báo" (One UI không cho app khác đọc ô này). */
+    val popupOffApps: Set<String> = emptySet(),
     /** Tự động sao lưu cấu hình ra Download/CapsuleVN (còn lại sau khi gỡ app). */
     val autoBackup: Boolean = true,
     /** Đã hỏi khôi phục cài đặt cũ sau khi cài mới. */
@@ -443,6 +455,8 @@ data class IslandSettings(
     val noticeGeneral: NoticeTweak get() = NoticeTweak(noticeOffsetX, noticeOffsetY, noticeWidth, noticeHeightExtra, noticeCornerRadius)
 
     fun tweakFor(kind: NoticeKind?): NoticeTweak = kind?.let { noticeTweaks[it] } ?: noticeGeneral
+
+    fun durationFor(key: String): Int = noticeDurations[key] ?: noticeDurationMs
 
     val liveEqualizer: Boolean get() = fxEqualizer && !reduceEffects
 }
@@ -500,6 +514,20 @@ object SettingsRepo {
                 )
             }
         }
+        // v1.5: màn hình tắt chỉ để AOD của máy hiển thị (không tự bật sáng); bỏ chờ chạm đúp làm chạm chậm
+        if (current.layoutVersion < 5) {
+            update {
+                val oldPreset = tapAction == TapAction.EXPAND && doubleTapAction == TapAction.OPEN_APP && longPressAction == TapAction.PLAY_PAUSE
+                copy(
+                    wakeOnMessage = false,
+                    doubleTapAction = if (oldPreset) TapAction.NOTHING else doubleTapAction,
+                    longPressAction = if (oldPreset) TapAction.OPEN_APP else longPressAction,
+                    layoutVersion = 5,
+                )
+            }
+        }
+        // v1.5: hệ thống đường viền mới theo từng nơi — chuyển thiết lập viền cũ sang, không mất gì
+        if (current.layoutVersion < 6) update { migrateBorders().copy(layoutVersion = 6) }
     }
 
     fun update(block: IslandSettings.() -> IslandSettings) {
@@ -516,7 +544,9 @@ object SettingsRepo {
 
     /** Khôi phục cài đặt từ file JSON đã sao lưu; giữ nguyên các thông tin cập nhật của bản đang cài. */
     fun importJson(raw: String): Boolean = runCatching {
-        val restored = json.decodeFromString<IslandSettings>(raw)
+        val decoded = json.decodeFromString<IslandSettings>(raw)
+        // File sao lưu từ bản cũ: chuyển thiết lập viền cũ sang hệ thống viền mới
+        val restored = if (decoded.layoutVersion in 1..5) decoded.migrateBorders().copy(layoutVersion = 6) else decoded
         val c = current
         update {
             restored.copy(

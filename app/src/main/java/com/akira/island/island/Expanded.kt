@@ -659,7 +659,8 @@ private fun ChargingExpanded(b: BatteryInfo) {
 private fun IdleExpanded(s: IslandSettings, battery: BatteryInfo) {
     val context = LocalContext.current
     val now = rememberWallNow(1000)
-    val time = DateFormat.getTimeFormat(context).format(Date(now))
+    // Giờ kèm giây (giây hiện nhỏ hơn)
+    val time = SimpleDateFormat(if (DateFormat.is24HourFormat(context)) "HH:mm:ss" else "h:mm:ss a", Lang.locale).format(Date(now))
     
     val date = SimpleDateFormat(if (Lang.en) "EEEE, MMMM d" else "EEEE, d MMMM", Lang.locale).format(Date(now))
         .replaceFirstChar { it.titlecase(Lang.locale) }
