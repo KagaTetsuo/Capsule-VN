@@ -267,7 +267,7 @@ class IslandService : AccessibilityService() {
         }
 
         scope.launch {
-            combine(SettingsRepo.state.map { it.liquidGlass && it.enabled }, IslandBus.screenOn) { glass, on -> glass && on }
+            combine(SettingsRepo.state.map { it.liquidGlass && it.enabled && !it.reduceEffects }, IslandBus.screenOn) { glass, on -> glass && on }
                 .distinctUntilChanged()
                 .collect { setTiltEnabled(it) }
         }

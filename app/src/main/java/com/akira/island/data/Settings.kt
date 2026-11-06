@@ -344,6 +344,8 @@ data class IslandSettings(
     val swipeExpand: Boolean = true,
 
     val lyricsEnabled: Boolean = true,
+    /** Nguồn lời dự phòng NetEase (máy chủ ở Trung Quốc) — người dùng có thể tắt để chỉ dùng LRCLIB. */
+    val lyricsNetease: Boolean = true,
 
     val hideIdle: Boolean = false,
     val hideInLandscape: Boolean = true,
@@ -370,6 +372,8 @@ data class IslandSettings(
     val msgLines: Int = 3,
     
     val msgInApp: Boolean = false,
+    /** Không hiện thẻ cuộc gọi đến khi đang mở sẵn màn hình cuộc gọi của chính app đó (tránh trùng). */
+    val hideCallInCallApp: Boolean = true,
     
     val msgChannels: Map<String, String> = emptyMap(),
     
@@ -540,7 +544,9 @@ object SettingsRepo {
 
     /** Khôi phục cài đặt từ file JSON đã sao lưu; giữ nguyên các thông tin cập nhật của bản đang cài. */
     fun importJson(raw: String): Boolean = runCatching {
-        val restored = json.decodeFromString<IslandSettings>(raw)
+        val decoded = json.decodeFromString<IslandSettings>(raw)
+        // File sao lưu từ bản cũ: chuyển thiết lập viền cũ sang hệ thống viền mới
+        val restored = if (decoded.layoutVersion in 1..5) decoded.migrateBorders().copy(layoutVersion = 6) else decoded
         val c = current
         update {
             restored.copy(

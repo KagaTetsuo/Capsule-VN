@@ -331,7 +331,10 @@ fun IslandOverlay(
     var pageOrder: List<Act> = emptyList()
     val acts = buildList {
         
-        if (call != null && call.incoming && !callHidden) add(Act.CallA(call))
+        // Đang mở đúng màn hình cuộc gọi (app gọi điện / Zalo / Messenger…): không hiện thêm thẻ cuộc gọi đến cho khỏi trùng
+        val callScreenOpen = call != null && foreground != null &&
+            (foreground == call.pkg || foreground!!.contains("incallui") || foreground!!.endsWith(".dialer") || foreground == "com.samsung.android.dialer")
+        if (call != null && call.incoming && !callHidden && !(s.hideCallInCallApp && callScreenOpen)) add(Act.CallA(call))
         notice?.let { add(Act.NoticeA(it)) }
 
         val persistent = mutableListOf<Act>()

@@ -113,6 +113,7 @@ import kotlinx.coroutines.delay
 fun CapsuleScreen(open: (Screen) -> Unit) {
     val s by SettingsRepo.state.collectAsState()
     Page(tr("Giao diện", "Appearance")) {
+        FeatureSearch(open)
         IslandPreview()
 
         SectionHeader(tr("Tùy chỉnh theo từng nơi", "Customize each place"))

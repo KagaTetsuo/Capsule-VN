@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.LibraryMusic
+import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -28,9 +29,14 @@ fun LyricsScreen(onBack: () -> Unit) {
     val s by SettingsRepo.state.collectAsState()
     Page(tr("Lời bài hát (Karaoke)", "Synced lyrics"), onBack) {
         Group {
-            GroupToggle(Pos.Single, Icons.Rounded.LibraryMusic, tr("Lời bài hát", "Lyrics"),
+            GroupToggle(if (s.lyricsEnabled) Pos.First else Pos.Single, Icons.Rounded.LibraryMusic, tr("Lời bài hát", "Lyrics"),
                 tr("Câu hát hiện tại trong trình phát mở rộng chuyển sang màu trắng theo nhịp bài hát", "The current line in the expanded player fills with white as it's sung"),
                 s.lyricsEnabled, color = Tile.Pink) { v -> SettingsRepo.update { copy(lyricsEnabled = v) } }
+            if (s.lyricsEnabled) {
+                GroupToggle(Pos.Last, Icons.Rounded.Language, tr("Nguồn dự phòng NetEase", "NetEase fallback source"),
+                    tr("Tìm thêm trên NetEase (máy chủ ở Trung Quốc) khi LRCLIB không có. Tắt để chỉ gửi tên bài hát lên LRCLIB", "Also search NetEase (servers in China) when LRCLIB has nothing. Turn off to use LRCLIB only"),
+                    s.lyricsNetease, color = Tile.Blue) { v -> SettingsRepo.update { copy(lyricsNetease = v) } }
+            }
         }
         Text(
             tr("Lời bài hát được tìm kiếm theo tên bài hát, nghệ sĩ và thời lượng: trước tiên trên LRCLIB (lrclib.net), sau đó là NetEase. Nếu không có lời đồng bộ, lời bài hát thông thường sẽ được phân bổ theo độ dài bài hát. Trong lúc tìm kiếm, trình phát sẽ hiện “Đang tìm lời bài hát…”, và nếu không tìm thấy sẽ báo “Không tìm thấy lời bài hát”. Chỉ có tên bài hát và nghệ sĩ được gửi lên máy chủ. Tính năng này tương thích với mọi ứng dụng phát nhạc có thanh điều khiển trên thông báo (Spotify, YouTube Music, Zing MP3, Apple Music...).", "Lyrics are looked up by title, artist and track length: first on LRCLIB (lrclib.net), then on NetEase, " +

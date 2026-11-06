@@ -16,6 +16,7 @@ import androidx.compose.material.icons.rounded.Apps
 import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material.icons.rounded.Bedtime
 import androidx.compose.material.icons.rounded.ChatBubble
+import androidx.compose.material.icons.rounded.Call
 import androidx.compose.material.icons.rounded.Circle
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.FormatLineSpacing
@@ -135,7 +136,10 @@ fun FeaturesScreen(open: (Screen) -> Unit) {
         Toast.makeText(context, if (ok) tr("Đã khôi phục cài đặt", "Settings restored") else tr("File không hợp lệ", "Invalid backup file"), Toast.LENGTH_SHORT).show()
     }
 
-    Page(tr("Tính năng", "Features")) {        SectionHeader(tr("Nội dung hiển thị", "Display content"))
+    Page(tr("Tính năng", "Features")) {
+        FeatureSearch(open)
+
+        SectionHeader(tr("Nội dung hiển thị", "Display content"))
         Group {
             GroupItem(Pos.First, Icons.Rounded.Dashboard, tr("Thẻ hoạt động", "Live activity cards"),
                 tr("Nhạc, cuộc gọi, hẹn giờ, đèn pin, điều hướng, tải xuống", "Music, calls, timers, flashlight, navigation, downloads"),
@@ -354,6 +358,9 @@ fun NotificationsScreen(onBack: () -> Unit, open: (Screen) -> Unit = {}) {
                 s.msgInApp, color = Tile.Teal) { v ->
                 SettingsRepo.update { copy(msgInApp = v) }
             }
+            GroupToggle(Pos.Middle, Icons.Rounded.Call, tr("Ẩn thẻ cuộc gọi khi đang ở màn hình gọi", "Hide call card on the call screen"),
+                tr("Đang mở sẵn màn hình cuộc gọi của máy / Zalo / Messenger… thì không hiện thêm thẻ cuộc gọi đến cho khỏi trùng", "When the phone / app call screen is already open, don't show a second incoming-call card"),
+                s.hideCallInCallApp, color = Tile.Green) { v -> SettingsRepo.update { copy(hideCallInCallApp = v) } }
             GroupItem(
                 Pos.Last,
                 Icons.Rounded.Tune,
