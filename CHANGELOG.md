@@ -1,5 +1,13 @@
 # Lịch sử phiên bản Capsule VN
 
+## v1.5.2 (2026) — Nhẹ hơn gần 3 lần, nhận diện Xanh SM / Grab / Be, giữ tin chưa đọc riêng
+- **Bản phát hành tối ưu (release)** thay cho bản thử nghiệm (debug) trước đây: mã được thu gọn & tối ưu (R8), bỏ tài nguyên thừa, nạp sẵn hồ sơ tăng tốc của giao diện. Đo trên máy ảo Android 14 với cùng thao tác:
+  - RAM thực dùng: **~99 MB → ~36 MB**.
+  - Thời gian vẽ mỗi khung hình (trung vị): **150 ms → 30 ms** — mở app, bung Viên thuốc mượt hơn hẳn.
+  - Mỗi bản phát hành từ nay đều được tự động chạy thử trên máy ảo (mở app, bật Viên thuốc, gửi tin, mở rộng, bắt lỗi crash) trước khi phát hành.
+- **Gọi xe & giao hàng Việt Nam**: nhận diện Xanh SM, Grab, Be, Maxim, Mai Linh, ShopeeFood, Shopee, Lazada, Tiki, Ahamove, Lalamove, GHN, GHTK… (siêu ứng dụng như Grab tự phân biệt gọi xe / giao đồ ăn theo nội dung), và "Live Updates" của Android 16 trở lên. Thêm nhiều cụm từ giai đoạn tiếng Việt (đang tìm xe, tài xế đã đến điểm đón, chuyến đi đã bắt đầu, hoàn tất…).
+- **"Giữ tin chưa đọc trên Viên thuốc"** thành công tắc riêng (Tính năng → Tin nhắn & thông báo), không còn phụ thuộc Vòng sáng LED; khi LED tắt có chấm nhỏ màu ứng dụng báo hiệu.
+
 ## v1.5.1 (2026) — Hết đổ chuông sau khi đã nghe máy, thanh tiến trình giao hàng
 - **Cuộc gọi không còn hiện trùng / đổ chuông mãi**:
   - Chạm thẻ cuộc gọi đến để mở app: thẻ trên Viên thuốc tự ẩn, app tự lo nghe / từ chối.

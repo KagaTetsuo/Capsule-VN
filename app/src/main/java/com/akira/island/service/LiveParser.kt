@@ -38,12 +38,12 @@ object LiveParser {
     fun parse(context: Context, sbn: StatusBarNotification, fallbackTitle: String): LiveInfo? {
         val n = sbn.notification
         val ex = n.extras
-        val kind = LiveApps.kind(sbn.packageName, n.category) ?: return null
         val head = ex.getCharSequence(Notification.EXTRA_TITLE)?.toString()?.trim().orEmpty()
         val text = ex.getCharSequence(Notification.EXTRA_TEXT)?.toString()?.trim().orEmpty()
         val big = ex.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString()?.trim().orEmpty()
         val sub = (ex.getCharSequence(Notification.EXTRA_SUB_TEXT) ?: ex.getCharSequence(Notification.EXTRA_INFO_TEXT))
             ?.toString()?.trim().orEmpty()
+        val kind = LiveApps.kind(sbn.packageName, n.category, n.flags, "$head $text $big $sub") ?: return null
         val fields = listOf(head, text, big, sub)
         
         val remote = if (!sbn.isOngoing) {
@@ -97,18 +97,18 @@ object LiveParser {
     private class Stage(val at: Float, val vi: String, val en: String, val words: List<String>)
 
     private val deliveryStages = listOf(
-        Stage(1f, "Đã giao", "Delivered", listOf("đã giao", "giao thành công", "giao hàng thành công", "hoàn thành", "delivered", "completed")),
+        Stage(1f, "Đã giao", "Delivered", listOf("đã giao", "giao thành công", "giao hàng thành công", "hoàn thành", "hoàn tất", "delivered", "completed")),
         Stage(0.85f, "Sắp đến", "Arriving", listOf("sắp đến", "sắp giao", "đã đến", "gần đến", "arriving", "nearby", "arrived")),
-        Stage(0.6f, "Đang giao", "On the way", listOf("đang giao", "đang trên đường", "đang đến", "đã lấy", "on the way", "out for delivery", "picked up")),
-        Stage(0.35f, "Đang chuẩn bị", "Preparing", listOf("đang chuẩn bị", "chuẩn bị", "tìm tài xế", "preparing", "finding a driver", "looking for")),
-        Stage(0.15f, "Đã đặt", "Ordered", listOf("đã đặt", "đã xác nhận", "xác nhận", "đặt hàng thành công", "confirmed", "order placed")),
+        Stage(0.6f, "Đang giao", "On the way", listOf("đang giao", "đang trên đường", "đang đến", "đã lấy", "đã nhận món", "on the way", "out for delivery", "picked up")),
+        Stage(0.35f, "Đang chuẩn bị", "Preparing", listOf("đang chuẩn bị", "chuẩn bị", "tìm tài xế", "tìm shipper", "đang lấy hàng", "đến lấy", "preparing", "finding a driver", "looking for")),
+        Stage(0.15f, "Đã đặt", "Ordered", listOf("đã đặt", "đã xác nhận", "xác nhận", "chờ xác nhận", "đặt hàng thành công", "confirmed", "order placed")),
     )
     private val rideStages = listOf(
-        Stage(1f, "Hoàn thành", "Completed", listOf("hoàn thành", "đã đến điểm đến", "completed", "arrived at destination")),
-        Stage(0.7f, "Đang di chuyển", "On trip", listOf("đang trong chuyến", "đang di chuyển", "đang đến điểm đến", "on trip", "on the way to")),
+        Stage(1f, "Hoàn thành", "Completed", listOf("hoàn thành", "hoàn tất", "kết thúc chuyến", "đã đến điểm đến", "completed", "arrived at destination")),
+        Stage(0.7f, "Đang di chuyển", "On trip", listOf("đang trong chuyến", "đang trên chuyến", "chuyến đi đã bắt đầu", "bắt đầu chuyến", "đang di chuyển", "đang đến điểm đến", "on trip", "on the way to")),
         Stage(0.45f, "Tài xế đã đến", "Driver arrived", listOf("tài xế đã đến", "đã đến điểm đón", "driver has arrived", "driver arrived")),
         Stage(0.25f, "Tài xế đang đến", "Driver on the way", listOf("tài xế đang đến", "đang đến đón", "driver is on the way", "driver is coming")),
-        Stage(0.1f, "Đang tìm tài xế", "Finding a driver", listOf("đang tìm", "tìm tài xế", "finding", "searching")),
+        Stage(0.1f, "Đang tìm tài xế", "Finding a driver", listOf("đang tìm", "tìm tài xế", "tìm xe", "finding", "searching")),
     )
 
     private fun minutesLeft(texts: List<String>): Float? {

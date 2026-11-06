@@ -328,7 +328,7 @@ fun IslandOverlay(
     val callHidden by IslandBus.callHidden.collectAsState()
     // Thứ tự ổn định của các hoạt động đang chạy, dùng để vuốt qua lại khi đang mở rộng.
     // Mỗi cuộc trò chuyện chưa đọc (viền LED đang sáng) là một trang, đứng trước các hoạt động khác.
-    val unreadPages = if (s.cardMessages && s.ledEnabled && s.ledOnUnread) {
+    val unreadPages = if (s.cardMessages && s.unreadKeep) {
         unreadList.filter { it.message != null }.map { Act.UnreadA(it) }
     } else emptyList()
     var pageOrder: List<Act> = emptyList()
@@ -679,6 +679,7 @@ private fun IslandBody(
     val chargeLed = s.ledOnCharge && battery.charging
     val ledActive = (s.ledEnabled || previewLed) && !calibrating && (s.ledAlwaysOn || eventLed || unreadLed || chargeLed || previewLed)
     val ledAlpha by animateFloatAsState(if (ledActive) 1f else 0f, tween(320), label = "ledAlpha")
+    val unreadDot: Color? = unreadLedColor.takeIf { s.unreadKeep && s.cardMessages && primary is Act.Idle && !expanded && !(ledActive && unreadLed) }
     val ledClock = rememberFxClock(ledActive && !s.reduceEffects)
     // Đường viền riêng theo từng nơi: bình thường / hoạt động / viên nhỏ / thẻ / mở rộng
     val surface = when {
@@ -808,9 +809,13 @@ private fun IslandBody(
                 },
             )
             .then(
-                if ((egg || ledAlpha > 0f || borderOn) && !calibrating) {
+                if ((egg || ledAlpha > 0f || borderOn || unreadDot != null) && !calibrating) {
                     Modifier.drawWithContent {
                         drawContent()
+                        // Chấm nhỏ báo có tin chưa đọc khi Vòng sáng LED không sáng
+                        if (unreadDot != null) {
+                            drawCircle(unreadDot, radius = 3.5.dp.toPx(), center = Offset(size.width - size.height / 2f, size.height / 2f))
+                        }
                         if (borderOn) drawBorder(bSpec, borderAdaptive, borderClock.value, corner.value.toPx(), s.notch)
                         if (ledAlpha > 0f) drawBorder(s.ledBorder, adaptiveLedColor, ledClock.value, corner.value.toPx(), s.notch, ledAlpha)
                         if (egg) eggRim(corner.value.toPx(), s.notch)
@@ -1073,7 +1078,7 @@ private fun GraphicsLayerScope.blurLayer(dp: Float) {
 }
 
 private fun hasUnread(s: IslandSettings): Boolean =
-    s.ledEnabled && s.ledOnUnread && s.cardMessages && IslandBus.unreadNotices.value.any { it.message != null }
+    s.unreadKeep && s.cardMessages && IslandBus.unreadNotices.value.any { it.message != null }
 
 private fun expandUnread() {
     IslandBus.unreadNotices.value.firstOrNull { it.message != null }?.let { Controls.expand(unreadId(it)) }
