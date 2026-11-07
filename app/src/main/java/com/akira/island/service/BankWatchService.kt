@@ -34,6 +34,7 @@ class BankWatchService : Service() {
     private var watch: Job? = null
     private var bankPkg: String? = null
     private var pausedAt = 0L
+    private var source = SOURCE_WINDOW
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -44,6 +45,7 @@ class BankWatchService : Service() {
             return START_NOT_STICKY
         }
         bankPkg = intent?.getStringExtra(EXTRA_PKG) ?: bankPkg
+        source = intent?.getIntExtra(EXTRA_SOURCE, SOURCE_WINDOW) ?: SOURCE_WINDOW
         pausedAt = System.currentTimeMillis()
         val shown = runCatching {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
@@ -60,8 +62,12 @@ class BankWatchService : Service() {
             watch = scope.launch {
                 // App ngân hàng có thể kịp tự đóng lần đầu (phát hiện Hỗ trợ tiếp cận trước khi Viên thuốc tắt):
                 // lúc này dịch vụ đã tắt -> mở lại app ngân hàng cho người dùng
-                delay(1_600)
-                relaunchIfClosed()
+                // Kiểm tra 2 lần (app tự thoát nhanh hoặc chậm sau hộp thoại cảnh báo); mở lại tối đa 1 lần
+                delay(1_500)
+                if (!relaunchIfClosed()) {
+                    delay(1_700)
+                    relaunchIfClosed()
+                }
                 if (BankMode.hasUsageAccess(this@BankWatchService)) watchForeground()
             }
         }
@@ -114,37 +120,37 @@ class BankWatchService : Service() {
     }
 
     /**
-     * Chỉ mở lại khi CHẮC CHẮN app ngân hàng đã lên màn hình rồi tự thoát về màn hình chính.
-     * Không đủ dữ liệu (chưa cấp Truy cập dữ liệu sử dụng) hoặc người dùng đang ở app khác -> không làm gì,
-     * tránh mở nhầm app (vd. đang mở Zalo lại bị bật Zalopay lên).
+     * Mở lại app ngân hàng nếu nó tự thoát lần đầu (kịp thấy Hỗ trợ tiếp cận trước khi Viên thuốc tắt).
+     * Chỉ khi chắc người dùng đang mở ĐÚNG app này (vừa chạm biểu tượng của nó / cửa sổ của nó vừa hiện)
+     * và giờ nó không còn trên màn hình — đang ở app khác thì không làm gì. Trả về true nếu đã mở lại.
      */
-    private fun relaunchIfClosed() {
-        val pkg = bankPkg ?: return
-        if (!BankMode.hasUsageAccess(this)) return
-        val usage = getSystemService(UsageStatsManager::class.java) ?: return
-        val events = usage.queryEvents(pausedAt - 500, System.currentTimeMillis())
-        val e = UsageEvents.Event()
-        var opened = false
-        var last: String? = null
-        while (events.hasNextEvent()) {
-            events.getNextEvent(e)
-            @Suppress("DEPRECATION")
-            if (e.eventType == UsageEvents.Event.MOVE_TO_FOREGROUND) {
-                if (e.packageName == pkg) opened = true
-                last = e.packageName
+    private fun relaunchIfClosed(): Boolean {
+        val pkg = bankPkg ?: return false
+        if (source == SOURCE_SAFE) return false
+        if (BankMode.hasUsageAccess(this)) {
+            val usage = getSystemService(UsageStatsManager::class.java) ?: return false
+            val events = usage.queryEvents(pausedAt - 500, System.currentTimeMillis())
+            val e = UsageEvents.Event()
+            var last: String? = null
+            while (events.hasNextEvent()) {
+                events.getNextEvent(e)
+                @Suppress("DEPRECATION")
+                if (e.eventType == UsageEvents.Event.MOVE_TO_FOREGROUND) last = e.packageName
             }
+            // Còn trên màn hình -> ổn; đang ở app khác -> người dùng đã đi nơi khác
+            if (last == pkg) return false
+            if (last != null && last !in BankMode.homePackages(this) && last !in TRANSIENT) return false
         }
-        val home = BankMode.homePackages(this)
-        val closed = opened && last != null && last != pkg && last in home
-        if (!closed) return
         val launch = packageManager.getLaunchIntentForPackage(pkg)
-            ?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED) ?: return
+            ?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED) ?: return false
         if (android.provider.Settings.canDrawOverlays(this)) {
-            // Có quyền "Hiển thị trên ứng dụng khác": tự mở lại ngay
+            // Có quyền "Hiển thị trên ứng dụng khác": tự mở lại ngay (app còn chạy thì chỉ đưa lên trước, không sao)
             runCatching { startActivity(launch) }
+            return true
         } else {
-            // Không tự mở được -> nhắc 1 chạm để mở lại
-            val nm = getSystemService(NotificationManager::class.java) ?: return
+            // Không tự mở được -> nhắc 1 chạm để mở lại (chỉ khi biết chắc app đã thoát)
+            if (!BankMode.hasUsageAccess(this)) return false
+            val nm = getSystemService(NotificationManager::class.java) ?: return false
             ensureRemindChannel(nm)
             val label = NotificationParser.appLabel(this, pkg)
             val pi = PendingIntent.getActivity(this, 3, launch, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
@@ -155,8 +161,10 @@ class BankWatchService : Service() {
                 .setContentIntent(pi)
                 .setAutoCancel(true)
                 .setCategory(Notification.CATEGORY_REMINDER)
+                .setTimeoutAfter(15_000)
                 .build()
             runCatching { nm.notify(RELAUNCH_ID, n) }
+            return true
         }
     }
 
@@ -261,6 +269,11 @@ class BankWatchService : Service() {
         private const val CHANNEL = "bank_mode"
         private const val ACTION_RESUME = "com.akira.island.BANK_RESUME"
         private const val EXTRA_PKG = "pkg"
+        private const val EXTRA_SOURCE = "source"
+        /** Tạm tắt vì: cửa sổ app ngân hàng hiện lên / chạm biểu tượng ở màn hình chính / lối tắt mở an toàn. */
+        const val SOURCE_WINDOW = 0
+        const val SOURCE_CLICK = 1
+        const val SOURCE_SAFE = 2
 
         // Màn hình chồng tạm thời không tính là "rời app ngân hàng" (bàn phím, xác thực sinh trắc, NFC…)
         private val TRANSIENT = setOf(
@@ -269,9 +282,11 @@ class BankWatchService : Service() {
             "com.google.android.permissioncontroller",
         )
 
-        fun start(context: Context, pkg: String) {
+        fun start(context: Context, pkg: String, source: Int = SOURCE_WINDOW) {
             runCatching {
-                context.startForegroundService(Intent(context, BankWatchService::class.java).putExtra(EXTRA_PKG, pkg))
+                context.startForegroundService(
+                    Intent(context, BankWatchService::class.java).putExtra(EXTRA_PKG, pkg).putExtra(EXTRA_SOURCE, source),
+                )
             }
         }
     }

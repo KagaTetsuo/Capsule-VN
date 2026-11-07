@@ -70,6 +70,11 @@ import kotlin.math.floor
 import kotlin.math.max
 
 class IslandService : AccessibilityService() {
+    companion object {
+        /** Dịch vụ đang chạy (để "Lối tắt mở an toàn" tắt được Viên thuốc). */
+        @Volatile var instance: IslandService? = null
+    }
+
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val handler = Handler(Looper.getMainLooper())
     private var wm: WindowManager? = null
@@ -175,6 +180,7 @@ class IslandService : AccessibilityService() {
 
     override fun onServiceConnected() {
         super.onServiceConnected()
+        instance = this
         SettingsRepo.init(this)
         watchCallAudio()
         wm = getSystemService(WINDOW_SERVICE) as WindowManager
@@ -636,8 +642,11 @@ class IslandService : AccessibilityService() {
         // Chế độ ngân hàng: nghe cú chạm biểu tượng ở màn hình chính để tắt Viên thuốc trước khi app ngân hàng mở
         // Luôn nghe cú chạm khi bật chế độ ngân hàng: tắt Viên thuốc NGAY lúc chạm biểu tượng, trước khi app kịp kiểm tra
         if (SettingsRepo.current.bankMode) types = types or AccessibilityEvent.TYPE_VIEW_CLICKED
-        if (types == info.eventTypes) return
+        // Chế độ ngân hàng: nhận cú chạm tức thì (không gom 100 ms) để tắt kịp trước khi app ngân hàng khởi động
+        val timeout = if (SettingsRepo.current.bankMode) 0L else 100L
+        if (types == info.eventTypes && info.notificationTimeout == timeout) return
         info.eventTypes = types
+        info.notificationTimeout = timeout
         runCatching { serviceInfo = info }
     }
 
@@ -651,8 +660,10 @@ class IslandService : AccessibilityService() {
             runCatching { event.source?.let { n -> (n.text ?: n.contentDescription)?.toString() } }.getOrNull().orEmpty()
         }
         if (label.isBlank()) return false
-        val pkg = BankMode.pkgForLabel(this, label) ?: return false
-        BankMode.pause(this, pkg)
+        val pkg = BankMode.pkgForLabel(this, label)
+        BankMode.lastClick.value = "“${label.take(40)}” → " + (pkg?.let { NotificationParser.appLabel(this, it) } ?: "không phải app trong danh sách")
+        if (pkg == null) return false
+        BankMode.pause(this, pkg, BankWatchService.SOURCE_CLICK)
         return true
     }
 
@@ -824,6 +835,7 @@ class IslandService : AccessibilityService() {
     }
 
     override fun onDestroy() {
+        if (instance === this) instance = null
         unwatchCallAudio()
         stopService(Intent(this, KeepAliveService::class.java))
         handler.removeCallbacks(shoot)

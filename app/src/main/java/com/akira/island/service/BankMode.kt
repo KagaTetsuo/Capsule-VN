@@ -161,9 +161,13 @@ object BankMode {
     }
 
     /** Tắt Viên thuốc ngay (trước / khi app ngân hàng mở) và bật dịch vụ canh để tự bật lại. */
-    fun pause(service: AccessibilityService, pkg: String) {
-        BankWatchService.start(service, pkg)
+    /** Lần chạm biểu tượng gần nhất ở màn hình chính (để chẩn đoán trong trang Ngân hàng & VNeID). */
+    val lastClick = kotlinx.coroutines.flow.MutableStateFlow("")
+
+    fun pause(service: AccessibilityService, pkg: String, source: Int = BankWatchService.SOURCE_WINDOW) {
+        // Tắt trước tiên (việc gấp nhất), rồi mới bật dịch vụ canh để tự bật lại
         if (canWriteSecure(service)) setAccessibility(service, false)
+        BankWatchService.start(service, pkg, source)
         service.disableSelf()
     }
 

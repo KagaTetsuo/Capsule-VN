@@ -49,6 +49,7 @@ import android.content.Context
 import android.graphics.drawable.Icon
 import android.os.Build
 import android.widget.Toast
+import androidx.core.graphics.drawable.toBitmap
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.NotificationsActive
@@ -91,6 +92,7 @@ fun BanksScreen(onBack: () -> Unit) {
         if (!ok) Perms.openAppNotifications(context)
     }
     var appsDialog by remember { mutableStateOf(false) }
+    var shortcutDialog by remember { mutableStateOf(false) }
     var adbDialog by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
 
@@ -138,11 +140,20 @@ fun BanksScreen(onBack: () -> Unit) {
             }
             val list = remember(s.bankApps, s.bankAppsEdited) { BankMode.apps(context) }
             GroupItem(
-                Pos.Last, Icons.Rounded.Apps, tr("Ứng dụng áp dụng", "Apps"),
+                Pos.Middle, Icons.Rounded.Apps, tr("Ứng dụng áp dụng", "Apps"),
                 if (list.isEmpty()) tr("Chưa có ứng dụng nào", "No apps yet")
                 else tr("${list.size} ứng dụng", "${list.size} apps") + (if (s.bankAppsEdited) "" else tr(" · tự nhận diện", " · auto-detected")),
                 color = Tile.Blue, onClick = { appsDialog = true },
             ) { Arrow() }
+            GroupItem(
+                Pos.Last, Icons.Rounded.AddBox, tr("Lối tắt mở an toàn (không bị tự thoát)", "Safe-open shortcut (never closes)"),
+                tr("Tạo biểu tượng ở màn hình chính cho app hay tự thoát lần đầu (Xanh SM, Tammi…): chạm vào là tắt Viên thuốc hẳn rồi mới mở app", "Adds a home-screen icon for apps that close on first open: it turns the island off fully, then opens the app"),
+                color = Tile.Green, onClick = { shortcutDialog = true },
+            ) { Arrow() }
+        }
+        val lastClick by BankMode.lastClick.collectAsState()
+        if (lastClick.isNotEmpty()) {
+            InfoText(tr("Lần chạm gần nhất ở màn hình chính: ", "Last home-screen tap: ") + lastClick)
         }
 
         val post = Perms.postNotifications(context)
@@ -224,6 +235,7 @@ fun BanksScreen(onBack: () -> Unit) {
     }
 
     if (appsDialog) BankAppsDialog { appsDialog = false }
+    if (shortcutDialog) SafeShortcutDialog { shortcutDialog = false }
     if (adbDialog) {
         val cmds = remember { BankMode.adbCommands(context) }
         AlertDialog(
@@ -309,6 +321,72 @@ private fun BankAppsDialog(onDismiss: () -> Unit) {
         },
     )
 }
+
+/** Chọn app để tạo "Lối tắt mở an toàn" ở màn hình chính. */
+@Composable
+private fun SafeShortcutDialog(onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    val apps = remember {
+        val list = BankMode.apps(context)
+        BankMode.launchable(context).filter { it.first in list }
+    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Ui.Card,
+        title = { Text(tr("Tạo lối tắt mở an toàn", "Create a safe-open shortcut")) },
+        text = {
+            LazyColumn(Modifier.heightIn(max = 420.dp)) {
+                item {
+                    Text(
+                        tr("Chọn app — một biểu tượng mới sẽ được thêm vào màn hình chính. Dùng biểu tượng đó thay cho biểu tượng gốc để không bao giờ bị tự thoát.",
+                            "Pick an app — a new icon is added to your home screen. Use it instead of the original icon so the app never closes itself."),
+                        color = Ui.Sub, fontSize = 13.sp, lineHeight = 18.sp, modifier = Modifier.padding(bottom = 8.dp),
+                    )
+                }
+                if (apps.isEmpty()) {
+                    item { Text(tr("Chưa có app nào trong danh sách", "No apps in the list yet"), color = Ui.Sub) }
+                }
+                items(apps, key = { it.first }) { (pkg, label) ->
+                    Text(
+                        label, color = Ui.Text, fontSize = 15.sp, maxLines = 1,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable {
+                                val ok = pinSafeShortcut(context, pkg, label)
+                                Toast.makeText(
+                                    context,
+                                    if (ok) tr("Đang thêm “$label” vào màn hình chính…", "Adding “$label” to the home screen…")
+                                    else tr("Màn hình chính này không cho thêm lối tắt", "This launcher doesn't support shortcuts"),
+                                    Toast.LENGTH_SHORT,
+                                ).show()
+                                if (ok) onDismiss()
+                            }
+                            .padding(vertical = 12.dp, horizontal = 6.dp),
+                    )
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(tr("Đóng", "Close"), color = Ui.Primary) } },
+    )
+}
+
+/** Ghim lối tắt: chạm vào -> SafeLaunchActivity tắt Viên thuốc hẳn rồi mới mở app. */
+private fun pinSafeShortcut(context: Context, pkg: String, label: String): Boolean = runCatching {
+    val sm = context.getSystemService(android.content.pm.ShortcutManager::class.java) ?: return false
+    if (!sm.isRequestPinShortcutSupported) return false
+    val bmp = context.packageManager.getApplicationIcon(pkg).toBitmap(192, 192)
+    val intent = Intent(context, com.akira.island.service.SafeLaunchActivity::class.java)
+        .setAction(Intent.ACTION_VIEW)
+        .putExtra(com.akira.island.service.SafeLaunchActivity.EXTRA_PKG, pkg)
+    val info = android.content.pm.ShortcutInfo.Builder(context, "safe_$pkg")
+        .setShortLabel(label)
+        .setLongLabel(tr("$label (mở an toàn)", "$label (safe open)"))
+        .setIcon(Icon.createWithBitmap(bmp))
+        .setIntent(intent)
+        .build()
+    sm.requestPinShortcut(info, null)
+}.getOrDefault(false)
 
 private fun addTile(context: Context) {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
