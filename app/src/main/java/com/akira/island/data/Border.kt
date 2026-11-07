@@ -146,8 +146,10 @@ enum class Place(private val ru: String, private val en: String, private val hin
     PAYMENT("Thanh toán", "Payments", "Chạm thanh toán NFC, đã thanh toán", "NFC tap to pay, paid"),
     NAV("Điều hướng & gọi xe", "Navigation & rides", "Rẽ, lộ trình, giao hàng, gọi xe", "Turns, routes, deliveries, rides"),
     ALARM("Báo thức", "Alarm", "Báo thức sắp reo", "Upcoming alarm"),
-    MODE("Chế độ chuông", "Ring mode", "Chuông, im lặng, rung (viên nhỏ)", "Ring, silent, vibrate (small pill)"),
-    SENT("Đã gửi / Đã sao chép", "Sent / Copied", "Đã gửi tin, đã chép mã OTP (viên nhỏ)", "Message sent, OTP copied (small pill)"),
+    MODE("Chế độ chuông", "Ring mode", "Chuông, rung, im lặng", "Ring, vibrate, silent"),
+    UNLOCK("Mở khoá máy", "Unlocked", "Biểu tượng ổ khoá khi mở khoá màn hình", "Lock icon when you unlock"),
+    COMPACT("Tin nhắn thu gọn & Gaming", "Compact message & gaming", "Tin nhắn dạng viên nhỏ (khi app tự hiện pop-up, khi chơi game) và Gaming Mode", "Messages as a pill (app pop-up, in games) and Gaming Mode"),
+    SENT("Đã gửi / Đã sao chép", "Sent / Copied", "Đã gửi tin trả lời, đã chép mã OTP", "Reply sent, OTP copied"),
     OTHER("Sự kiện khác", "Other events", "Wi-Fi, chế độ máy bay, đèn pin…", "Wi-Fi, airplane mode, flashlight…"),
     ;
 
@@ -163,6 +165,8 @@ enum class Place(private val ru: String, private val en: String, private val hin
             NAV -> NoticeKind.NAV
             ALARM -> NoticeKind.ALARM
             MODE -> NoticeKind.MODE
+            UNLOCK -> NoticeKind.UNLOCK
+            COMPACT -> NoticeKind.COMPACT
             SENT -> NoticeKind.SENT
             OTHER -> NoticeKind.OTHER
             else -> null
@@ -184,13 +188,15 @@ fun NoticeKind.place(): Place = when (this) {
     NoticeKind.NAV -> Place.NAV
     NoticeKind.ALARM -> Place.ALARM
     NoticeKind.MODE -> Place.MODE
+    NoticeKind.UNLOCK -> Place.UNLOCK
+    NoticeKind.COMPACT -> Place.COMPACT
     NoticeKind.SENT -> Place.SENT
     NoticeKind.OTHER -> Place.OTHER
 }
 
 /** Mặc định: nơi nào dùng nền đen thường (không dùng nền thẻ) — giống giao diện trước đây. */
 val DEFAULT_PLAIN_BG: Set<Place> = setOf(
-    Place.IDLE, Place.ACTIVE, Place.CHARGING, Place.AUDIO, Place.PAYMENT, Place.OTHER, Place.MODE, Place.SENT,
+    Place.IDLE, Place.ACTIVE, Place.CHARGING, Place.AUDIO, Place.PAYMENT, Place.OTHER, Place.MODE, Place.UNLOCK, Place.COMPACT, Place.SENT,
 )
 
 fun IslandSettings.placeBorder(p: Place): BorderSpec = placeBorders[p] ?: BorderSpec()
@@ -216,4 +222,21 @@ internal fun IslandSettings.migratePlaces(): IslandSettings {
         if (!cardStylePills) addAll(listOf(Place.CHARGING, Place.AUDIO, Place.PAYMENT, Place.OTHER, Place.MODE, Place.SENT))
     }
     return copy(placeBorders = map, plainBgPlaces = plain)
+}
+
+/** Thông báo viên nhỏ (biểu tượng + chữ ngắn quanh camera). */
+val NoticeKind.isPill: Boolean get() = this == NoticeKind.MODE || this == NoticeKind.UNLOCK || this == NoticeKind.COMPACT
+
+/** v1.6.1: trước đây mọi viên nhỏ dùng chung thiết lập "chế độ chuông" — chép sang 2 loại mới để giữ nguyên giao diện. */
+internal fun IslandSettings.migratePills(): IslandSettings {
+    val newKinds = listOf(NoticeKind.UNLOCK, NoticeKind.COMPACT)
+    val tw = noticeTweaks[NoticeKind.MODE]
+    val dur = noticeDurations[NoticeKind.MODE.name]
+    val b = placeBorders[Place.MODE]
+    return copy(
+        noticeTweaks = if (tw == null) noticeTweaks else noticeTweaks + newKinds.filter { it !in noticeTweaks }.associateWith { tw },
+        noticeDurations = if (dur == null) noticeDurations else noticeDurations + newKinds.map { it.name }.filter { it !in noticeDurations }.associateWith { dur },
+        placeBorders = if (b == null) placeBorders else placeBorders + listOf(Place.UNLOCK, Place.COMPACT).filter { it !in placeBorders }.associateWith { b },
+        plainBgPlaces = if (Place.MODE in plainBgPlaces) plainBgPlaces + Place.UNLOCK + Place.COMPACT else plainBgPlaces - Place.UNLOCK - Place.COMPACT,
+    )
 }

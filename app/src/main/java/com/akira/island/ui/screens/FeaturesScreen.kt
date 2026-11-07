@@ -481,6 +481,7 @@ fun GamingScreen(onBack: () -> Unit) {
                             icon = Ios.load(context, R.drawable.ios_chatbubble_ellipses),
                             tint = Tints.Blue,
                             style = NoticeStyle.PILL,
+                            kindHint = com.akira.island.data.NoticeKind.COMPACT,
                         ),
                     )
                 },

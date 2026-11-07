@@ -46,7 +46,7 @@ class KeepAliveService : Service() {
         val open = packageManager.getLaunchIntentForPackage(packageName)
             ?.let { PendingIntent.getActivity(this, 0, it, PendingIntent.FLAG_IMMUTABLE) }
         return Notification.Builder(this, CHANNEL)
-            .setSmallIcon(R.drawable.ic_tab_island)
+            .setSmallIcon(R.drawable.ic_stat_capsule)
             .setContentTitle(tr("Viên thuốc đang hoạt động", "The island is running"))
             .setContentText(tr("Thông báo này giúp hệ thống không tắt Viên thuốc ngầm", "This notification keeps the system from closing the island"))
             .setContentIntent(open)

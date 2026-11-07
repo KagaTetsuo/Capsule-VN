@@ -256,6 +256,8 @@ data class Notice(
     val alarm: AlarmInfo? = null,
     
     val update: com.akira.island.update.Release? = null,
+    /** Loại thông báo chỉ định sẵn (vd. viên nhỏ mở khoá / tin nhắn thu gọn) để chỉnh giao diện riêng. */
+    val kindHint: com.akira.island.data.NoticeKind? = null,
     val id: Long = ids.incrementAndGet(),
 ) {
     private companion object {

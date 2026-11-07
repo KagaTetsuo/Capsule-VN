@@ -566,6 +566,7 @@ private fun demos(context: Context): List<Demo> {
                     icon = Ios.load(context, R.drawable.ios_hardware_chip),
                     tint = Tints.Orange,
                     style = NoticeStyle.PILL,
+                    kindHint = com.akira.island.data.NoticeKind.COMPACT,
                     extraMs = 3_000,
                 ),
             )

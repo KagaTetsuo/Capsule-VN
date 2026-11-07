@@ -360,7 +360,7 @@ private fun NoticeCompact(n: Notice, base: IslandSettings, cardWidth: Dp) {
         n.style == NoticeStyle.EGG -> EggBanner(n, s)
         n.style == NoticeStyle.SENT -> SentBanner(n, s, wideWidth)
         n.style == NoticeStyle.UPDATE -> UpdateCard(n, s, cardWidth)
-        n.style == NoticeStyle.PILL || n.title.isBlank() && n.state == null -> PillNotice(n, base, base.noticeTweaks[NoticeKind.MODE])
+        n.style == NoticeStyle.PILL || n.title.isBlank() && n.state == null -> PillNotice(n, base, base.noticeTweaks[kind ?: n.kind()])
         else -> WideNotice(n, s, wideWidth)
     }
 }
@@ -414,6 +414,8 @@ private fun PillNotice(n: Notice, s: IslandSettings, own: NoticeTweak?) {
     // Kích thước riêng của thông báo viên nhỏ (Giao diện → Thông báo viên nhỏ); chưa chỉnh thì như cũ
     val h = (activeHeight(s) + (own?.heightExtra ?: 0).dp).coerceAtLeast(22.dp)
     val fixedW = own?.width?.takeIf { it > 0 }?.dp
+    val iconK = (own?.iconScale ?: 100).coerceIn(50, 180) / 100f
+    val textK = (own?.textScale ?: 100).coerceIn(50, 180) / 100f
     val swing = remember(n.id) { Animatable(0f) }
     LaunchedEffect(n.id) {
         if (s.reduceEffects || !s.fxShake) return@LaunchedEffect
@@ -429,7 +431,7 @@ private fun PillNotice(n: Notice, s: IslandSettings, own: NoticeTweak?) {
         left = {
             Icon(
                 n.icon, null, tint = n.tint,
-                modifier = Modifier.size(h * 0.5f).graphicsLayer {
+                modifier = Modifier.size(h * 0.5f * iconK).graphicsLayer {
                     rotationZ = swing.value
                     transformOrigin = TransformOrigin(0.5f, 0.1f)
                 },
@@ -437,7 +439,7 @@ private fun PillNotice(n: Notice, s: IslandSettings, own: NoticeTweak?) {
         },
         right = {
             if (n.state != null) {
-                Text(n.state, color = n.tint, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false)
+                Text(n.state, color = n.tint, fontSize = (16 * textK).sp, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false)
             }
         },
         

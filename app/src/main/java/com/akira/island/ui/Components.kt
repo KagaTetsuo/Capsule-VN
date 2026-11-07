@@ -90,6 +90,8 @@ fun Page(
     onBack: (() -> Unit)? = null,
     subtitle: String? = null,
     action: (@Composable () -> Unit)? = null,
+    /** Chừa chỗ phía trên (vd. cho bản xem trước Viên thuốc ở đỉnh màn hình) để không che tiêu đề & nút. */
+    topInset: Dp = 0.dp,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(
@@ -99,6 +101,7 @@ fun Page(
             .padding(horizontal = 16.dp),
     ) {
         Spacer(Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
+        if (topInset > 0.dp) Spacer(Modifier.height(topInset))
         Spacer(Modifier.height(14.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (onBack != null) {

@@ -129,7 +129,7 @@ class BankWatchService : Service() {
             val label = NotificationParser.appLabel(this, pkg)
             val pi = PendingIntent.getActivity(this, 3, launch, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
             val n = Notification.Builder(this, REMIND_CHANNEL)
-                .setSmallIcon(R.drawable.ic_tab_island)
+                .setSmallIcon(R.drawable.ic_stat_capsule)
                 .setContentTitle(tr("Mở lại $label", "Open $label again"))
                 .setContentText(tr("Viên thuốc đã tạm nghỉ — chạm để mở lại $label", "The island is paused — tap to open $label again"))
                 .setContentIntent(pi)
@@ -174,7 +174,7 @@ class BankWatchService : Service() {
             },
         )
         val n = Notification.Builder(this, REMIND_CHANNEL)
-            .setSmallIcon(R.drawable.ic_tab_island)
+            .setSmallIcon(R.drawable.ic_stat_capsule)
             .setContentTitle(tr("Bật lại Viên thuốc?", "Turn the island back on?"))
             .setContentText(tr("Bạn đã rời ứng dụng — chạm để bật lại trong Hỗ trợ tiếp cận", "You left the app — tap to turn it back on in Accessibility"))
             .setContentIntent(accessibilityIntent())
@@ -209,7 +209,7 @@ class BankWatchService : Service() {
         val openA11y = accessibilityIntent()
         val auto = BankMode.canWriteSecure(this)
         return Notification.Builder(this, CHANNEL)
-            .setSmallIcon(R.drawable.ic_tab_island)
+            .setSmallIcon(R.drawable.ic_stat_capsule)
             .setContentTitle(tr("Viên thuốc tạm nghỉ khi dùng $label", "The island is paused for $label"))
             .setContentText(
                 when {

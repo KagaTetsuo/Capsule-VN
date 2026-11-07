@@ -190,7 +190,7 @@ object IslandBus {
 enum class ServiceCommand { SCREENSHOT, LOCK, TURN_OFF }
 
 /** Phân loại thông báo để áp dụng vị trí / kích thước / thời gian hiển thị riêng. */
-fun Notice.kind(): com.akira.island.data.NoticeKind = when {
+fun Notice.kind(): com.akira.island.data.NoticeKind = kindHint ?: when {
     style == NoticeStyle.PAY_DONE -> com.akira.island.data.NoticeKind.PAYMENT
     style == NoticeStyle.LIVE -> com.akira.island.data.NoticeKind.NAV
     style == NoticeStyle.ALARM -> com.akira.island.data.NoticeKind.ALARM

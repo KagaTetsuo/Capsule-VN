@@ -2,6 +2,19 @@ package com.akira.island.ui.screens
 
 import android.os.SystemClock
 import androidx.compose.foundation.background
+import androidx.compose.material.icons.rounded.LockOpen
+import androidx.compose.material.icons.rounded.SportsEsports
+import androidx.compose.material.icons.rounded.FormatSize
+import androidx.compose.material.icons.rounded.Image
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.material3.Text
+import androidx.compose.ui.draw.shadow
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
@@ -63,6 +76,7 @@ import com.akira.island.data.Place
 import com.akira.island.data.SettingsRepo
 import com.akira.island.data.cardBgOn
 import com.akira.island.data.placeBorder
+import com.akira.island.data.isPill
 import com.akira.island.ui.Group
 import com.akira.island.ui.GroupItem
 import com.akira.island.ui.GroupSlider
@@ -93,6 +107,8 @@ fun Place.icon(): ImageVector = when (this) {
     Place.NAV -> Icons.Rounded.Navigation
     Place.ALARM -> Icons.Rounded.Alarm
     Place.MODE -> Icons.Rounded.NotificationsOff
+    Place.UNLOCK -> Icons.Rounded.LockOpen
+    Place.COMPACT -> Icons.Rounded.SportsEsports
     Place.SENT -> Icons.Rounded.CheckCircle
     Place.OTHER -> Icons.Rounded.Wifi
 }
@@ -110,6 +126,8 @@ fun Place.tile(): Color = when (this) {
     Place.NAV -> Tile.Blue
     Place.ALARM -> Tile.Orange
     Place.MODE -> Tile.Red
+    Place.UNLOCK -> Tile.Gray
+    Place.COMPACT -> Tile.Indigo
     Place.SENT -> Tile.Green
     Place.OTHER -> Tile.Gray
 }
@@ -167,8 +185,11 @@ fun PlaceScreen(onBack: () -> Unit, open: (Screen) -> Unit) {
 
     fun set(block: IslandSettings.() -> IslandSettings) = SettingsRepo.update(block)
 
+    Box(Modifier.fillMaxSize()) {
     Page(
         place.title, onBack, subtitle = place.hint,
+        // Đẩy cả trang (tiêu đề, nút quay lại, nút 👁) xuống dưới bản xem trước — không còn bị che
+        topInset = if (previewOn) previewSpace(s, place).dp else 0.dp,
         action = {
             Box(
                 Modifier.size(42.dp).clip(CircleShape).background(if (previewOn) Ui.Primary.copy(alpha = 0.22f) else Ui.Card)
@@ -183,10 +204,7 @@ fun PlaceScreen(onBack: () -> Unit, open: (Screen) -> Unit) {
             }
         },
     ) {
-        // Chừa chỗ cho bản xem trước ở đỉnh màn hình để không che các thanh chỉnh (nút 👁 để ẩn)
         if (previewOn) {
-            val space = previewSpace(s, place)
-            if (space > 0) Spacer(Modifier.height(space.dp))
             LivePreviewHint(
                 tr("Đang xem trước trên đỉnh màn hình — kéo thanh trượt thấy ngay. Nút 👁 ở góc trên để ẩn / hiện.",
                     "Live preview at the top — drag a slider to see it. Tap 👁 to hide / show."),
@@ -235,18 +253,48 @@ fun PlaceScreen(onBack: () -> Unit, open: (Screen) -> Unit) {
         val spec = s.placeBorder(place)
         BorderPreview(spec, null, place.title)
         BorderEditor(spec, null, tr("Đường viền riêng", "Own border")) { b -> set { copy(placeBorders = placeBorders + (place to b)) } }
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(96.dp))
+    }
+
+        // Nút nổi ở đáy màn hình (luôn bấm được, không bị bản xem trước che): ẩn / hiện xem trước
+        Row(
+            Modifier
+                .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
+                .padding(bottom = 20.dp)
+                .shadow(12.dp, CircleShape)
+                .clip(CircleShape)
+                .background(if (previewOn) Ui.Card else Ui.Primary)
+                .clickable { previewOn = !previewOn }
+                .padding(horizontal = 22.dp, vertical = 13.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                if (previewOn) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility, null,
+                tint = if (previewOn) Ui.Text else Ui.OnPrimary, modifier = Modifier.size(20.dp),
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                if (previewOn) tr("Ẩn xem trước", "Hide preview") else tr("Hiện xem trước", "Show preview"),
+                color = if (previewOn) Ui.Text else Ui.OnPrimary, fontSize = 15.sp, fontWeight = FontWeight.SemiBold,
+            )
+        }
     }
 }
 
-/** Bản xem trước nằm ở đỉnh màn hình cao bao nhiêu (dp, phần vượt quá tiêu đề trang). */
-private fun previewSpace(s: IslandSettings, p: Place): Int = when (p) {
-    Place.EXPANDED -> 150 + s.expandedHeightExtra + s.expandedOffsetY
-    Place.MESSAGE -> 40 + s.msgLines * 20 + s.msgHeightExtra + s.msgOffsetY
-    Place.CALL -> s.callHeight + s.callOffsetY - 40
-    Place.UPDATE -> 90 + s.updateHeightExtra + s.updateOffsetY
-    else -> 0
-}.coerceIn(0, 360)
+/** Bản xem trước ở đỉnh màn hình cao bao nhiêu (dp, tính từ dưới thanh trạng thái) — trang bắt đầu ngay bên dưới. */
+private fun previewSpace(s: IslandSettings, p: Place): Int {
+    val tw = p.kind?.let { s.tweakFor(it) }
+    return when (p) {
+        Place.IDLE -> s.height + s.offsetY + 12
+        Place.ACTIVE -> s.height + s.activeExtra + s.activeOffsetY + 14
+        Place.EXPANDED -> 260 + s.expandedHeightExtra + s.expandedOffsetY
+        Place.MESSAGE -> 110 + s.msgLines * 20 + s.msgHeightExtra + s.msgOffsetY
+        Place.CALL -> s.callHeight + s.callOffsetY + 24
+        Place.UPDATE -> 160 + s.updateHeightExtra + s.updateOffsetY
+        else -> 72 + (tw?.heightExtra ?: 0) + (tw?.offsetY ?: 0)
+    }.coerceIn(0, 420)
+}
 
 @Composable
 private fun IdleSize(s: IslandSettings, calibrate: Boolean, onCalibrate: (Boolean) -> Unit) {
@@ -416,12 +464,12 @@ private fun UpdateSize(s: IslandSettings) {
 @Composable
 private fun KindSize(s: IslandSettings, kind: NoticeKind) {
     val own = s.noticeTweaks[kind]
-    val pill = kind == NoticeKind.MODE
+    val pill = kind.isPill
     val cur = own ?: if (pill || kind == NoticeKind.SENT) s.noticeGeneral.copy(width = 0, heightExtra = 0, corner = -1) else s.noticeGeneral
     val autoW = (LocalConfiguration.current.screenWidthDp - 22).coerceAtMost(460)
-    val widths = when (kind) {
-        NoticeKind.MODE -> 60..360
-        NoticeKind.SENT -> 120..460
+    val widths = when {
+        pill -> 60..360
+        kind == NoticeKind.SENT -> 120..460
         else -> 200..460
     }
     fun put(tw: NoticeTweak) = SettingsRepo.update { copy(noticeTweaks = noticeTweaks + (kind to tw)) }
@@ -450,11 +498,22 @@ private fun KindSize(s: IslandSettings, kind: NoticeKind) {
             action = tr("Mặc định 0 dp", "Default 0 dp") to { put(cur.copy(heightExtra = 0)) }, color = Tile.Purple,
         ) { v -> put(cur.copy(heightExtra = v)) }
         GroupStepSlider(
-            if (own != null) Pos.Middle else Pos.Last, Icons.Rounded.BorderStyle, tr("Bo góc", "Corner radius"),
+            if (own != null || pill) Pos.Middle else Pos.Last, Icons.Rounded.BorderStyle, tr("Bo góc", "Corner radius"),
             if (cur.corner < 0) (if (pill) 20 else 28) else cur.corner, if (pill) 0..30 else 0..44,
             action = tr("Tự động (tròn đều)", "Auto (fully round)") to { put(cur.copy(corner = -1)) }, color = Tile.Yellow,
             valueText = if (cur.corner < 0) tr("Tự động", "Auto") else null,
         ) { v -> put(cur.copy(corner = v)) }
+        if (pill) {
+            // Viên nhỏ: chỉnh riêng cỡ biểu tượng & cỡ chữ
+            GroupStepSlider(
+                Pos.Middle, Icons.Rounded.Image, tr("Cỡ biểu tượng", "Icon size"), cur.iconScale, 50..180, unit = "%",
+                action = tr("Mặc định 100%", "Default 100%") to { put(cur.copy(iconScale = 100)) }, color = Tile.Pink,
+            ) { v -> put(cur.copy(iconScale = v)) }
+            GroupStepSlider(
+                if (own != null) Pos.Middle else Pos.Last, Icons.Rounded.FormatSize, tr("Cỡ chữ", "Text size"), cur.textScale, 50..180, unit = "%",
+                action = tr("Mặc định 100%", "Default 100%") to { put(cur.copy(textScale = 100)) }, color = Tile.Orange,
+            ) { v -> put(cur.copy(textScale = v)) }
+        }
         if (own != null) {
             GroupItem(
                 Pos.Last, Icons.Rounded.Restore, tr("Đặt lại kích thước & vị trí", "Reset size & position"),

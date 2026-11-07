@@ -123,8 +123,8 @@ fun CapsuleScreen(open: (Screen) -> Unit) {
         val sections = listOf(
             tr("Viên thuốc", "Island") to listOf(Place.IDLE, Place.ACTIVE, Place.EXPANDED),
             tr("Khung thẻ thông báo", "Notification cards") to listOf(Place.MESSAGE, Place.CALL, Place.UPDATE),
-            tr("Thông báo sự kiện", "Event alerts") to listOf(Place.CHARGING, Place.AUDIO, Place.PAYMENT, Place.NAV, Place.ALARM, Place.OTHER),
-            tr("Thông báo viên nhỏ", "Small pills") to listOf(Place.MODE, Place.SENT),
+            tr("Thông báo sự kiện", "Event alerts") to listOf(Place.CHARGING, Place.AUDIO, Place.PAYMENT, Place.NAV, Place.ALARM, Place.SENT, Place.OTHER),
+            tr("Thông báo viên nhỏ", "Small pills") to listOf(Place.MODE, Place.UNLOCK, Place.COMPACT),
         )
         sections.forEach { (header, list) ->
             SectionHeader(header)

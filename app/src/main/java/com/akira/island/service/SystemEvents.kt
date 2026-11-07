@@ -364,7 +364,7 @@ class SystemEvents(private val context: Context) {
         val now = SystemClock.elapsedRealtime()
         if (now - lastUnlock < 3_000) return
         lastUnlock = now
-        notice(s.evUnlock, Notice("", null, ic(R.drawable.ios_lock_open), Color.White, style = NoticeStyle.PILL))
+        notice(s.evUnlock, Notice("", null, ic(R.drawable.ios_lock_open), Color.White, style = NoticeStyle.PILL, kindHint = com.akira.island.data.NoticeKind.UNLOCK))
     }
 
     private fun isLocked(): Boolean = keyguard?.isDeviceLocked == true

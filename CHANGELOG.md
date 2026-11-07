@@ -1,5 +1,12 @@
 # Lịch sử phiên bản Capsule VN
 
+## v1.6.1 (2026) — Viên nhỏ tách riêng, không còn bị xem trước che, biểu tượng Capsule VN trên thanh trạng thái
+- **Thông báo viên nhỏ tách 3 loại**, mỗi loại một trang riêng: **Chế độ chuông** (chuông / rung / im lặng), **Mở khoá máy**, **Tin nhắn thu gọn & Gaming**. Thêm chỉnh **cỡ biểu tượng** và **cỡ chữ** cho từng loại viên nhỏ (ngoài vị trí, chiều rộng, chiều cao, bo góc, nền, thời gian, viền).
+- **"Đã gửi / Đã sao chép"** là thẻ ngang nên chuyển sang nhóm **Thông báo sự kiện**.
+- **Bản xem trước không còn che giao diện**: cả trang (tiêu đề, nút quay lại, nút 👁) tự dời xuống ngay dưới bản xem trước; thêm nút nổi **"Ẩn / Hiện xem trước"** ở đáy màn hình, luôn bấm được.
+- **Biểu tượng trên thanh trạng thái** (khi mở app ngân hàng, giữ Viên thuốc chạy nền, nhắc bật lại…) đổi từ hình "điện thoại" sang **viên thuốc Capsule VN có ngôi sao**; ô Cài đặt nhanh cũng dùng biểu tượng mới.
+- Thiết lập cũ của viên nhỏ được chép sang cả 3 loại để giữ nguyên giao diện.
+
 ## v1.6.0 (2026) — Mỗi loại một trang riêng, không còn mục trùng lặp
 - **Tab Giao diện sắp xếp lại**: mỗi nơi / mỗi loại thông báo là **một mục riêng**, bấm vào chỉ chỉnh đúng loại đó (không còn hàng nút chuyển sang nơi khác ở đầu trang):
   - Viên thuốc: Bình thường · Khi có hoạt động · Bảng mở rộng.

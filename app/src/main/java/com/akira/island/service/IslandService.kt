@@ -745,6 +745,7 @@ class IslandService : AccessibilityService() {
                     icon = Ios.load(this, R.drawable.ios_hardware_chip),
                     tint = Tints.Green,
                     style = NoticeStyle.PILL,
+                    kindHint = com.akira.island.data.NoticeKind.COMPACT,
                 ),
             )
         }
