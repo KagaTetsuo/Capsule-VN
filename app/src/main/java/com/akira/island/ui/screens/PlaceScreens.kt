@@ -3,6 +3,7 @@ package com.akira.island.ui.screens
 import android.os.SystemClock
 import androidx.compose.foundation.background
 import androidx.compose.material.icons.rounded.LockOpen
+import androidx.compose.material.icons.rounded.MarkChatUnread
 import androidx.compose.material.icons.rounded.SportsEsports
 import androidx.compose.material.icons.rounded.FormatSize
 import androidx.compose.material.icons.rounded.Image
@@ -96,6 +97,7 @@ object PlaceNav {
 
 fun Place.icon(): ImageVector = when (this) {
     Place.IDLE -> Icons.Rounded.AspectRatio
+    Place.UNREAD -> Icons.Rounded.MarkChatUnread
     Place.ACTIVE -> Icons.Rounded.GraphicEq
     Place.EXPANDED -> Icons.Rounded.DashboardCustomize
     Place.MESSAGE -> Icons.Rounded.ChatBubble
@@ -115,6 +117,7 @@ fun Place.icon(): ImageVector = when (this) {
 
 fun Place.tile(): Color = when (this) {
     Place.IDLE -> Tile.Indigo
+    Place.UNREAD -> Tile.Blue
     Place.ACTIVE -> Tile.Purple
     Place.EXPANDED -> Tile.Blue
     Place.MESSAGE -> Tile.Blue
@@ -166,6 +169,7 @@ fun PlaceScreen(onBack: () -> Unit, open: (Screen) -> Unit) {
             IslandBus.calibrating.value = place == Place.IDLE && calibrate
             IslandBus.widthPreviewUntil.value = if (place == Place.ACTIVE) SystemClock.elapsedRealtime() + 10 * 60_000L else 0L
             IslandBus.previewNoticeKind.value = place.kind
+            IslandBus.previewUnread.value = place == Place.UNREAD
             IslandBus.cardPreviewMode.value = when {
                 place == Place.EXPANDED -> CardPreviewMode.EXPANDED
                 place == Place.MESSAGE -> CardPreviewMode.MESSAGE
@@ -179,6 +183,7 @@ fun PlaceScreen(onBack: () -> Unit, open: (Screen) -> Unit) {
             IslandBus.calibrating.value = false
             IslandBus.widthPreviewUntil.value = 0L
             IslandBus.previewNoticeKind.value = null
+            IslandBus.previewUnread.value = false
             IslandBus.cardPreviewMode.value = CardPreviewMode.NONE
         }
     }
@@ -214,6 +219,10 @@ fun PlaceScreen(onBack: () -> Unit, open: (Screen) -> Unit) {
         SectionHeader(tr("Kích thước & vị trí", "Size & position"))
         when (place) {
             Place.IDLE -> IdleSize(s, calibrate) { calibrate = it }
+            Place.UNREAD -> LivePreviewHint(
+                tr("Cùng kích thước & vị trí với \"Viên thuốc bình thường\" — ở đây chỉnh riêng nền và đường viền khi còn tin chưa đọc.",
+                    "Same size & position as the idle island — set the background and border used while messages are unread."),
+            )
             Place.ACTIVE -> ActiveSize(s)
             Place.EXPANDED -> ExpandedSize(s)
             Place.MESSAGE -> MessageSize(s)
@@ -286,7 +295,7 @@ fun PlaceScreen(onBack: () -> Unit, open: (Screen) -> Unit) {
 private fun previewSpace(s: IslandSettings, p: Place): Int {
     val tw = p.kind?.let { s.tweakFor(it) }
     return when (p) {
-        Place.IDLE -> s.height + s.offsetY + 12
+        Place.IDLE, Place.UNREAD -> s.height + s.offsetY + 12
         Place.ACTIVE -> s.height + s.activeExtra + s.activeOffsetY + 14
         Place.EXPANDED -> 260 + s.expandedHeightExtra + s.expandedOffsetY
         Place.MESSAGE -> 110 + s.msgLines * 20 + s.msgHeightExtra + s.msgOffsetY

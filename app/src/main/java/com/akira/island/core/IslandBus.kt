@@ -57,6 +57,8 @@ object IslandBus {
     val cardPreviewMode = MutableStateFlow(CardPreviewMode.NONE)
     /** Màn hình cài đặt của app đang hiển thị — xem trước chỉ hiện khi app đang mở, rời app là tự ẩn. */
     val appVisible = MutableStateFlow(false)
+    /** Đang chỉnh trang "Có tin chưa đọc": Viên thuốc giả lập trạng thái có tin chưa đọc. */
+    val previewUnread = MutableStateFlow(false)
 
     /** Ngón tay vừa chạm Viên thuốc: phóng sẵn cửa sổ để bung mở rộng không bị khựng. */
     val touchDown = MutableSharedFlow<Unit>(extraBufferCapacity = 1)

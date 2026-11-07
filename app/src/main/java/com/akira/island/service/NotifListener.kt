@@ -184,8 +184,17 @@ object NotificationParser {
             decline = decline ?: hangUp,
             hangUp = hangUp ?: decline,
             open = n.contentIntent,
+            popsUp = popsUp(context, sbn),
         )
     }
+
+    /** Kênh thông báo của cuộc gọi có bật pop-up (mức Cao) hoặc màn hình cuộc gọi toàn màn hình không. */
+    private fun popsUp(context: Context, sbn: StatusBarNotification): Boolean = runCatching {
+        val svc = context as? NotificationListenerService ?: return@runCatching sbn.notification.fullScreenIntent != null
+        val r = NotificationListenerService.Ranking()
+        if (!svc.currentRanking.getRanking(sbn.key, r)) return@runCatching sbn.notification.fullScreenIntent != null
+        r.importance >= android.app.NotificationManager.IMPORTANCE_HIGH
+    }.getOrDefault(false)
 
     private fun looksLikeTimer(n: Notification, title: String): Boolean {
         val t = (title + " " + n.channelId.orEmpty()).lowercase()

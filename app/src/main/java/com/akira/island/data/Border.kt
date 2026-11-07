@@ -136,6 +136,7 @@ internal fun IslandSettings.migrateBorders(): IslandSettings {
 @Serializable
 enum class Place(private val ru: String, private val en: String, private val hintRu: String, private val hintEn: String) {
     IDLE("Viên thuốc bình thường", "Idle island", "Khi không có hoạt động nào", "When nothing is happening"),
+    UNREAD("Có tin chưa đọc", "Unread messages", "Viên thuốc khi còn tin nhắn chưa xem (chạm để đọc lại)", "The island while messages are still unread"),
     ACTIVE("Khi có hoạt động", "With activity", "Nhạc, hẹn giờ, cuộc gọi đang diễn ra, dẫn đường…", "Music, timers, ongoing calls, navigation…"),
     EXPANDED("Bảng mở rộng", "Expanded board", "Giờ – Pin, trình phát nhạc, hẹn giờ…", "Clock & battery, music player, timers…"),
     MESSAGE("Tin nhắn", "Messages", "Thẻ tin nhắn & tin chưa đọc", "Message cards & unread"),
@@ -196,10 +197,14 @@ fun NoticeKind.place(): Place = when (this) {
 
 /** Mặc định: nơi nào dùng nền đen thường (không dùng nền thẻ) — giống giao diện trước đây. */
 val DEFAULT_PLAIN_BG: Set<Place> = setOf(
-    Place.IDLE, Place.ACTIVE, Place.CHARGING, Place.AUDIO, Place.PAYMENT, Place.OTHER, Place.MODE, Place.UNLOCK, Place.COMPACT, Place.SENT,
+    Place.IDLE, Place.UNREAD, Place.ACTIVE, Place.CHARGING, Place.AUDIO, Place.PAYMENT, Place.OTHER, Place.MODE, Place.UNLOCK, Place.COMPACT, Place.SENT,
 )
 
-fun IslandSettings.placeBorder(p: Place): BorderSpec = placeBorders[p] ?: BorderSpec()
+/** Viền mặc định khi có tin chưa đọc: nhịp thở theo màu ứng dụng (như đèn báo trước đây) — tắt được. */
+val DEFAULT_UNREAD_BORDER = BorderSpec(on = true, palette = BorderPalette.APP, color = 0xFF0068FF, effect = BorderEffect.BREATHE, width = 2f, glow = 55)
+
+fun IslandSettings.placeBorder(p: Place): BorderSpec =
+    placeBorders[p] ?: if (p == Place.UNREAD) DEFAULT_UNREAD_BORDER else BorderSpec()
 
 /** Nơi này dùng nền thẻ (màu / ảnh / Liquid Glass ở "Nền thẻ thông báo") hay nền đen thường. */
 fun IslandSettings.cardBgOn(p: Place): Boolean = p !in plainBgPlaces
@@ -240,3 +245,7 @@ internal fun IslandSettings.migratePills(): IslandSettings {
         plainBgPlaces = if (Place.MODE in plainBgPlaces) plainBgPlaces + Place.UNLOCK + Place.COMPACT else plainBgPlaces - Place.UNLOCK - Place.COMPACT,
     )
 }
+
+/** v1.6.2: thêm "Có tin chưa đọc" — nền theo như Viên thuốc bình thường. */
+internal fun IslandSettings.migrateUnread(): IslandSettings =
+    if (Place.IDLE in plainBgPlaces) copy(plainBgPlaces = plainBgPlaces + Place.UNREAD) else copy(plainBgPlaces = plainBgPlaces - Place.UNREAD)

@@ -121,7 +121,7 @@ fun CapsuleScreen(open: (Screen) -> Unit) {
 
         // Mỗi nơi / mỗi loại thông báo một trang riêng: kích thước & vị trí, nền, thời gian hiển thị, đường viền
         val sections = listOf(
-            tr("Viên thuốc", "Island") to listOf(Place.IDLE, Place.ACTIVE, Place.EXPANDED),
+            tr("Viên thuốc", "Island") to listOf(Place.IDLE, Place.UNREAD, Place.ACTIVE, Place.EXPANDED),
             tr("Khung thẻ thông báo", "Notification cards") to listOf(Place.MESSAGE, Place.CALL, Place.UPDATE),
             tr("Thông báo sự kiện", "Event alerts") to listOf(Place.CHARGING, Place.AUDIO, Place.PAYMENT, Place.NAV, Place.ALARM, Place.SENT, Place.OTHER),
             tr("Thông báo viên nhỏ", "Small pills") to listOf(Place.MODE, Place.UNLOCK, Place.COMPACT),

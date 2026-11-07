@@ -380,6 +380,8 @@ data class IslandSettings(
     val msgInApp: Boolean = false,
     /** Không hiện thẻ cuộc gọi đến khi đang mở sẵn màn hình cuộc gọi của chính app đó (tránh trùng). */
     val hideCallInCallApp: Boolean = true,
+    /** Chỉ một thông báo cuộc gọi: nếu app gọi điện tự bật pop-up của hệ thống thì Viên thuốc không hiện thêm thẻ. */
+    val callDedupe: Boolean = false,
     
     val msgChannels: Map<String, String> = emptyMap(),
     
@@ -546,6 +548,7 @@ object SettingsRepo {
         if (current.layoutVersion < 8) update { migratePlaces().copy(layoutVersion = 8) }
         // v1.6.1: viên nhỏ tách 3 loại (chế độ chuông / mở khoá / tin nhắn thu gọn & Gaming) — chép thiết lập cũ sang
         if (current.layoutVersion < 9) update { migratePills().copy(layoutVersion = 9) }
+        if (current.layoutVersion < 10) update { migrateUnread().copy(layoutVersion = 10) }
     }
 
     fun update(block: IslandSettings.() -> IslandSettings) {
@@ -565,9 +568,10 @@ object SettingsRepo {
         val decoded = json.decodeFromString<IslandSettings>(raw)
         // File sao lưu từ bản cũ: chuyển thiết lập viền cũ sang hệ thống viền mới
         val restored = when {
-            decoded.layoutVersion in 1..5 -> decoded.migrateBorders().migratePlaces().migratePills().copy(layoutVersion = 9)
-            decoded.layoutVersion in 6..7 -> decoded.migratePlaces().migratePills().copy(layoutVersion = 9)
-            decoded.layoutVersion == 8 -> decoded.migratePills().copy(layoutVersion = 9)
+            decoded.layoutVersion in 1..5 -> decoded.migrateBorders().migratePlaces().migratePills().migrateUnread().copy(layoutVersion = 10)
+            decoded.layoutVersion in 6..7 -> decoded.migratePlaces().migratePills().migrateUnread().copy(layoutVersion = 10)
+            decoded.layoutVersion == 8 -> decoded.migratePills().migrateUnread().copy(layoutVersion = 10)
+            decoded.layoutVersion == 9 -> decoded.migrateUnread().copy(layoutVersion = 10)
             else -> decoded
         }
         val c = current

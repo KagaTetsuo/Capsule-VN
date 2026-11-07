@@ -634,10 +634,8 @@ class IslandService : AccessibilityService() {
         var types = info.eventTypes and extra.inv()
         if (screenEvents) types = types or extra
         // Chế độ ngân hàng: nghe cú chạm biểu tượng ở màn hình chính để tắt Viên thuốc trước khi app ngân hàng mở
-        // Chỉ nghe khi đang ở màn hình chính (bớt xử lý mỗi lần chạm trong các app khác)
-        if (SettingsRepo.current.bankMode && IslandBus.foregroundPackage.value.let { it == null || it == BankMode.homePackage(this) }) {
-            types = types or AccessibilityEvent.TYPE_VIEW_CLICKED
-        }
+        // Luôn nghe cú chạm khi bật chế độ ngân hàng: tắt Viên thuốc NGAY lúc chạm biểu tượng, trước khi app kịp kiểm tra
+        if (SettingsRepo.current.bankMode) types = types or AccessibilityEvent.TYPE_VIEW_CLICKED
         if (types == info.eventTypes) return
         info.eventTypes = types
         runCatching { serviceInfo = info }
@@ -647,8 +645,11 @@ class IslandService : AccessibilityService() {
         val s = SettingsRepo.current
         if (!s.bankMode || !s.enabled) return false
         val src = event.packageName?.toString() ?: return false
-        if (src != BankMode.homePackage(this)) return false
-        val label = event.text.joinToString(" ").ifBlank { event.contentDescription?.toString().orEmpty() }
+        if (src !in BankMode.homePackages(this)) return false
+        // Tên biểu tượng: chữ của sự kiện, mô tả, hoặc chữ của chính ô được chạm
+        val label = event.text.joinToString(" ").ifBlank { event.contentDescription?.toString().orEmpty() }.ifBlank {
+            runCatching { event.source?.let { n -> (n.text ?: n.contentDescription)?.toString() } }.getOrNull().orEmpty()
+        }
         if (label.isBlank()) return false
         val pkg = BankMode.pkgForLabel(this, label) ?: return false
         BankMode.pause(this, pkg)

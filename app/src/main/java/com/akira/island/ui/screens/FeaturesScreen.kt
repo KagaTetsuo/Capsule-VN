@@ -17,6 +17,7 @@ import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material.icons.rounded.Bedtime
 import androidx.compose.material.icons.rounded.ChatBubble
 import androidx.compose.material.icons.rounded.Call
+import androidx.compose.material.icons.rounded.PhoneInTalk
 import androidx.compose.material.icons.rounded.MarkChatUnread
 import androidx.compose.material.icons.rounded.Circle
 import androidx.compose.material.icons.rounded.Dashboard
@@ -75,7 +76,6 @@ import com.akira.island.service.VoiceAnnouncer
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Key
 import androidx.compose.material.icons.rounded.Password
-import androidx.compose.material.icons.rounded.PhoneInTalk
 import androidx.compose.material.icons.rounded.RecordVoiceOver
 import androidx.compose.material.icons.rounded.VolumeUp
 import com.akira.island.island.Ios
@@ -362,6 +362,9 @@ fun NotificationsScreen(onBack: () -> Unit, open: (Screen) -> Unit = {}) {
             GroupToggle(Pos.Middle, Icons.Rounded.MarkChatUnread, tr("Giữ tin chưa đọc trên Viên thuốc", "Keep unread messages"),
                 tr("Hết thời gian hiển thị, tin vẫn được giữ lại: chấm nhỏ báo hiệu, chạm Viên thuốc để xem lại từng cuộc trò chuyện", "After the card hides, a small dot stays; tap the island to read each conversation again"),
                 s.unreadKeep, color = Tile.Indigo) { v -> SettingsRepo.update { copy(unreadKeep = v) } }
+            GroupToggle(Pos.Middle, Icons.Rounded.PhoneInTalk, tr("Chỉ một thông báo cuộc gọi", "One call alert only"),
+                tr("App gọi điện (Điện thoại, Zalo…) còn tự hiện pop-up thì Viên thuốc không hiện thêm thẻ. Muốn chỉ dùng Viên thuốc: tắt pop-up cuộc gọi của app đó ở Biểu ngữ hệ thống", "If the calling app still shows its own pop-up, the island stays out of the way. To use only the island, turn that app's pop-up off in System banners"),
+                s.callDedupe, color = Tile.Teal) { v -> SettingsRepo.update { copy(callDedupe = v) } }
             GroupToggle(Pos.Last, Icons.Rounded.Call, tr("Ẩn thẻ cuộc gọi khi đang ở màn hình gọi", "Hide call card on the call screen"),
                 tr("Đang mở sẵn màn hình cuộc gọi của máy / Zalo / Messenger… thì không hiện thêm thẻ cuộc gọi đến cho khỏi trùng", "When the phone / app call screen is already open, don't show a second incoming-call card"),
                 s.hideCallInCallApp, color = Tile.Green) { v -> SettingsRepo.update { copy(hideCallInCallApp = v) } }

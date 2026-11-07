@@ -52,6 +52,7 @@ private fun fold(s: String): String =
 
 private fun placeKeys(p: Place): String = when (p) {
     Place.IDLE -> "binh thuong idle vi tri kich thuoc camera can chinh lech rong cao bo goc tai tho"
+    Place.UNREAD -> "tin chua doc chua xem den bao led vien nhip tho"
     Place.ACTIVE -> "hoat dong nhac hen gio chieu rong do day"
     Place.EXPANDED -> "bang mo rong gio pin am lich expanded"
     Place.MESSAGE -> "tin nhan khung the so dong chua doc"

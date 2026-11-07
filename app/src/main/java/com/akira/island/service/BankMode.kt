@@ -95,6 +95,7 @@ object BankMode {
     fun invalidate() {
         detectedCache = null
         labelCache = null
+        homesCache = null
     }
 
     /** Ứng dụng màn hình chính (launcher) hiện tại. */
@@ -106,11 +107,30 @@ object BankMode {
     fun pkgForLabel(context: Context, label: String): String? {
         val map = labelCache ?: run {
             val list = apps(context)
-            launchable(context).filter { it.first in list }.associate { it.second.trim().lowercase() to it.first }
+            launchable(context).filter { it.first in list }.associate { fold(it.second) to it.first }
         }.also { labelCache = it }
-        val l = label.trim().lowercase()
-        return map.entries.firstOrNull { (name, _) -> l == name || l.startsWith("$name,") || l.startsWith("$name\n") || l.startsWith("$name (") }?.value
+        // Chữ trên biểu tượng có thể kèm số thông báo ("Xanh SM, 2 thông báo") hoặc ngắn hơn tên app ("Tammi" ↔ "Viettel Tammi")
+        val l = fold(label.substringBefore('\n').substringBefore(','))
+        if (l.isEmpty()) return null
+        map[l]?.let { return it }
+        return map.entries.firstOrNull { (name, _) ->
+            l.startsWith("$name ") || l.startsWith("$name(") ||
+                (l.length >= 4 && name.length >= 4 && (name.contains(l) || l.contains(name)))
+        }?.value
     }
+
+    /** Chữ thường, bỏ dấu, gộp khoảng trắng — để so tên app trên biểu tượng. */
+    private fun fold(s: String): String =
+        java.text.Normalizer.normalize(s.lowercase(), java.text.Normalizer.Form.NFD)
+            .replace(Regex("\\p{Mn}+"), "").replace('đ', 'd').replace(Regex("\\s+"), " ").trim()
+
+    @Volatile private var homesCache: Set<String>? = null
+
+    /** Mọi launcher đã cài (màn hình chính mặc định, launcher phụ, khay ứng dụng). */
+    fun homePackages(context: Context): Set<String> = homesCache ?: runCatching {
+        context.packageManager.queryIntentActivities(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME), 0)
+            .map { it.activityInfo.packageName }.toSet() + listOfNotNull(homePackage(context))
+    }.getOrDefault(emptySet()).also { homesCache = it }
 
     fun canWriteSecure(context: Context): Boolean =
         context.checkSelfPermission(Manifest.permission.WRITE_SECURE_SETTINGS) == PackageManager.PERMISSION_GRANTED
