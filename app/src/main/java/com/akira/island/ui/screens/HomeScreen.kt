@@ -97,7 +97,7 @@ import com.akira.island.core.PayReady
 import com.akira.island.core.Tints
 import com.akira.island.core.tr
 import com.akira.island.data.SettingsRepo
-import com.akira.island.data.border
+import com.akira.island.data.placeBorder
 import com.akira.island.island.Act
 import com.akira.island.island.CompactContent
 import com.akira.island.island.Ios
@@ -807,7 +807,7 @@ fun IslandPreview(expanded: Boolean = false) {
                     },
                 )
                 .then(
-                    s.border(com.akira.island.data.Surface.IDLE).let { b ->
+                    s.placeBorder(com.akira.island.data.Place.IDLE).let { b ->
                         if (b.on) Modifier.border(b.width.dp, com.akira.island.island.paletteColors(b, Ui.Primary).first().copy(alpha = b.opacity / 100f), shape) else Modifier
                     },
                 )

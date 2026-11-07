@@ -1,5 +1,17 @@
 # Lịch sử phiên bản Capsule VN
 
+## v1.6.0 (2026) — Mỗi loại một trang riêng, không còn mục trùng lặp
+- **Tab Giao diện sắp xếp lại**: mỗi nơi / mỗi loại thông báo là **một mục riêng**, bấm vào chỉ chỉnh đúng loại đó (không còn hàng nút chuyển sang nơi khác ở đầu trang):
+  - Viên thuốc: Bình thường · Khi có hoạt động · Bảng mở rộng.
+  - Khung thẻ thông báo: Tin nhắn · Cuộc gọi đến · Cập nhật ứng dụng.
+  - Thông báo sự kiện: Sạc pin · Tai nghe & Bluetooth · Thanh toán · Điều hướng & gọi xe · Báo thức · Sự kiện khác.
+  - Thông báo viên nhỏ: Chế độ chuông · Đã gửi / Đã sao chép.
+- Trong trang của từng loại: **Kích thước & vị trí**, **Nền** (bật / tắt nền thẻ riêng cho loại đó), **Thời gian hiển thị** riêng, **Đường viền riêng** (màu, hiệu ứng, độ dày, quầng sáng…). Viền và nền **không còn dùng chung** giữa các loại.
+- **Bỏ các mục trùng**: "Vị trí & kích thước", "Khi có hoạt động", "Khung thẻ thông báo" (4 tab), "Thời gian hiển thị" và "Tùy chỉnh theo từng nơi" cũ đã gộp vào trang riêng của từng loại. Màu nền & bóng đổ, Nền thẻ thông báo (kiểu nền), Vòng sáng LED nằm ở mục **Chung**. Thời gian hiển thị mặc định nằm ở Mở rộng & độ đàn hồi.
+- **Bảng mở rộng không còn che các thanh chỉnh**: trang tự chừa chỗ cho bản xem trước; nút 👁 ở góc trên để ẩn / hiện bản xem trước bất cứ lúc nào.
+- Viên thuốc bình thường: thêm công tắc "Tô đỏ để căn quanh camera".
+- Thiết lập cũ được chuyển sang tự động: loại nào trước đây có viền / nền thẻ thì vẫn giữ nguyên.
+
 ## v1.5.2 (2026) — Nhẹ hơn gần 3 lần, nhận diện Xanh SM / Grab / Be, giữ tin chưa đọc riêng
 - **Bản phát hành tối ưu (release)** thay cho bản thử nghiệm (debug) trước đây: mã được thu gọn & tối ưu (R8), bỏ tài nguyên thừa, nạp sẵn hồ sơ tăng tốc của giao diện. Đo trên máy ảo Android 14 với cùng thao tác:
   - RAM thực dùng: **~99 MB → ~36 MB**.

@@ -101,6 +101,9 @@ import com.akira.island.ui.Screen
 import com.akira.island.ui.SectionHeader
 import com.akira.island.ui.Tile
 import com.akira.island.ui.Ui
+import com.akira.island.data.Place
+import kotlin.math.roundToInt
+import androidx.compose.material.icons.rounded.Wallpaper
 import androidx.compose.ui.platform.LocalContext
 import com.akira.island.R
 import com.akira.island.core.Notice
@@ -116,42 +119,42 @@ fun CapsuleScreen(open: (Screen) -> Unit) {
         FeatureSearch(open)
         IslandPreview()
 
-        SectionHeader(tr("Tùy chỉnh theo từng nơi", "Customize each place"))
-        Text(
-            tr("Mỗi nơi có kích thước, vị trí, nền, đường viền và tính năng riêng", "Each place has its own size, position, background, border and features"),
-            color = Ui.Sub, fontSize = 13.sp, lineHeight = 17.sp, modifier = Modifier.padding(horizontal = 8.dp),
+        // Mỗi nơi / mỗi loại thông báo một trang riêng: kích thước & vị trí, nền, thời gian hiển thị, đường viền
+        val sections = listOf(
+            tr("Viên thuốc", "Island") to listOf(Place.IDLE, Place.ACTIVE, Place.EXPANDED),
+            tr("Khung thẻ thông báo", "Notification cards") to listOf(Place.MESSAGE, Place.CALL, Place.UPDATE),
+            tr("Thông báo sự kiện", "Event alerts") to listOf(Place.CHARGING, Place.AUDIO, Place.PAYMENT, Place.NAV, Place.ALARM, Place.OTHER),
+            tr("Thông báo viên nhỏ", "Small pills") to listOf(Place.MODE, Place.SENT),
         )
-        Group {
-            val icons = listOf(
-                Icons.Rounded.AspectRatio to Tile.Indigo,
-                Icons.Rounded.GraphicEq to Tile.Purple,
-                Icons.Rounded.Circle to Tile.Teal,
-                Icons.Rounded.ChatBubble to Tile.Green,
-                Icons.Rounded.DashboardCustomize to Tile.Blue,
-            )
-            com.akira.island.data.Surface.entries.forEachIndexed { i, sf ->
-                val b = s.borders[sf]
-                GroupItem(
-                    com.akira.island.ui.posOf(i, com.akira.island.data.Surface.entries.size), icons[i].first, sf.title,
-                    sf.hint + if (b?.on == true) tr(" · viền ", " · border ") + b.palette.title.lowercase() else "",
-                    color = icons[i].second,
-                    onClick = {
-                        SurfaceNav.initial = sf
-                        open(Screen.SURFACES)
-                    },
-                ) { Arrow() }
+        sections.forEach { (header, list) ->
+            SectionHeader(header)
+            Group {
+                list.forEachIndexed { i, p ->
+                    GroupItem(
+                        com.akira.island.ui.posOf(i, list.size), p.icon(), p.title, placeSummary(s, p),
+                        color = p.tile(), onClick = { openPlace(open, p) },
+                    ) { Arrow() }
+                }
             }
         }
 
-        SectionHeader(tr("Màu sắc & ánh sáng", "Color and lighting"))
+        SectionHeader(tr("Chung", "General"))
         Group {
             GroupItem(
                 Pos.First,
                 Icons.Rounded.FormatColorFill,
-                tr("Màu sắc & viền", "Color & border"),
-                tr("Màu sắc nền, viền ngoài và bóng đổ", "Color, outline and shadow"),
+                tr("Màu nền & bóng đổ", "Color & shadow"),
+                tr("Màu nền đen / màu của Viên thuốc khi không dùng nền thẻ, bóng đổ", "Island color when not using the card background, shadow"),
                 color = Tile.Orange,
                 onClick = { open(Screen.COLORS) },
+            ) { Arrow() }
+            GroupItem(
+                Pos.Middle,
+                Icons.Rounded.Wallpaper,
+                tr("Nền thẻ thông báo", "Card background"),
+                tr("Kiểu nền (màu / ảnh / Liquid Glass) cho các loại bật \"Dùng nền thẻ\"", "Style used by places with \"Use card background\""),
+                color = Tile.Pink,
+                onClick = { open(Screen.CARD_BG) },
             ) { Arrow() }
             GroupItem(
                 Pos.Middle,
@@ -203,49 +206,6 @@ fun CapsuleScreen(open: (Screen) -> Unit) {
                 color = Tile.Purple,
                 onClick = { open(Screen.EFFECTS) },
             ) { Arrow() }
-        }
-    }
-}
-
-@Composable
-fun LookScreen(onBack: () -> Unit) {
-    val s by SettingsRepo.state.collectAsState()
-    Page(tr("Khi có hoạt động", "With activity"), onBack, subtitle = tr("Kích thước & vị trí Viên thuốc khi đang có nhạc, hẹn giờ, điều hướng… — xem trước trực tiếp trên đỉnh màn hình", "Size & position of the island while music, timers, navigation… are running — live preview at the top")) {
-        IslandPreview()
-        Group {
-            GroupSlider(
-                Pos.First, Icons.Rounded.LineWeight, tr("Độ dày", "Thickness"),
-                value = s.activeExtra.toFloat(), range = 0f..14f, label = "+${s.activeExtra} dp", steps = 13, color = Tile.Purple,
-            ) { v ->
-                previewActivity()
-                SettingsRepo.update { copy(activeExtra = v.toInt()) }
-            }
-            GroupSlider(
-                Pos.Last, Icons.Rounded.SwapHoriz, tr("Chiều rộng", "Width"),
-                value = s.activeWidth.toFloat(), range = 0f..120f, steps = 23,
-                label = if (s.activeWidth == 0) tr("Tự động theo nội dung", "Auto (fits content)") else "+${s.activeWidth} dp", color = Tile.Blue,
-            ) { v ->
-                previewActivity()
-                SettingsRepo.update { copy(activeWidth = (v / 5).toInt() * 5) }
-            }
-        }
-
-        SectionHeader(tr("Vị trí khi có hoạt động", "Position with activity"))
-        Group {
-            GroupStepSlider(
-                Pos.First, Icons.Rounded.SwapVert, tr("Vị trí dọc (lên / xuống)", "Vertical position (up / down)"), s.activeOffsetY, -30..60,
-                action = tr("Mặc định 0 dp", "Default 0 dp") to { SettingsRepo.update { copy(activeOffsetY = 0) } }, color = Tile.Indigo,
-            ) { v ->
-                previewActivity()
-                SettingsRepo.update { copy(activeOffsetY = v) }
-            }
-            GroupStepSlider(
-                Pos.Last, Icons.Rounded.SwapHoriz, tr("Vị trí ngang (trái / phải)", "Horizontal position"), s.activeOffsetX, -120..120,
-                action = tr("Chính giữa", "Center") to { SettingsRepo.update { copy(activeOffsetX = 0) } }, color = Tile.Teal,
-            ) { v ->
-                previewActivity()
-                SettingsRepo.update { copy(activeOffsetX = v) }
-            }
         }
     }
 }
@@ -359,13 +319,15 @@ fun AnimScreen(onBack: () -> Unit, open: (Screen) -> Unit = {}) {
                 SettingsRepo.update { copy(durationPercent = v.toInt()) }
                 IslandBus.previewMotion(450)
             }
-            GroupItem(
-                Pos.Last, Icons.Rounded.Schedule, tr("Thời gian hiển thị thông báo", "Alert display time"),
-                tr("Mặc định %.1f giây · chỉnh riêng nhanh / chậm cho từng loại", "Default %.1f s · set fast / slow per kind").format(s.noticeDurationMs / 1000f) +
-                    if (s.noticeDurations.isNotEmpty()) tr(" · %d loại riêng", " · %d custom").format(s.noticeDurations.size) else "",
-                color = Tile.Orange,
-                onClick = { open(Screen.DURATIONS) },
-            ) { Arrow() }
+            // Mặc định cho mọi loại; loại nào cần nhanh / chậm riêng thì chỉnh trong trang riêng của loại đó
+            GroupSlider(
+                Pos.Last, Icons.Rounded.Schedule, tr("Thời gian hiển thị mặc định", "Default display time"),
+                value = s.noticeDurationMs / 1000f, range = 1f..12f, steps = 21,
+                label = tr("%.1f giây", "%.1f s").format(s.noticeDurationMs / 1000f), color = Tile.Orange,
+            ) { v ->
+                SettingsRepo.update { copy(noticeDurationMs = (v * 2).roundToInt() * 500) }
+                previewNotice()
+            }
         }
 
         SectionHeader(tr("Hiệu năng", "Performance"))

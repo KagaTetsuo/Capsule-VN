@@ -67,8 +67,8 @@ import com.akira.island.core.LangScope
 import com.akira.island.core.tr
 import com.akira.island.data.SettingsRepo
 import com.akira.island.ui.screens.AnimScreen
-import com.akira.island.ui.screens.DurationsScreen
-import com.akira.island.ui.screens.SurfaceScreen
+import com.akira.island.ui.screens.PlaceScreen
+import com.akira.island.ui.screens.CardBgScreen
 import com.akira.island.ui.screens.AppInfoScreen
 import com.akira.island.ui.screens.BannersScreen
 import com.akira.island.ui.screens.BanksScreen
@@ -85,7 +85,6 @@ import com.akira.island.ui.screens.HomeScreen
 import com.akira.island.ui.screens.IdeaScreen
 import com.akira.island.ui.screens.InstructionScreen
 import com.akira.island.ui.screens.KeepAliveScreen
-import com.akira.island.ui.screens.LookScreen
 import com.akira.island.ui.screens.LyricsScreen
 import com.akira.island.ui.screens.NotificationsScreen
 import com.akira.island.ui.screens.PayDiagScreen
@@ -93,18 +92,16 @@ import com.akira.island.ui.screens.PermissionsScreen
 import com.akira.island.ui.screens.EcosystemScreen
 import com.akira.island.ui.screens.GamingScreen
 import com.akira.island.ui.screens.LedRingScreen
-import com.akira.island.ui.screens.MsgCallSizeScreen
 import com.akira.island.ui.screens.OtpSettingsScreen
 import com.akira.island.ui.screens.TtsSettingsScreen
-import com.akira.island.ui.screens.SizeScreen
 import com.akira.island.ui.screens.TestsScreen
 import com.akira.island.service.KeepAliveService
 import com.akira.island.update.UpdateChecker
 
 enum class Screen {
-    CARDS, EVENTS, GESTURES, LYRICS, SIZE, COLORS, INSTRUCTION, ABOUT, DIAG, LOOK, ANIM, EFFECTS, BANNERS,
-    PERMISSIONS, TESTS, NOTIFICATIONS, BEHAVIOR, PAYDIAG, KEEPALIVE, BANKS, MSG_CALL_SIZE,
-    GAMING, LED_RING, ECOSYSTEM, OTP_SETTINGS, TTS_SETTINGS, DURATIONS, SURFACES,
+    CARDS, EVENTS, GESTURES, LYRICS, COLORS, INSTRUCTION, ABOUT, DIAG, ANIM, EFFECTS, BANNERS,
+    PERMISSIONS, TESTS, NOTIFICATIONS, BEHAVIOR, PAYDIAG, KEEPALIVE, BANKS,
+    GAMING, LED_RING, ECOSYSTEM, OTP_SETTINGS, TTS_SETTINGS, PLACE, CARD_BG,
 }
 
 class MainActivity : ComponentActivity() {
@@ -181,8 +178,6 @@ private fun AppRoot() {
                     Screen.EVENTS.name -> EventsScreen(back)
                     Screen.GESTURES.name -> GesturesScreen(back)
                     Screen.LYRICS.name -> LyricsScreen(back)
-                    Screen.SIZE.name -> SizeScreen(back, open)
-                    Screen.MSG_CALL_SIZE.name -> MsgCallSizeScreen(back)
                     Screen.GAMING.name -> GamingScreen(back)
                     Screen.LED_RING.name -> LedRingScreen(back)
                     Screen.ECOSYSTEM.name -> EcosystemScreen(back)
@@ -195,10 +190,9 @@ private fun AppRoot() {
                     Screen.PAYDIAG.name -> PayDiagScreen(back)
                     Screen.KEEPALIVE.name -> KeepAliveScreen(back)
                     Screen.BANKS.name -> BanksScreen(back)
-                    Screen.LOOK.name -> LookScreen(back)
                     Screen.ANIM.name -> AnimScreen(back, open)
-                    Screen.DURATIONS.name -> DurationsScreen(back)
-                    Screen.SURFACES.name -> SurfaceScreen(back, open)
+                    Screen.PLACE.name -> PlaceScreen(back, open)
+                    Screen.CARD_BG.name -> CardBgScreen(back)
                     Screen.EFFECTS.name -> EffectsScreen(back)
                     Screen.BANNERS.name -> BannersScreen(back)
                     Screen.PERMISSIONS.name -> PermissionsScreen(back, open)
