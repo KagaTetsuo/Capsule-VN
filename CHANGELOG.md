@@ -1,5 +1,11 @@
 # Lịch sử phiên bản Capsule VN
 
+## v1.6.2 (2026) — App ngân hàng thêm sau không còn tự thoát, chống trùng cuộc gọi, viền "Có tin chưa đọc"
+- **Chế độ ngân hàng**: app thêm vào sau (Xanh SM, Viettel Tammi…) không còn tự thoát lần đầu. Viên thuốc tạm nghỉ ngay lúc chạm biểu tượng nhờ so tên linh hoạt hơn (không phân biệt dấu, tên ngắn trên biểu tượng như "Tammi" vẫn khớp "Viettel Tammi", có kèm số thông báo vẫn nhận), nhận cả launcher phụ, và luôn nghe cú chạm khi bật chế độ ngân hàng.
+- **Chỉ một thông báo cuộc gọi** (Tính năng → Tin nhắn & thông báo): nếu app gọi điện (Điện thoại, Zalo…) vẫn tự hiện pop-up của hệ thống thì Viên thuốc không hiện thêm thẻ. Muốn chỉ dùng Viên thuốc: tắt pop-up cuộc gọi của app đó ở Biểu ngữ hệ thống (không tắt hẳn thông báo, vì tắt hẳn thì Viên thuốc cũng không nhận được).
+- **Tên người gọi** tự thu nhỏ chữ cho vừa khung, không còn bị cắt "…".
+- **Có tin chưa đọc** (Giao diện → Viên thuốc): mục riêng cho Viên thuốc khi còn tin nhắn chưa xem — viền riêng (mặc định nhịp thở theo màu ứng dụng), nền riêng; tắt viền thì hiện chấm nhỏ báo hiệu.
+
 ## v1.6.1 (2026) — Viên nhỏ tách riêng, không còn bị xem trước che, biểu tượng Capsule VN trên thanh trạng thái
 - **Thông báo viên nhỏ tách 3 loại**, mỗi loại một trang riêng: **Chế độ chuông** (chuông / rung / im lặng), **Mở khoá máy**, **Tin nhắn thu gọn & Gaming**. Thêm chỉnh **cỡ biểu tượng** và **cỡ chữ** cho từng loại viên nhỏ (ngoài vị trí, chiều rộng, chiều cao, bo góc, nền, thời gian, viền).
 - **"Đã gửi / Đã sao chép"** là thẻ ngang nên chuyển sang nhóm **Thông báo sự kiện**.

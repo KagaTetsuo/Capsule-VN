@@ -329,6 +329,7 @@ fun IslandOverlay(
                 incoming = tel.incoming,
                 base = if (!tel.incoming && fromApp.incoming) tel.base else fromApp.base,
                 avatar = fromApp.avatar ?: tel.avatar,
+                popsUp = fromApp.popsUp,
             )
         }
     }
@@ -345,7 +346,9 @@ fun IslandOverlay(
         // Đang mở đúng màn hình cuộc gọi (app gọi điện / Zalo / Messenger…): không hiện thêm thẻ cuộc gọi đến cho khỏi trùng
         val callScreenOpen = call != null && foreground != null &&
             (foreground == call.pkg || foreground!!.contains("incallui") || foreground!!.endsWith(".dialer") || foreground == "com.samsung.android.dialer")
-        if (call != null && call.incoming && !callHidden && !(s.hideCallInCallApp && callScreenOpen)) add(Act.CallA(call))
+        // "Chỉ một thông báo cuộc gọi": app gọi điện đã tự hiện pop-up / toàn màn hình thì Viên thuốc nhường lại
+        val systemShows = s.callDedupe && call?.popsUp == true
+        if (call != null && call.incoming && !callHidden && !(s.hideCallInCallApp && callScreenOpen) && !systemShows) add(Act.CallA(call))
         notice?.let { add(Act.NoticeA(it)) }
 
         val persistent = mutableListOf<Act>()
@@ -652,8 +655,13 @@ private fun IslandBody(
     val corner = animateDpAsState(cornerTarget, islandSpec(s), label = "corner")
 
     // Mỗi nơi / mỗi loại thông báo có nền & đường viền riêng (Giao diện → từng mục)
+    val unreadNow by IslandBus.unreadLedColor.collectAsState()
+    val previewUnreadOn by IslandBus.previewUnread.collectAsState()
+    val appShown by IslandBus.appVisible.collectAsState()
+    val unreadPreview = previewUnreadOn && appShown
     val place = when {
         expanded -> Place.EXPANDED
+        primary is Act.Idle && (unreadPreview || (s.unreadKeep && s.cardMessages && unreadNow != null)) -> Place.UNREAD
         primary is Act.Idle -> Place.IDLE
         primary is Act.CallA && primary.c.incoming -> Place.CALL
         primary is Act.UnreadA -> Place.MESSAGE
@@ -688,7 +696,10 @@ private fun IslandBody(
     val chargeLed = s.ledOnCharge && battery.charging
     val ledActive = (s.ledEnabled || previewLed) && !calibrating && (s.ledAlwaysOn || eventLed || unreadLed || chargeLed || previewLed)
     val ledAlpha by animateFloatAsState(if (ledActive) 1f else 0f, tween(320), label = "ledAlpha")
-    val unreadDot: Color? = unreadLedColor.takeIf { s.unreadKeep && s.cardMessages && primary is Act.Idle && !expanded && !(ledActive && unreadLed) }
+    // Chấm nhỏ báo tin chưa đọc chỉ khi "Có tin chưa đọc" đang tắt viền và Vòng sáng LED không sáng
+    val unreadDot: Color? = unreadLedColor.takeIf {
+        place == Place.UNREAD && !unreadPreview && !s.placeBorder(Place.UNREAD).on && !(ledActive && unreadLed)
+    }
     val ledClock = rememberFxClock(ledActive && !s.reduceEffects)
     val bSpec = s.placeBorder(place)
     val borderOn = bSpec.on && !calibrating
@@ -698,6 +709,7 @@ private fun IslandBody(
         primary is Act.MediaA -> primary.m.accent
         primary is Act.CallA -> Tints.Green
         unreadLedColor != null -> unreadLedColor
+        unreadPreview -> Color(0xFF0068FF)
         battery.charging -> Tints.Green
         else -> null
     }

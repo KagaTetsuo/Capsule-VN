@@ -994,8 +994,8 @@ private fun IncomingCall(c: CallInfo, s: IslandSettings, @Suppress("UNUSED_PARAM
         Spacer(Modifier.width(11.dp))
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
             Text(tr("Cuộc gọi đến", "Incoming call"), color = Tints.Gray, fontSize = 12.5.sp, lineHeight = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(c.name, color = Color.White, fontSize = 18.sp, lineHeight = 22.sp, fontWeight = FontWeight.SemiBold, maxLines = 1,
-                overflow = TextOverflow.Ellipsis)
+            // Tên người gọi tự thu nhỏ chữ cho vừa khung (tên dài vẫn đọc trọn)
+            FitText(c.name, Color.White, 18.sp, 11.sp, FontWeight.SemiBold, Modifier.fillMaxWidth())
         }
         Spacer(Modifier.width(8.dp))
         RoundButton(Ios.call, size = btnSize, bg = Tints.Red, iconScale = 0.52f, iconRotation = 135f) {

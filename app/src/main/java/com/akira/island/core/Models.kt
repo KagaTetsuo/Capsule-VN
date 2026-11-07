@@ -115,6 +115,8 @@ data class CallInfo(
     val decline: PendingIntent?,
     val hangUp: PendingIntent?,
     val open: PendingIntent?,
+    /** Thông báo cuộc gọi này tự bật pop-up / toàn màn hình của hệ thống (Viên thuốc có thể nhường để khỏi trùng). */
+    val popsUp: Boolean = false,
 )
 
 enum class LiveKind { NAV, RIDE, DELIVERY }
