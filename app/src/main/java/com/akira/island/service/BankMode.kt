@@ -89,7 +89,10 @@ object BankMode {
         }.getOrDefault(emptyList())
     }
 
-    @Volatile private var labelCache: Map<String, String>? = null
+    /** Tên (đã bỏ dấu) → gói: của MỌI app có biểu tượng, và riêng các app trong danh sách ngân hàng. */
+    private class Labels(val all: Map<String, String>, val banks: Map<String, String>)
+
+    @Volatile private var labelCache: Labels? = null
     @Volatile private var homeCache: String? = null
 
     fun invalidate() {
@@ -105,18 +108,24 @@ object BankMode {
 
     /** Chạm vào biểu tượng ở màn hình chính: đoán gói từ tên hiển thị (để tắt Viên thuốc TRƯỚC khi app ngân hàng kịp kiểm tra). */
     fun pkgForLabel(context: Context, label: String): String? {
-        val map = labelCache ?: run {
+        val c = labelCache ?: run {
             val list = apps(context)
-            launchable(context).filter { it.first in list }.associate { fold(it.second) to it.first }
+            val all = HashMap<String, String>()
+            launchable(context).forEach { (pkg, name) -> all.putIfAbsent(fold(name), pkg) }
+            Labels(all, all.filterValues { it in list })
         }.also { labelCache = it }
-        // Chữ trên biểu tượng có thể kèm số thông báo ("Xanh SM, 2 thông báo") hoặc ngắn hơn tên app ("Tammi" ↔ "Viettel Tammi")
         val l = fold(label.substringBefore('\n').substringBefore(','))
         if (l.isEmpty()) return null
-        map[l]?.let { return it }
-        return map.entries.firstOrNull { (name, _) ->
-            l.startsWith("$name ") || l.startsWith("$name(") ||
-                (l.length >= 4 && name.length >= 4 && (name.contains(l) || l.contains(name)))
-        }?.value
+        // 1) Trùng đúng tên một app: chỉ tạm tắt nếu CHÍNH app đó nằm trong danh sách ngân hàng
+        //    (chạm "Zalo" là Zalo, không bao giờ bị nhầm thành "Zalopay")
+        c.all[l]?.let { pkg -> return pkg.takeIf { it in c.banks.values } }
+        // 2) Chữ trên biểu tượng ngắn hơn / dài hơn tên app ("Tammi" ↔ "Viettel Tammi", "Xanh SM 2 thông báo"):
+        //    phải khớp nguyên từ, khớp đúng MỘT app ngân hàng và không trùng nguyên từ với app thường nào
+        fun wordMatch(name: String) = " $name ".contains(" $l ") || " $l ".contains(" $name ")
+        val bankHits = c.banks.filterKeys(::wordMatch).values.distinct()
+        if (bankHits.size != 1) return null
+        val otherHit = c.all.any { (name, pkg) -> pkg !in c.banks.values && wordMatch(name) }
+        return if (otherHit) null else bankHits.first()
     }
 
     /** Chữ thường, bỏ dấu, gộp khoảng trắng — để so tên app trên biểu tượng. */

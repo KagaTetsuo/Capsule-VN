@@ -1,5 +1,11 @@
 # Lịch sử phiên bản Capsule VN
 
+## v1.6.3 (2026) — Sửa khẩn: mở Zalo bị nhảy sang Zalopay
+- **Sửa lỗi chế độ ngân hàng ở v1.6.2**: so tên biểu tượng quá lỏng làm chạm "Zalo" bị hiểu nhầm là "Zalopay", Viên thuốc tạm tắt rồi tự mở Zalopay đè lên. Nay:
+  - Chạm biểu tượng trùng đúng tên một app thì chỉ xét **đúng app đó** (Zalo là Zalo).
+  - Tên ngắn trên biểu tượng ("Tammi" ↔ "Viettel Tammi") phải khớp **nguyên từ**, khớp đúng **một** app ngân hàng và không trùng với app thường nào.
+- **Tự mở lại app ngân hàng** chỉ khi chắc chắn app đó đã lên màn hình rồi tự thoát về màn hình chính; đang dùng app khác hoặc chưa đủ dữ liệu thì không mở gì cả.
+
 ## v1.6.2 (2026) — App ngân hàng thêm sau không còn tự thoát, chống trùng cuộc gọi, viền "Có tin chưa đọc"
 - **Chế độ ngân hàng**: app thêm vào sau (Xanh SM, Viettel Tammi…) không còn tự thoát lần đầu. Viên thuốc tạm nghỉ ngay lúc chạm biểu tượng nhờ so tên linh hoạt hơn (không phân biệt dấu, tên ngắn trên biểu tượng như "Tammi" vẫn khớp "Viettel Tammi", có kèm số thông báo vẫn nhận), nhận cả launcher phụ, và luôn nghe cú chạm khi bật chế độ ngân hàng.
 - **Chỉ một thông báo cuộc gọi** (Tính năng → Tin nhắn & thông báo): nếu app gọi điện (Điện thoại, Zalo…) vẫn tự hiện pop-up của hệ thống thì Viên thuốc không hiện thêm thẻ. Muốn chỉ dùng Viên thuốc: tắt pop-up cuộc gọi của app đó ở Biểu ngữ hệ thống (không tắt hẳn thông báo, vì tắt hẳn thì Viên thuốc cũng không nhận được).
