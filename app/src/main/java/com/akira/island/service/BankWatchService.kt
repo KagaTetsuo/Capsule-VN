@@ -33,6 +33,7 @@ class BankWatchService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var watch: Job? = null
     private var bankPkg: String? = null
+    private var pausedAt = 0L
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -43,6 +44,7 @@ class BankWatchService : Service() {
             return START_NOT_STICKY
         }
         bankPkg = intent?.getStringExtra(EXTRA_PKG) ?: bankPkg
+        pausedAt = System.currentTimeMillis()
         val shown = runCatching {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                 startForeground(ID, notification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
@@ -111,18 +113,36 @@ class BankWatchService : Service() {
         return last
     }
 
+    /**
+     * Chỉ mở lại khi CHẮC CHẮN app ngân hàng đã lên màn hình rồi tự thoát về màn hình chính.
+     * Không đủ dữ liệu (chưa cấp Truy cập dữ liệu sử dụng) hoặc người dùng đang ở app khác -> không làm gì,
+     * tránh mở nhầm app (vd. đang mở Zalo lại bị bật Zalopay lên).
+     */
     private fun relaunchIfClosed() {
         val pkg = bankPkg ?: return
-        val fg = foregroundPkg()
-        val closed = fg != null && fg != pkg && fg !in TRANSIENT
-        val unknown = fg == null
-        if (!closed && !unknown) return
+        if (!BankMode.hasUsageAccess(this)) return
+        val usage = getSystemService(UsageStatsManager::class.java) ?: return
+        val events = usage.queryEvents(pausedAt - 500, System.currentTimeMillis())
+        val e = UsageEvents.Event()
+        var opened = false
+        var last: String? = null
+        while (events.hasNextEvent()) {
+            events.getNextEvent(e)
+            @Suppress("DEPRECATION")
+            if (e.eventType == UsageEvents.Event.MOVE_TO_FOREGROUND) {
+                if (e.packageName == pkg) opened = true
+                last = e.packageName
+            }
+        }
+        val home = BankMode.homePackages(this)
+        val closed = opened && last != null && last != pkg && last in home
+        if (!closed) return
         val launch = packageManager.getLaunchIntentForPackage(pkg)
             ?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED) ?: return
         if (android.provider.Settings.canDrawOverlays(this)) {
             // Có quyền "Hiển thị trên ứng dụng khác": tự mở lại ngay
             runCatching { startActivity(launch) }
-        } else if (closed) {
+        } else {
             // Không tự mở được -> nhắc 1 chạm để mở lại
             val nm = getSystemService(NotificationManager::class.java) ?: return
             ensureRemindChannel(nm)
