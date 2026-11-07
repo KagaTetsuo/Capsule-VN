@@ -1,5 +1,11 @@
 # Lịch sử phiên bản Capsule VN
 
+## v1.6.4 (2026) — Lối tắt mở an toàn: app hay tự thoát (Xanh SM, Tammi…) mở được ngay lần đầu
+- **Lối tắt mở an toàn** (Ngân hàng & VNeID → Lối tắt mở an toàn): tạo biểu tượng ở màn hình chính cho từng app. Chạm vào, Viên thuốc **tắt hẳn trước**, chờ Android xác nhận đã tắt rồi mới mở app — không còn "cuộc đua" với app kiểm tra Hỗ trợ tiếp cận ngay khi khởi động, nên không bị tự thoát lần đầu.
+- Chạm biểu tượng gốc: Viên thuốc nhận cú chạm tức thì (bỏ độ trễ gom sự kiện 100 ms) và tắt trước khi bật dịch vụ canh.
+- **Tự mở lại** app bị thoát: kiểm tra 2 lần (1,5 giây và 3,2 giây), mở lại khi chắc bạn vừa mở đúng app đó mà nó không còn trên màn hình (cần quyền "Hiển thị trên ứng dụng khác").
+- Trang Ngân hàng & VNeID hiện **lần chạm gần nhất** ở màn hình chính được nhận ra là app nào — để kiểm tra nhanh khi có app vẫn tự thoát.
+
 ## v1.6.3 (2026) — Sửa khẩn: mở Zalo bị nhảy sang Zalopay
 - **Sửa lỗi chế độ ngân hàng ở v1.6.2**: so tên biểu tượng quá lỏng làm chạm "Zalo" bị hiểu nhầm là "Zalopay", Viên thuốc tạm tắt rồi tự mở Zalopay đè lên. Nay:
   - Chạm biểu tượng trùng đúng tên một app thì chỉ xét **đúng app đó** (Zalo là Zalo).

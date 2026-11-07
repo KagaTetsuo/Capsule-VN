@@ -111,6 +111,15 @@
         </activity>
 
         
+        <!-- Lối tắt mở an toàn app ngân hàng: tắt Viên thuốc trước rồi mới mở app -->
+        <activity
+            android:name=".service.SafeLaunchActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
         <activity
             android:name=".service.WakeActivity"
             android:excludeFromRecents="true"
