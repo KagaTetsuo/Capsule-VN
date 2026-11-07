@@ -34,8 +34,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.akira.island.core.tr
 import com.akira.island.data.SettingsRepo
-import com.akira.island.data.Surface
-import com.akira.island.data.border
 import com.akira.island.ui.Group
 import com.akira.island.ui.GroupSlider
 import com.akira.island.ui.GroupToggle
@@ -53,23 +51,12 @@ private val capsuleColors = listOf(
 @Composable
 fun ColorsScreen(onBack: () -> Unit) {
     val s by SettingsRepo.state.collectAsState()
-    Page(tr("Màu sắc & viền", "Color & border"), onBack) {
+    Page(tr("Màu nền & bóng đổ", "Color & shadow"), onBack, subtitle = tr("Áp dụng khi một loại không dùng nền thẻ. Đường viền chỉnh riêng trong trang của từng loại.", "Used where the card background is off. Borders are set per place.")) {
         IslandPreview()
 
         SectionHeader(tr("Màu sắc", "Color"))
         Swatches(capsuleColors, s.color) { c -> SettingsRepo.update { copy(color = c) } }
 
-        // Đường viền Viên thuốc bình thường (các nơi khác chỉnh ở Giao diện → Tùy chỉnh theo từng nơi)
-        SectionHeader(tr("Đường viền Viên thuốc bình thường", "Idle island border"))
-        val idle = s.border(Surface.IDLE)
-        BorderPreview(idle, null, tr("Viên thuốc", "Island"))
-        BorderEditor(idle, null, tr("Đường viền", "Border")) { b ->
-            SettingsRepo.update { copy(borders = borders + (Surface.IDLE to b)) }
-        }
-        Text(
-            tr("Viền khi có hoạt động, thông báo viên nhỏ, khung thẻ và bảng mở rộng: Giao diện → Tùy chỉnh theo từng nơi.", "Borders for activities, pills, cards and the expanded board: Appearance → Customize each place."),
-            color = Ui.Sub, fontSize = 13.sp, lineHeight = 17.sp, modifier = Modifier.padding(horizontal = 8.dp),
-        )
 
         SectionHeader(tr("Bóng đổ", "Shadow"))
         GroupToggle(Pos.Single, Icons.Rounded.Layers, tr("Bóng đổ", "Shadow"),

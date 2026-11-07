@@ -405,6 +405,10 @@ data class IslandSettings(
     val cardBorderLed: Boolean = false,
     /** Đường viền riêng của từng nơi (bình thường, hoạt động, viên nhỏ, thẻ, mở rộng). Mặc định: không viền. */
     val borders: Map<Surface, BorderSpec> = emptyMap(),
+    /** Đường viền riêng của từng nơi / từng loại thông báo (thay cho viền theo nhóm ở trên). Mặc định: không viền. */
+    val placeBorders: Map<Place, BorderSpec> = emptyMap(),
+    /** Những nơi dùng nền đen thường thay cho nền thẻ. */
+    val plainBgPlaces: Set<Place> = DEFAULT_PLAIN_BG,
     /** Màu & hiệu ứng của Vòng sáng LED báo sự kiện / tin chưa đọc / sạc. */
     val ledBorder: BorderSpec = BorderSpec(on = true, width = 2.5f, glow = 60),
 
@@ -533,6 +537,8 @@ object SettingsRepo {
         if (current.layoutVersion < 6) update { migrateBorders().copy(layoutVersion = 6) }
         // v1.5.1: Vòng sáng LED mặc định tắt (giống đường viền) — bật lại được trong Giao diện → Vòng sáng LED
         if (current.layoutVersion < 7) update { copy(ledEnabled = false, layoutVersion = 7) }
+        // v1.6: viền & nền tách riêng từng loại thông báo
+        if (current.layoutVersion < 8) update { migratePlaces().copy(layoutVersion = 8) }
     }
 
     fun update(block: IslandSettings.() -> IslandSettings) {
@@ -551,7 +557,11 @@ object SettingsRepo {
     fun importJson(raw: String): Boolean = runCatching {
         val decoded = json.decodeFromString<IslandSettings>(raw)
         // File sao lưu từ bản cũ: chuyển thiết lập viền cũ sang hệ thống viền mới
-        val restored = if (decoded.layoutVersion in 1..5) decoded.migrateBorders().copy(layoutVersion = 6) else decoded
+        val restored = when {
+            decoded.layoutVersion in 1..5 -> decoded.migrateBorders().migratePlaces().copy(layoutVersion = 8)
+            decoded.layoutVersion in 6..7 -> decoded.migratePlaces().copy(layoutVersion = 8)
+            else -> decoded
+        }
         val c = current
         update {
             restored.copy(

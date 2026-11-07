@@ -128,8 +128,11 @@ import com.akira.island.data.ExpandStyle
 import com.akira.island.data.IslandSettings
 import com.akira.island.data.NoticeTweak
 import com.akira.island.data.NoticeKind
-import com.akira.island.data.Surface
-import com.akira.island.data.border
+import com.akira.island.data.Place
+import com.akira.island.data.cardBgOn
+import com.akira.island.data.place
+import com.akira.island.data.placeBorder
+import com.akira.island.core.kind
 import com.akira.island.data.SettingsRepo
 import com.akira.island.data.TapAction
 import com.akira.island.service.CallMonitor
@@ -643,20 +646,21 @@ private fun IslandBody(
     
     val corner = animateDpAsState(cornerTarget, islandSpec(s), label = "corner")
 
-    // Mọi bảng thông báo (tin nhắn, sự kiện, sạc, thanh toán, cuộc gọi đến, cập nhật, tin chưa đọc…)
-    // và bảng mở rộng dùng nền & viền tuỳ chỉnh riêng
-    // Thông báo dạng viên nhỏ chỉ dùng nền tuỳ chỉnh khi người dùng bật (mặc định nền đen như cũ)
-    val smallPill = primary is Act.PayA || (
-        primary is Act.NoticeA && primary.n.style in setOf(NoticeStyle.WIDE, NoticeStyle.PILL, NoticeStyle.SENT, NoticeStyle.PAY_DONE)
-        )
-    val isCard = !calibrating && (
-        primary is Act.UnreadA ||
-            (primary is Act.Idle && !expanded && s.cardStyleIdle) ||
-            (primary is Act.NoticeA && !smallPill) ||
-            (smallPill && s.cardStylePills) ||
-            (expanded && s.cardStyleExpanded) ||
-            (primary is Act.CallA && primary.c.incoming)
-        )
+    // Mỗi nơi / mỗi loại thông báo có nền & đường viền riêng (Giao diện → từng mục)
+    val place = when {
+        expanded -> Place.EXPANDED
+        primary is Act.Idle -> Place.IDLE
+        primary is Act.CallA && primary.c.incoming -> Place.CALL
+        primary is Act.UnreadA -> Place.MESSAGE
+        primary is Act.PayA -> Place.PAYMENT
+        primary is Act.NoticeA -> when (primary.n.style) {
+            NoticeStyle.MESSAGE -> Place.MESSAGE
+            NoticeStyle.UPDATE -> Place.UPDATE
+            else -> ((if (cardPreviewNow == CardPreviewMode.NOTICE) previewKindNow else null) ?: primary.n.kind()).place()
+        }
+        else -> Place.ACTIVE
+    }
+    val isCard = !calibrating && s.cardBgOn(place)
     val cardImage by produceState<ImageBitmap?>(null, s.cardBg, s.cardBgImage) {
         value = if (s.cardBg == CardBg.IMAGE && s.cardBgImage.isNotEmpty()) {
             withContext(Dispatchers.IO) { runCatching { BitmapFactory.decodeFile(s.cardBgImage)?.asImageBitmap() }.getOrNull() }
@@ -681,15 +685,7 @@ private fun IslandBody(
     val ledAlpha by animateFloatAsState(if (ledActive) 1f else 0f, tween(320), label = "ledAlpha")
     val unreadDot: Color? = unreadLedColor.takeIf { s.unreadKeep && s.cardMessages && primary is Act.Idle && !expanded && !(ledActive && unreadLed) }
     val ledClock = rememberFxClock(ledActive && !s.reduceEffects)
-    // Đường viền riêng theo từng nơi: bình thường / hoạt động / viên nhỏ / thẻ / mở rộng
-    val surface = when {
-        expanded -> Surface.EXPANDED
-        primary is Act.Idle -> Surface.IDLE
-        smallPill -> Surface.PILL
-        primary is Act.UnreadA || primary is Act.NoticeA || (primary is Act.CallA && primary.c.incoming) -> Surface.CARD
-        else -> Surface.ACTIVE
-    }
-    val bSpec = s.border(surface)
+    val bSpec = s.placeBorder(place)
     val borderOn = bSpec.on && !calibrating
     val borderClock = rememberFxClock(borderOn && bSpec.moving && !s.reduceEffects)
     val borderAdaptive: Color? = when {
@@ -1201,7 +1197,7 @@ private fun Bubble(act: Act, s: IslandSettings) {
                 else Modifier.background(Color(s.color)),
             )
             .then(
-                s.border(Surface.ACTIVE).let { b ->
+                s.placeBorder(Place.ACTIVE).let { b ->
                     if (b.on) Modifier.border(b.width.dp, paletteColors(b).first().copy(alpha = b.opacity / 100f), CircleShape) else Modifier
                 },
             )

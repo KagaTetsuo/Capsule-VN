@@ -42,17 +42,9 @@ fun CardsScreen(onBack: () -> Unit, onInstruction: () -> Unit, open: (Screen) ->
             GroupToggle(Pos.First, Icons.Outlined.PlayCircle, tr("Điều khiển trình phát", "Player controls"),
                 tr("Khi đang phát nhạc và trình phát chạy ngầm", "When music is playing and the player is in the background"),
                 s.cardMedia, color = Tile.Pink) { set { copy(cardMedia = it) } }
-            GroupToggle(Pos.Middle, Icons.Rounded.Call, tr("Cuộc gọi", "Calls"),
+            GroupToggle(Pos.Last, Icons.Rounded.Call, tr("Cuộc gọi", "Calls"),
                 tr("Cuộc gọi đến kèm nút trả lời và thời lượng cuộc gọi", "Incoming calls with answer buttons, and the call time"),
                 s.cardCall, color = Tile.Green) { set { copy(cardCall = it) } }
-            GroupItem(
-                Pos.Last,
-                Icons.Rounded.Tune,
-                tr("Kích thước & bo góc khung thẻ", "Cards size & corner radius"),
-                tr("Tùy chỉnh riêng vị trí, kích thước & độ bo góc kèm mô phỏng trực tiếp", "Position, size & corner radius controls with live simulation"),
-                color = Tile.Indigo,
-                onClick = { open(Screen.MSG_CALL_SIZE) },
-            ) { Arrow() }
         }
 
         SectionHeader(tr("Hẹn giờ & báo thức", "Timers and alarm"))

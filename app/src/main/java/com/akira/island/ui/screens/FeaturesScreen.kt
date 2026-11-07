@@ -362,17 +362,9 @@ fun NotificationsScreen(onBack: () -> Unit, open: (Screen) -> Unit = {}) {
             GroupToggle(Pos.Middle, Icons.Rounded.MarkChatUnread, tr("Giữ tin chưa đọc trên Viên thuốc", "Keep unread messages"),
                 tr("Hết thời gian hiển thị, tin vẫn được giữ lại: chấm nhỏ báo hiệu, chạm Viên thuốc để xem lại từng cuộc trò chuyện", "After the card hides, a small dot stays; tap the island to read each conversation again"),
                 s.unreadKeep, color = Tile.Indigo) { v -> SettingsRepo.update { copy(unreadKeep = v) } }
-            GroupToggle(Pos.Middle, Icons.Rounded.Call, tr("Ẩn thẻ cuộc gọi khi đang ở màn hình gọi", "Hide call card on the call screen"),
+            GroupToggle(Pos.Last, Icons.Rounded.Call, tr("Ẩn thẻ cuộc gọi khi đang ở màn hình gọi", "Hide call card on the call screen"),
                 tr("Đang mở sẵn màn hình cuộc gọi của máy / Zalo / Messenger… thì không hiện thêm thẻ cuộc gọi đến cho khỏi trùng", "When the phone / app call screen is already open, don't show a second incoming-call card"),
                 s.hideCallInCallApp, color = Tile.Green) { v -> SettingsRepo.update { copy(hideCallInCallApp = v) } }
-            GroupItem(
-                Pos.Last,
-                Icons.Rounded.Tune,
-                tr("Khung thẻ thông báo", "Notification cards"),
-                tr("Vị trí, kích thước, số dòng & bo góc — xem trước trực tiếp", "Position, size, lines & corners — live preview"),
-                color = Tile.Purple,
-                onClick = { open(Screen.MSG_CALL_SIZE) },
-            ) { Arrow() }
         }
 
         SectionHeader(tr("Màu nút bấm", "Button color"))

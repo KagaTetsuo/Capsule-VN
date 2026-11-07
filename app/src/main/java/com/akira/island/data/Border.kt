@@ -128,3 +128,92 @@ internal fun IslandSettings.migrateBorders(): IslandSettings {
     }
     return copy(borders = map, ledBorder = led)
 }
+
+/**
+ * Từng nơi / từng loại thông báo của Viên thuốc — mỗi loại một trang tuỳ chỉnh riêng,
+ * có kích thước & vị trí, nền, thời gian hiển thị và đường viền riêng (không dùng chung).
+ */
+@Serializable
+enum class Place(private val ru: String, private val en: String, private val hintRu: String, private val hintEn: String) {
+    IDLE("Viên thuốc bình thường", "Idle island", "Khi không có hoạt động nào", "When nothing is happening"),
+    ACTIVE("Khi có hoạt động", "With activity", "Nhạc, hẹn giờ, cuộc gọi đang diễn ra, dẫn đường…", "Music, timers, ongoing calls, navigation…"),
+    EXPANDED("Bảng mở rộng", "Expanded board", "Giờ – Pin, trình phát nhạc, hẹn giờ…", "Clock & battery, music player, timers…"),
+    MESSAGE("Tin nhắn", "Messages", "Thẻ tin nhắn & tin chưa đọc", "Message cards & unread"),
+    CALL("Cuộc gọi đến", "Incoming call", "Thẻ cuộc gọi đến có nút nghe / từ chối", "Card with answer / decline"),
+    UPDATE("Cập nhật ứng dụng", "App update", "Thẻ báo có phiên bản mới", "New version card"),
+    CHARGING("Sạc pin", "Charging", "Cắm / rút sạc, mức pin", "Plug in / unplug, battery level"),
+    AUDIO("Tai nghe & Bluetooth", "Headphones & Bluetooth", "Kết nối tai nghe, loa, pin tai nghe", "Headphones, speakers, battery"),
+    PAYMENT("Thanh toán", "Payments", "Chạm thanh toán NFC, đã thanh toán", "NFC tap to pay, paid"),
+    NAV("Điều hướng & gọi xe", "Navigation & rides", "Rẽ, lộ trình, giao hàng, gọi xe", "Turns, routes, deliveries, rides"),
+    ALARM("Báo thức", "Alarm", "Báo thức sắp reo", "Upcoming alarm"),
+    MODE("Chế độ chuông", "Ring mode", "Chuông, im lặng, rung (viên nhỏ)", "Ring, silent, vibrate (small pill)"),
+    SENT("Đã gửi / Đã sao chép", "Sent / Copied", "Đã gửi tin, đã chép mã OTP (viên nhỏ)", "Message sent, OTP copied (small pill)"),
+    OTHER("Sự kiện khác", "Other events", "Wi-Fi, chế độ máy bay, đèn pin…", "Wi-Fi, airplane mode, flashlight…"),
+    ;
+
+    val title: String get() = tr(ru, en)
+    val hint: String get() = tr(hintRu, hintEn)
+
+    /** Loại thông báo tương ứng (để chỉnh vị trí / kích thước, thời gian hiển thị). */
+    val kind: NoticeKind?
+        get() = when (this) {
+            CHARGING -> NoticeKind.CHARGING
+            AUDIO -> NoticeKind.AUDIO
+            PAYMENT -> NoticeKind.PAYMENT
+            NAV -> NoticeKind.NAV
+            ALARM -> NoticeKind.ALARM
+            MODE -> NoticeKind.MODE
+            SENT -> NoticeKind.SENT
+            OTHER -> NoticeKind.OTHER
+            else -> null
+        }
+
+    /** Khoá thời gian hiển thị (null = không có thời gian hiển thị riêng). */
+    val durationKey: String?
+        get() = when (this) {
+            MESSAGE -> "MESSAGE"
+            UPDATE -> "UPDATE"
+            else -> kind?.name
+        }
+}
+
+fun NoticeKind.place(): Place = when (this) {
+    NoticeKind.CHARGING -> Place.CHARGING
+    NoticeKind.AUDIO -> Place.AUDIO
+    NoticeKind.PAYMENT -> Place.PAYMENT
+    NoticeKind.NAV -> Place.NAV
+    NoticeKind.ALARM -> Place.ALARM
+    NoticeKind.MODE -> Place.MODE
+    NoticeKind.SENT -> Place.SENT
+    NoticeKind.OTHER -> Place.OTHER
+}
+
+/** Mặc định: nơi nào dùng nền đen thường (không dùng nền thẻ) — giống giao diện trước đây. */
+val DEFAULT_PLAIN_BG: Set<Place> = setOf(
+    Place.IDLE, Place.ACTIVE, Place.CHARGING, Place.AUDIO, Place.PAYMENT, Place.OTHER, Place.MODE, Place.SENT,
+)
+
+fun IslandSettings.placeBorder(p: Place): BorderSpec = placeBorders[p] ?: BorderSpec()
+
+/** Nơi này dùng nền thẻ (màu / ảnh / Liquid Glass ở "Nền thẻ thông báo") hay nền đen thường. */
+fun IslandSettings.cardBgOn(p: Place): Boolean = p !in plainBgPlaces
+
+/** v1.6: viền & nền tách riêng từng loại — chép thiết lập theo nhóm cũ sang từng loại, giữ nguyên giao diện. */
+internal fun IslandSettings.migratePlaces(): IslandSettings {
+    val map = placeBorders.toMutableMap()
+    fun put(spec: BorderSpec?, vararg ps: Place) {
+        if (spec != null) ps.forEach { map.putIfAbsent(it, spec) }
+    }
+    put(borders[Surface.IDLE], Place.IDLE)
+    put(borders[Surface.ACTIVE], Place.ACTIVE)
+    put(borders[Surface.EXPANDED], Place.EXPANDED)
+    put(borders[Surface.CARD], Place.MESSAGE, Place.CALL, Place.UPDATE, Place.NAV, Place.ALARM)
+    put(borders[Surface.PILL], Place.CHARGING, Place.AUDIO, Place.PAYMENT, Place.OTHER, Place.MODE, Place.SENT)
+    val plain = buildSet {
+        if (!cardStyleIdle) add(Place.IDLE)
+        add(Place.ACTIVE)
+        if (!cardStyleExpanded) add(Place.EXPANDED)
+        if (!cardStylePills) addAll(listOf(Place.CHARGING, Place.AUDIO, Place.PAYMENT, Place.OTHER, Place.MODE, Place.SENT))
+    }
+    return copy(placeBorders = map, plainBgPlaces = plain)
+}
