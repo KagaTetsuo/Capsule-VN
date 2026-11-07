@@ -316,7 +316,7 @@ private fun addTile(context: Context) {
     runCatching {
         bar.requestAddTileService(
             ComponentName(context, IslandTile::class.java), context.getString(R.string.tile_label),
-            Icon.createWithResource(context, R.drawable.ic_tab_island), context.mainExecutor,
+            Icon.createWithResource(context, R.drawable.ic_stat_capsule), context.mainExecutor,
         ) { result ->
             if (result == StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ALREADY_ADDED) {
                 Toast.makeText(context, tr("Phím tắt đã có trong Cài đặt nhanh", "The tile is already in quick settings"), Toast.LENGTH_SHORT).show()

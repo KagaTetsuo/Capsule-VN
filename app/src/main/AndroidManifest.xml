@@ -175,7 +175,7 @@
         <service
             android:name=".service.IslandTile"
             android:exported="true"
-            android:icon="@drawable/ic_tab_island"
+            android:icon="@drawable/ic_stat_capsule"
             android:label="@string/tile_label"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>

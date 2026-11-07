@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Biểu tượng Capsule VN trên thanh trạng thái: viên thuốc nằm ngang, chữ "VN" cách điệu bằng vạch và ngôi sao (một màu, theo chuẩn Android) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Viền viên thuốc -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="1.9"
+        android:pathData="M7.5,5.6 H16.5 A6.4,6.4 0 0 1 16.5,18.4 H7.5 A6.4,6.4 0 0 1 7.5,5.6 Z" />
+    <!-- Nửa trái: vạch đứng như chữ "CAPSULE" thu nhỏ -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M5.6,9.2 H7.3 V14.8 H5.6 Z M8.6,9.2 H10.3 V14.8 H8.6 Z" />
+    <!-- Ngôi sao -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M15.20,7.70 L16.23,10.58 L19.29,10.67 L16.86,12.54 L17.73,15.48 L15.20,13.75 L12.67,15.48 L13.54,12.54 L11.11,10.67 L14.17,10.58 Z" />
+</vector>

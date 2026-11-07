@@ -153,6 +153,7 @@ object Messages {
                     icon = Ios.load(service, R.drawable.ios_chatbubble_ellipses),
                     tint = brandColor,
                     style = NoticeStyle.PILL,
+                    kindHint = com.akira.island.data.NoticeKind.COMPACT,
                     openPkg = sbn.packageName,
                 ),
             )

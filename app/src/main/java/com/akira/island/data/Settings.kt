@@ -116,7 +116,9 @@ enum class NoticeKind(private val ru: String, private val en: String) {
     PAYMENT("Thanh toán", "Payments"),
     NAV("Điều hướng", "Navigation"),
     ALARM("Báo thức", "Alarm"),
-    MODE("Viên nhỏ (chế độ chuông, im lặng, rung…)", "Small pills (ring mode, silent, vibrate…)"),
+    MODE("Viên nhỏ: chế độ chuông", "Pill: ring mode"),
+    UNLOCK("Viên nhỏ: mở khoá máy", "Pill: unlocked"),
+    COMPACT("Viên nhỏ: tin nhắn thu gọn & Gaming", "Pill: compact message & gaming"),
     SENT("Đã gửi / Đã sao chép", "Sent / Copied"),
     OTHER("Sự kiện khác", "Other events"),
     ;
@@ -132,6 +134,9 @@ data class NoticeTweak(
     val width: Int = 0,
     val heightExtra: Int = 0,
     val corner: Int = -1,
+    /** Cỡ biểu tượng & cỡ chữ (%), dùng cho thông báo viên nhỏ. */
+    val iconScale: Int = 100,
+    val textScale: Int = 100,
 )
 
 /** Kiểu chuyển động của viền sáng. */
@@ -539,6 +544,8 @@ object SettingsRepo {
         if (current.layoutVersion < 7) update { copy(ledEnabled = false, layoutVersion = 7) }
         // v1.6: viền & nền tách riêng từng loại thông báo
         if (current.layoutVersion < 8) update { migratePlaces().copy(layoutVersion = 8) }
+        // v1.6.1: viên nhỏ tách 3 loại (chế độ chuông / mở khoá / tin nhắn thu gọn & Gaming) — chép thiết lập cũ sang
+        if (current.layoutVersion < 9) update { migratePills().copy(layoutVersion = 9) }
     }
 
     fun update(block: IslandSettings.() -> IslandSettings) {
@@ -558,8 +565,9 @@ object SettingsRepo {
         val decoded = json.decodeFromString<IslandSettings>(raw)
         // File sao lưu từ bản cũ: chuyển thiết lập viền cũ sang hệ thống viền mới
         val restored = when {
-            decoded.layoutVersion in 1..5 -> decoded.migrateBorders().migratePlaces().copy(layoutVersion = 8)
-            decoded.layoutVersion in 6..7 -> decoded.migratePlaces().copy(layoutVersion = 8)
+            decoded.layoutVersion in 1..5 -> decoded.migrateBorders().migratePlaces().migratePills().copy(layoutVersion = 9)
+            decoded.layoutVersion in 6..7 -> decoded.migratePlaces().migratePills().copy(layoutVersion = 9)
+            decoded.layoutVersion == 8 -> decoded.migratePills().copy(layoutVersion = 9)
             else -> decoded
         }
         val c = current

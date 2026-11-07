@@ -63,6 +63,8 @@ private fun placeKeys(p: Place): String = when (p) {
     Place.NAV -> "dieu huong ban do goi xe giao hang xanh sm grab be tien trinh"
     Place.ALARM -> "bao thuc"
     Place.MODE -> "che do chuong im lang rung vien nho"
+    Place.UNLOCK -> "mo khoa man hinh o khoa vien nho"
+    Place.COMPACT -> "tin nhan thu gon gaming game vien nho pop up"
     Place.SENT -> "da gui da sao chep otp vien nho"
     Place.OTHER -> "su kien khac wifi may bay den pin"
 } + " vien duong vien border mau hieu ung xoay nhap nhay loang led rgb nen kich thuoc vi tri thoi gian hien thi"

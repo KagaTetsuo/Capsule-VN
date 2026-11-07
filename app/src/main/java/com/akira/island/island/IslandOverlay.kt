@@ -209,6 +209,11 @@ private fun buildPreviewKind(context: Context, kind: NoticeKind): Notice = when 
     NoticeKind.NAV -> Notice(tr("Rẽ phải sau 300 m", "Turn right in 300 m"), "300 m", Ios.load(context, com.akira.island.R.drawable.ios_navigate), Tints.Blue)
     NoticeKind.ALARM -> Notice(tr("Báo thức", "Alarm"), "06:30", Ios.load(context, com.akira.island.R.drawable.ios_alarm), Tints.Orange)
     NoticeKind.MODE -> Notice("", tr("Im lặng", "Silent"), Ios.load(context, com.akira.island.R.drawable.ios_notifications_off), Tints.Red, style = NoticeStyle.PILL)
+    NoticeKind.UNLOCK -> Notice("", null, Ios.load(context, com.akira.island.R.drawable.ios_lock_open), Color.White, style = NoticeStyle.PILL, kindHint = NoticeKind.UNLOCK)
+    NoticeKind.COMPACT -> Notice(
+        "Zalo · Minh", tr("Tối nay đi ăn không?", "Dinner tonight?"), Ios.load(context, com.akira.island.R.drawable.ios_chatbubble_ellipses),
+        Tints.Blue, style = NoticeStyle.PILL, kindHint = NoticeKind.COMPACT,
+    )
     NoticeKind.SENT -> Notice(tr("Đã sao chép OTP", "OTP copied"), "482 913", Ios.load(context, com.akira.island.R.drawable.ios_checkmark_circle), Tints.Green, style = NoticeStyle.SENT)
     NoticeKind.OTHER -> Notice(tr("Wi-Fi", "Wi-Fi"), tr("Đã kết nối", "Connected"), Ios.load(context, com.akira.island.R.drawable.ios_wifi), Tints.Blue)
 }
@@ -634,7 +639,7 @@ private fun IslandBody(
         }
         primary is Act.NoticeA && primary.n.style == NoticeStyle.PILL -> {
             if (s.capsuleCornerRadius >= 0) s.capsuleCornerRadius.dp
-            else ((activeHeight(s) + (s.noticeTweaks[NoticeKind.MODE]?.heightExtra ?: 0).dp).coerceAtLeast(22.dp)) / 2
+            else ((activeHeight(s) + (s.noticeTweaks[primary.n.kind()]?.heightExtra ?: 0).dp).coerceAtLeast(22.dp)) / 2
         }
         primary is Act.Idle -> {
             if (s.capsuleCornerRadius >= 0) s.capsuleCornerRadius.dp else h / 2
